@@ -32,5 +32,7 @@ int main(int , char* [])
 	return EXIT_SUCCESS;
 }
 
-// todo next: bring over sdl framework code...
-	// make window resizeable, able to switch to fullscreen...
+// todo next:
+	// make window resizeable, alt-enter to switch to / from fullscreen
+	// add sdl opengl context class
+	// add opengl pipeline class
