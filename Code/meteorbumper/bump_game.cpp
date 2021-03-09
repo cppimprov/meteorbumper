@@ -54,7 +54,8 @@ namespace bump
 
 				// render
 				{
-					glClear(GL_COLOR_BUFFER_BIT); // temp!
+					app.m_renderer.clear_color_buffers({ 1.f, 0.f, 0.f, 1.f });
+					app.m_renderer.clear_depth_buffers();
 
 					// ...
 

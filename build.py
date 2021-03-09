@@ -287,7 +287,7 @@ class PlatformMSVC:
 		
 		glew = ProjectStaticLib.from_name('glew', self, build_type)
 		glew.inc_dirs = [ join_dir(glew.code_dir, '.') ]
-		glew.defines = [ 'GLEW_STATIC' ]
+		glew.defines = [ 'GLEW_STATIC', 'GLEW_NO_GLU' ]
 		self.write_static_lib(n, build_type, glew)
 
 		stb = ProjectStaticLib.from_name('stbimage', self, build_type)
@@ -474,7 +474,7 @@ class PlatformMSVC:
 		self.write_static_lib(n, build_type, sdlmixer, '3')
 
 		meteorbumper = ProjectExe.from_name('meteorbumper', self, build_type)
-		meteorbumper.defines = stb.defines + glm.defines + sdl.defines + [ 'MUSIC_WAV' ]
+		meteorbumper.defines = freetype.defines + harfbuzz.defines + glew.defines + stb.defines + glm.defines + sdl.defines + [ 'MUSIC_WAV' ]
 		meteorbumper.inc_dirs = [
 			json.code_dir,
 			join_dir(freetype.code_dir, 'include'),
