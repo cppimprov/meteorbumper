@@ -16,10 +16,9 @@ namespace bump
 		class buffer : public object_handle<>
 		{
 		public:
+		
+			buffer();
 
-			template<class ComponentT>
-			buffer(GLenum target, ComponentT const* data, std::size_t component_count, std::size_t element_count, GLenum usage);
-			
 			template<class ComponentT>
 			void set_data(GLenum target, ComponentT const* data, std::size_t component_count, std::size_t element_count, GLenum usage);
 
@@ -37,21 +36,12 @@ namespace bump
 
 		private:
 
-			buffer();
-
 			GLenum m_component_type;
 			std::size_t m_component_size_bytes;
 			std::size_t m_component_count;
 			std::size_t m_element_count;
 		};
 		
-		template<class ComponentT>
-		buffer::buffer(GLenum target, ComponentT const* data, std::size_t component_count, std::size_t element_count, GLenum usage):
-			buffer()
-		{
-			set_data(target, data, component_count, element_count, usage);
-		}
-
 		template<class ComponentT>
 		void buffer::set_data(GLenum target, ComponentT const* data, std::size_t component_count, std::size_t element_count, GLenum usage)
 		{

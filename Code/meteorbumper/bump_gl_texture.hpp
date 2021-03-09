@@ -57,7 +57,6 @@ namespace bump
 		public:
 
 			texture_2d();
-			texture_2d(glm::vec<2, GLsizei> size, GLenum format, texture_data_source data);
 
 			void set_data(glm::vec<2, GLsizei> size, GLenum format, texture_data_source data);
 			void set_sub_data(glm::vec<2, GLsizei> offset, glm::vec<2, GLsizei> size, texture_data_source data);
@@ -78,7 +77,6 @@ namespace bump
 		public:
 
 			texture_2d_array();
-			texture_2d_array(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data);
 
 			void set_data(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data);
 			void set_sub_data(glm::vec<3, GLsizei> offset, glm::vec<3, GLsizei> size, texture_data_source data);
@@ -99,7 +97,6 @@ namespace bump
 		public:
 
 			texture_3d();
-			texture_3d(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data);
 
 			void set_data(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data);
 			void set_sub_data(glm::vec<3, GLsizei> offset, glm::vec<3, GLsizei> size, texture_data_source data);

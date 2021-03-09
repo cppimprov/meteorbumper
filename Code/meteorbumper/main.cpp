@@ -51,8 +51,4 @@ int main(int , char* [])
 
 // todo next:
 
-	// add opengl objects:
-		// shader_object
-		// shader_program
-	
 	// add opengl draw calls (to renderer)

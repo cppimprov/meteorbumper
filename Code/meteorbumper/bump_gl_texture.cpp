@@ -18,12 +18,6 @@ namespace bump
 			reset(id, [] (GLuint id) { glDeleteTextures(1, &id); });
 		}
 		
-		texture_2d::texture_2d(glm::vec<2, GLsizei> size, GLenum format, texture_data_source data):
-			texture_2d()
-		{
-			set_data(size, format, data);
-		}
-
 		void texture_2d::set_data(glm::vec<2, GLsizei> size, GLenum format, texture_data_source data)
 		{
 			die_if(!is_valid());
@@ -133,12 +127,6 @@ namespace bump
 			reset(id, [] (GLuint id) { glDeleteTextures(1, &id); });
 		}
 		
-		texture_2d_array::texture_2d_array(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data):
-			texture_2d_array()
-		{
-			set_data(size, format, data);
-		}
-
 		void texture_2d_array::set_data(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data)
 		{
 			die_if(!is_valid());
@@ -250,12 +238,6 @@ namespace bump
 			reset(id, [] (GLuint id) { glDeleteTextures(1, &id); });
 		}
 		
-		texture_3d::texture_3d(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data):
-			texture_3d()
-		{
-			set_data(size, format, data);
-		}
-
 		void texture_3d::set_data(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data)
 		{
 			die_if(!is_valid());
