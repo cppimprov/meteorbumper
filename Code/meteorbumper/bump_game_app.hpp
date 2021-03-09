@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bump_sdl_context.hpp"
+#include "bump_sdl_gl_context.hpp"
 #include "bump_sdl_mixer_context.hpp"
 #include "bump_sdl_window.hpp"
 
@@ -23,10 +24,11 @@ namespace bump
 			app& operator=(app&&) = delete;
 
 
-			sdl::context m_context;
+			sdl::context m_sdl_context;
 			sdl::mixer_context m_mixer_context;
 
 			sdl::window m_window;
+			sdl::gl_context m_gl_context;
 		};
 
 	} // game

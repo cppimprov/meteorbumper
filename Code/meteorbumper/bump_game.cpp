@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+#include <GL/glew.h>
+
 #include <algorithm>
 #include <chrono>
 #include <deque>
@@ -18,7 +20,7 @@ namespace bump
 	namespace game
 	{
 		
-		gamestate do_start(app& )
+		gamestate do_start(app& app)
 		{
 			while (true)
 			{
@@ -33,6 +35,15 @@ namespace bump
 
 						if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_ESCAPE)
 							return { };
+
+						if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN && (e.key.keysym.mod & KMOD_LALT) != 0)
+						{
+							auto mode = app.m_window.get_display_mode();
+							using display_mode = sdl::window::display_mode;
+							
+							if (mode != display_mode::FULLSCREEN)
+								app.m_window.set_display_mode(mode == display_mode::BORDERLESS_WINDOWED ? display_mode::WINDOWED : display_mode::BORDERLESS_WINDOWED);
+						}
 					}
 				}
 
@@ -43,7 +54,11 @@ namespace bump
 
 				// render
 				{
+					glClear(GL_COLOR_BUFFER_BIT); // temp!
+
 					// ...
+
+					app.m_window.swap_buffers();
 				}
 			}
 

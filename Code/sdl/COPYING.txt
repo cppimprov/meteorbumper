@@ -21,4 +21,4 @@ freely, subject to the following restrictions:
 
 ----
 
-Note: source code altered slightly for the snek project.
+Note: source code altered slightly for the MeteorBumper project.

@@ -7,11 +7,12 @@ namespace bump
 	{
 
 		app::app():
-			m_context(),
+			m_sdl_context(),
 			m_mixer_context(),
-			m_window({ 1280, 720 }, "bump!", sdl::window::display_mode::WINDOWED)
+			m_window({ 1280, 720 }, "bump!", sdl::window::display_mode::WINDOWED),
+			m_gl_context(m_window)
 		{
-
+			m_window.set_min_size({ 640, 360 });
 		}
 	
 	} // game

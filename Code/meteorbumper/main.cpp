@@ -33,6 +33,4 @@ int main(int , char* [])
 }
 
 // todo next:
-	// make window resizeable, alt-enter to switch to / from fullscreen
-	// add sdl opengl context class
-	// add opengl pipeline class
+	// add opengl renderer class
