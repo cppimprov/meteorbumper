@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bump_sdl_object_handle.hpp"
+#include "bump_ptr_handle.hpp"
 #include "bump_span.hpp"
 
 #include <hb.h>
@@ -13,7 +13,7 @@ namespace bump
 	namespace font
 	{
 
-		class hb_shaper : public sdl::object_handle<hb_buffer_t>
+		class hb_shaper : public ptr_handle<hb_buffer_t>
 		{
 		public:
 			

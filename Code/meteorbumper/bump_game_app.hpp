@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bump_font_ft_context.hpp"
+#include "bump_game_assets.hpp"
 #include "bump_gl_renderer.hpp"
 #include "bump_glew_context.hpp"
 #include "bump_sdl_context.hpp"
@@ -37,6 +38,8 @@ namespace bump
 			glew_context m_glew_context;
 
 			gl::renderer m_renderer;
+
+			assets m_assets;
 		};
 
 	} // game

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "bump_ptr_handle.hpp"
 #include "bump_sdl_blendmode.hpp"
-#include "bump_sdl_object_handle.hpp"
 
 #include <glm/glm.hpp>
 #include <SDL.h>
@@ -12,7 +12,7 @@ namespace bump
 	namespace sdl
 	{
 		
-		class surface : public object_handle<SDL_Surface>
+		class surface : public ptr_handle<SDL_Surface>
 		{
 		public:
 

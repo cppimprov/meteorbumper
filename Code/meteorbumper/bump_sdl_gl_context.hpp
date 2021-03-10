@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bump_sdl_object_handle.hpp"
+#include "bump_ptr_handle.hpp"
 
 namespace bump
 {
@@ -10,7 +10,7 @@ namespace bump
 
 		class window;
 		
-		class gl_context : public object_handle<void>
+		class gl_context : public ptr_handle<void>
 		{
 		public:
 

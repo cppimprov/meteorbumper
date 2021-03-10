@@ -39,17 +39,14 @@ namespace bump
 		
 		gamestate do_start(app& app)
 		{
-			auto ft_font = font::ft_font(app.m_ft_context.get_handle(), "data/fonts/BungeeShade-Regular.ttf");
-			ft_font.set_pixel_size(32);
-
-			auto hb_font = font::hb_font(ft_font.get_handle());
+			auto const& font = app.m_assets.m_fonts.at({ "BungeeShade-Regular", 32 });
 
 			auto text = std::string("\u1EB2test\u222B 1 2 \u1EB2 \ngy \u0604 3.4 ~@ q`¬|' Vo Te Av fi iiiiiiiiiii");
 
 			auto hb_shaper = font::hb_shaper(HB_DIRECTION_LTR, HB_SCRIPT_LATIN, hb_language_from_string("en", -1));
-			hb_shaper.shape(hb_font.get_handle(), text);
+			hb_shaper.shape(font.m_hb_font.get_handle(), text);
 
-			auto glyphs = render_glyphs(ft_font, hb_font, hb_shaper);
+			auto glyphs = render_glyphs(font.m_ft_font, font.m_hb_font, hb_shaper);
 			auto image = blit_glyphs(glyphs);
 
 			write_png("test.png", image.m_image);

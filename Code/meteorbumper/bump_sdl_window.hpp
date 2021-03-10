@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bump_sdl_object_handle.hpp"
+#include "bump_ptr_handle.hpp"
 
 #include <glm/glm.hpp>
 #include <SDL.h>
@@ -14,7 +14,7 @@ namespace bump
 	{
 		
 		
-		class window : public object_handle<SDL_Window>
+		class window : public ptr_handle<SDL_Window>
 		{
 		public:
 

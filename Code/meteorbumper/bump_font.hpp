@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bump_font_asset.hpp"
 #include "bump_font_conversions.hpp"
 #include "bump_font_ft_context.hpp"
 #include "bump_font_ft_font.hpp"

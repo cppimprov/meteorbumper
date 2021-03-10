@@ -13,7 +13,7 @@ namespace bump
 	namespace gl
 	{
 		
-		class buffer : public object_handle<>
+		class buffer : public object_handle
 		{
 		public:
 		

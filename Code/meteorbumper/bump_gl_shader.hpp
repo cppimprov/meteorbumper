@@ -12,7 +12,7 @@ namespace bump
 	namespace gl
 	{
 		
-		class shader_object : public object_handle<>
+		class shader_object : public object_handle
 		{
 		public:
 
@@ -27,7 +27,7 @@ namespace bump
 			std::string get_log() const;
 		};
 
-		class shader_program : public object_handle<>
+		class shader_program : public object_handle
 		{
 		public:
 

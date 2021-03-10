@@ -10,7 +10,7 @@ namespace bump
 	namespace gl
 	{
 		
-		class framebuffer : public object_handle<>
+		class framebuffer : public object_handle
 		{
 		public:
 

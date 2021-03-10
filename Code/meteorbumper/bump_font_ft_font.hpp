@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bump_sdl_object_handle.hpp"
+#include "bump_ptr_handle.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -14,7 +14,7 @@ namespace bump
 	namespace font
 	{
 
-		class ft_font : public sdl::object_handle<FT_FaceRec_>
+		class ft_font : public ptr_handle<FT_FaceRec_>
 		{
 		public:
 

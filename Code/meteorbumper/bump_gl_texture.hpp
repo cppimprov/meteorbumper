@@ -52,7 +52,7 @@ namespace bump
 			return { type, format, data };
 		}
 
-		class texture_2d : public object_handle<>
+		class texture_2d : public object_handle
 		{
 		public:
 
@@ -72,7 +72,7 @@ namespace bump
 			void generate_mipmaps();
 		};
 		
-		class texture_2d_array : public object_handle<>
+		class texture_2d_array : public object_handle
 		{
 		public:
 
@@ -92,7 +92,7 @@ namespace bump
 			void generate_mipmaps();
 		};
 		
-		class texture_3d : public object_handle<>
+		class texture_3d : public object_handle
 		{
 		public:
 

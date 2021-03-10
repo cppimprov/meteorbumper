@@ -10,7 +10,7 @@ namespace bump
 		
 		class buffer;
 
-		class vertex_array : public object_handle<>
+		class vertex_array : public object_handle
 		{
 		public:
 
