@@ -1,6 +1,6 @@
 #include "bump_gl_renderer.hpp"
 
-#include "bump_die.hpp"
+#include "bump_gl_error.hpp"
 
 #include <GL/glew.h>
 
@@ -15,7 +15,7 @@ namespace bump
 			glClearColor(color.x, color.y, color.z, color.w);
 			glClear(GL_COLOR_BUFFER_BIT);
 			
-			die_if(glGetError() != GL_NO_ERROR);
+			die_if_error();
 		}
 
 		void renderer::clear_depth_buffers(float depth)
@@ -23,7 +23,7 @@ namespace bump
 			glClearDepth(depth);
 			glClear(GL_DEPTH_BUFFER_BIT);
 
-			die_if(glGetError() != GL_NO_ERROR);
+			die_if_error();
 		}
 		
 	} // gl

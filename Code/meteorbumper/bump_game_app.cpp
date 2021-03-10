@@ -11,14 +11,14 @@ namespace bump
 
 			auto const fonts = std::vector<font_metadata>
 			{
-				{ "press_start", "BungeeShade-Regular.ttf", 32 },
+				{ "press_start", "Bungee-Regular.ttf", 64 },
 			};
 
 			auto const sounds = std::vector<sound_metadata>{ };
 
 			auto const shaders = std::vector<shader_metadata>
 			{
-				// ...
+				{ "press_start", { "text_quad.vert", "text_quad.frag" } },
 			};
 
 		} // unnamed

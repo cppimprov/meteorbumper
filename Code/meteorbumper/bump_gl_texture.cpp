@@ -16,6 +16,11 @@ namespace bump
 			die_if(!id);
 
 			reset(id, [] (GLuint id) { glDeleteTextures(1, &id); });
+
+			set_min_filter(GL_NEAREST);
+			set_mag_filter(GL_NEAREST);
+			set_wrap_mode(GL_CLAMP_TO_EDGE);
+			set_anisotropy(1.f);
 		}
 		
 		void texture_2d::set_data(glm::vec<2, GLsizei> size, GLenum format, texture_data_source data)
@@ -125,6 +130,11 @@ namespace bump
 			die_if(!id);
 
 			reset(id, [] (GLuint id) { glDeleteTextures(1, &id); });
+			
+			set_min_filter(GL_NEAREST);
+			set_mag_filter(GL_NEAREST);
+			set_wrap_mode(GL_CLAMP_TO_EDGE);
+			set_anisotropy(1.f);
 		}
 		
 		void texture_2d_array::set_data(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data)
@@ -236,6 +246,11 @@ namespace bump
 			die_if(!id);
 
 			reset(id, [] (GLuint id) { glDeleteTextures(1, &id); });
+			
+			set_min_filter(GL_NEAREST);
+			set_mag_filter(GL_NEAREST);
+			set_wrap_mode(GL_CLAMP_TO_EDGE);
+			set_anisotropy(1.f);
 		}
 		
 		void texture_3d::set_data(glm::vec<3, GLsizei> size, GLenum format, texture_data_source data)

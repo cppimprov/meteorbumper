@@ -18,7 +18,6 @@ namespace bump
 
 			auto texture = gl::texture_2d();
 			texture.set_data(narrow_cast<glm::i32vec2>(image.size()), GL_R8, gl::make_texture_data_source(GL_RED, image.data()));
-			texture.set_wrap_mode(GL_CLAMP_TO_EDGE);
 
 			gl::die_if_error();
 			return texture;

@@ -22,16 +22,20 @@ int main(int , char* [])
 
 // todo next:
 
-	// font rendering to screen!
+	// move some stuff into the renderer!
+		// blend mode (similar to sdl)
+		// use_shader();
+		// clear_shader();
+		// set_texture();
+		// clear_texture();
+		// set_uniform();
 
-		// add text shader!
+		// draw call?
 
-	// where to store simple vertex buffers?
+
 
 
 	// ui::cell
 		// origin
 		// rel_pos, size
 		// abs_pos
-
-	// ???
