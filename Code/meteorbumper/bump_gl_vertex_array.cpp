@@ -19,6 +19,9 @@ namespace bump
 			reset(id, [] (GLuint id) { glDeleteVertexArrays(1, &id); });
 		}
 
+		// todo:
+		// max 4 floats components (floats???) per location
+		// so for 4x4matrix buffers, we need to do this 4 times!
 		void vertex_array::set_array_buffer(GLuint location, buffer const& buffer, GLuint divisor)
 		{
 			die_if(!is_valid());

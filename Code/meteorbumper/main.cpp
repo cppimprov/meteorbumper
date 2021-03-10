@@ -33,6 +33,7 @@ namespace bump
 	
 } // bump
 
+
 #include <cstdlib>
 
 int main(int , char* [])
@@ -51,4 +52,5 @@ int main(int , char* [])
 
 // todo next:
 
-	// add opengl draw calls (to renderer)
+	// move sdl::object_handle out of sdl:: and rename to ptr_handle (?)
+	// remove template deleter from gl::object_handle (not needed)

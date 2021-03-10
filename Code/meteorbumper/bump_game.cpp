@@ -2,10 +2,14 @@
 
 #include "bump_die.hpp"
 #include "bump_game_app.hpp"
-
-#include <glm/glm.hpp>
+#include "bump_font.hpp"
+#include "bump_log.hpp"
+#include "bump_narrow_cast.hpp"
 
 #include <GL/glew.h>
+#include <glm/glm.hpp>
+#include <stb_image.h>
+#include <stb_image_write.h>
 
 #include <algorithm>
 #include <chrono>
@@ -20,8 +24,37 @@ namespace bump
 	namespace game
 	{
 		
+		// temp!
+		void write_png(std::string const& filename, image<std::uint8_t> const& image)
+		{
+			die_if(image.channels() <= 0 || image.channels() > 4);
+
+			auto const stride = sizeof(std::uint8_t) * image.channels() * image.size().x;
+			if (!stbi_write_png(filename.c_str(), narrow_cast<int>(image.size().x), narrow_cast<int>(image.size().y), narrow_cast<int>(image.channels()), image.data(), narrow_cast<int>(stride)))
+			{
+				log_error("stbi_write_png() failed: " + std::string(stbi_failure_reason()));
+				die();
+			}
+		}
+		
 		gamestate do_start(app& app)
 		{
+			auto ft_font = font::ft_font(app.m_ft_context.get_handle(), "data/fonts/BungeeShade-Regular.ttf");
+			ft_font.set_pixel_size(32);
+
+			auto hb_font = font::hb_font(ft_font.get_handle());
+
+			auto text = std::string("\u1EB2test\u222B 1 2 \u1EB2 \ngy \u0604 3.4 ~@ q`¬|' Vo Te Av fi iiiiiiiiiii");
+
+			auto hb_shaper = font::hb_shaper(HB_DIRECTION_LTR, HB_SCRIPT_LATIN, hb_language_from_string("en", -1));
+			hb_shaper.shape(hb_font.get_handle(), text);
+
+			auto glyphs = render_glyphs(ft_font, hb_font, hb_shaper);
+			auto image = blit_glyphs(glyphs);
+
+			write_png("test.png", image.m_image);
+
+
 			while (true)
 			{
 				// input

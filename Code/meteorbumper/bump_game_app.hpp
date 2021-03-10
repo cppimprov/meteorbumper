@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bump_font_ft_context.hpp"
 #include "bump_gl_renderer.hpp"
 #include "bump_glew_context.hpp"
 #include "bump_sdl_context.hpp"
@@ -28,6 +29,8 @@ namespace bump
 
 			sdl::context m_sdl_context;
 			sdl::mixer_context m_mixer_context;
+			
+			font::ft_context m_ft_context;
 
 			sdl::window m_window;
 			sdl::gl_context m_gl_context;

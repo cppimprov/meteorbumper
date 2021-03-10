@@ -1,0 +1,5 @@
+The Bungee font files are:
+
+Copyright 2008 The Bungee Project Authors (david@djr.com)
+
+Used under the terms of the SIL Open Font License, Version 1.1: http://scripts.sil.org/OFL

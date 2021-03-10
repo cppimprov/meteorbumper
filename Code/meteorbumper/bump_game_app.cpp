@@ -9,6 +9,7 @@ namespace bump
 		app::app():
 			m_sdl_context(),
 			m_mixer_context(),
+			m_ft_context(),
 			m_window({ 1280, 720 }, "bump!", sdl::window::display_mode::WINDOWED),
 			m_gl_context(m_window),
 			m_glew_context(),
