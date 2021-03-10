@@ -5,6 +5,7 @@
 #include "bump_font.hpp"
 #include "bump_log.hpp"
 #include "bump_narrow_cast.hpp"
+#include "bump_render_text.hpp"
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
@@ -39,18 +40,9 @@ namespace bump
 		
 		gamestate do_start(app& app)
 		{
-			auto const& font = app.m_assets.m_fonts.at({ "BungeeShade-Regular", 32 });
-
+			auto const& font = app.m_assets.m_fonts.at("press_start");
 			auto text = std::string("\u1EB2test\u222B 1 2 \u1EB2 \ngy \u0604 3.4 ~@ q`¬|' Vo Te Av fi iiiiiiiiiii");
-
-			auto hb_shaper = font::hb_shaper(HB_DIRECTION_LTR, HB_SCRIPT_LATIN, hb_language_from_string("en", -1));
-			hb_shaper.shape(font.m_hb_font.get_handle(), text);
-
-			auto glyphs = render_glyphs(font.m_ft_font, font.m_hb_font, hb_shaper);
-			auto image = blit_glyphs(glyphs);
-
-			write_png("test.png", image.m_image);
-
+			auto texture = render_text_to_gl_texture(font, text);
 
 			while (true)
 			{

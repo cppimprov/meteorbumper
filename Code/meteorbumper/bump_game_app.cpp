@@ -9,8 +9,17 @@ namespace bump
 		namespace
 		{
 
-			const auto font_assets = std::vector<font::font_asset_key>{ { "BungeeShade-Regular", 32 } };
-			const auto sound_assets = std::vector<std::string>{ };
+			auto const fonts = std::vector<font_metadata>
+			{
+				{ "press_start", "BungeeShade-Regular.ttf", 32 },
+			};
+
+			auto const sounds = std::vector<sound_metadata>{ };
+
+			auto const shaders = std::vector<shader_metadata>
+			{
+				// ...
+			};
 
 		} // unnamed
 
@@ -22,7 +31,7 @@ namespace bump
 			m_gl_context(m_window),
 			m_glew_context(),
 			m_renderer(),
-			m_assets(load_assets(*this, font_assets, sound_assets))
+			m_assets(load_assets(*this, fonts, sounds, shaders))
 		{
 			m_window.set_min_size({ 640, 360 });
 		}
