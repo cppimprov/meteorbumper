@@ -26,38 +26,6 @@ namespace bump
 	namespace game
 	{
 		
-		// temp!
-		void write_png(std::string const& filename, image<std::uint8_t> const& image)
-		{
-			die_if(image.channels() <= 0 || image.channels() > 4);
-
-			auto const stride = sizeof(std::uint8_t) * image.channels() * image.size().x;
-			if (!stbi_write_png(filename.c_str(), narrow_cast<int>(image.size().x), narrow_cast<int>(image.size().y), narrow_cast<int>(image.channels()), image.data(), narrow_cast<int>(stride)))
-			{
-				log_error("stbi_write_png() failed: " + std::string(stbi_failure_reason()));
-				die();
-			}
-		}
-
-		struct press_start_shader_locations
-		{
-			press_start_shader_locations(gl::shader_program const& shader):
-				m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
-				m_u_MVP(shader.get_uniform_location("u_MVP")),
-				m_u_Position(shader.get_uniform_location("u_Position")),
-				m_u_Size(shader.get_uniform_location("u_Size")),
-				m_u_Color(shader.get_uniform_location("u_Color")),
-				m_u_TextTexture(shader.get_uniform_location("u_TextTexture"))
-				{ }
-
-			GLint m_in_VertexPosition;
-			GLint m_u_MVP;
-			GLint m_u_Position;
-			GLint m_u_Size;
-			GLint m_u_Color;
-			GLint m_u_TextTexture;
-		};
-		
 		class press_start_text
 		{
 		public:

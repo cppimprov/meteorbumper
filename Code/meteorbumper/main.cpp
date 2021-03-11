@@ -22,7 +22,15 @@ int main(int , char* [])
 
 // todo next:
 
-	
+	// blender exporter
+		// 
+
+	// load the cube and render!
+
+	// load ship model + render!
+
+	// intro music!
+	// add a skybox... distant stars / nebulae.
 
 
 
