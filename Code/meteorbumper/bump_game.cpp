@@ -57,23 +57,86 @@ namespace bump
 			GLint m_u_Color;
 			GLint m_u_TextTexture;
 		};
+		
+		class press_start_text
+		{
+		public:
+
+			explicit press_start_text(font::font_asset const& font, gl::shader_program const& shader):
+				m_shader(shader),
+				m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
+				m_u_MVP(shader.get_uniform_location("u_MVP")),
+				m_u_Position(shader.get_uniform_location("u_Position")),
+				m_u_Size(shader.get_uniform_location("u_Size")),
+				m_u_Color(shader.get_uniform_location("u_Color")),
+				m_u_TextTexture(shader.get_uniform_location("u_TextTexture")),
+				m_texture(render_text_to_gl_texture(font, "Press any key to start!").m_texture),
+				m_vertex_buffer(),
+				m_vertex_array()
+			{
+				auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
+				m_vertex_buffer.set_data(GL_ARRAY_BUFFER, vertices.begin(), 2, 6, GL_STATIC_DRAW);
+
+				m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertex_buffer);
+			}
+
+			void render(gl::renderer& renderer, glm::vec2 window_size)
+			{
+
+				// note: ortho * view * model... but view and model are both identity
+				auto mvp = glm::ortho(0.f, window_size.x, 0.f, window_size.y, -1.f, 1.f);
+
+				auto size = glm::vec2(m_texture.get_size());
+
+				auto pos = glm::round(glm::vec2{
+					(window_size.x - size.x) / 2, // center
+					window_size.y / 8.f, // offset from bottom
+				});
+				
+				renderer.set_viewport({ 0, 0 }, glm::uvec2(window_size));
+
+				renderer.set_blend_mode(gl::renderer::blend_mode::BLEND);
+				
+				renderer.set_program(m_shader);
+
+				renderer.set_uniform_4x4f(m_u_MVP, mvp);
+				renderer.set_uniform_2f(m_u_Position, pos);
+				renderer.set_uniform_2f(m_u_Size, size);
+				renderer.set_uniform_3f(m_u_Color, glm::f32vec3(1.f));
+				renderer.set_uniform_1i(m_u_TextTexture, 0);
+
+				renderer.set_texture_2d(0, m_texture);
+
+				renderer.set_vertex_array(m_vertex_array);
+
+				renderer.draw_arrays(GL_TRIANGLES, m_vertex_buffer.get_element_count());
+
+				renderer.clear_vertex_array();
+				renderer.clear_texture_2d(0);
+				renderer.clear_program();
+				renderer.set_blend_mode(gl::renderer::blend_mode::NONE);
+			}
+
+		private:
+
+			gl::shader_program const& m_shader;
+			GLint m_in_VertexPosition;
+			GLint m_u_MVP;
+			GLint m_u_Position;
+			GLint m_u_Size;
+			GLint m_u_Color;
+			GLint m_u_TextTexture;
+
+			gl::texture_2d m_texture;
+			gl::buffer m_vertex_buffer;
+			gl::vertex_array m_vertex_array;
+		};
 
 		gamestate do_start(app& app)
 		{
 			auto const& font = app.m_assets.m_fonts.at("press_start");
-			auto text = std::string("Press any key to start!");
-			auto texture = render_text_to_gl_texture(font, text);
-
 			auto const& shader = app.m_assets.m_shaders.at("press_start");
-			auto const locations = press_start_shader_locations(shader);
-
-			auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
-
-			auto vertex_buffer = gl::buffer();
-			vertex_buffer.set_data(GL_ARRAY_BUFFER, vertices.begin(), 2, 6, GL_STATIC_DRAW);
-
-			auto vertex_array = gl::vertex_array();
-			vertex_array.set_array_buffer(locations.m_in_VertexPosition, vertex_buffer);
+			auto press_start = press_start_text(font, shader);
 
 			while (true)
 			{
@@ -110,53 +173,7 @@ namespace bump
 					app.m_renderer.clear_color_buffers({ 1.f, 0.f, 0.f, 1.f });
 					app.m_renderer.clear_depth_buffers();
 
-					auto view = glm::mat4(1.f);
-					auto projection = glm::ortho(0.f, (float)app.m_window.get_size().x, 0.f, (float)app.m_window.get_size().y, -1.f, 1.f);
-					auto model = glm::mat4(1.f);
-
-					auto mvp = projection * view * model;
-
-					// renderer.set_blend_mode(blend_mode::BLEND);
-
-					// renderer.set_program();
-					// renderer.set_uniform(locations.m_u_MVP, mvp);
-					// ...
-					
-					// renderer.set_texture(0, texture);
-					// renderer.draw(quad_mesh);
-
-					// renderer.clear_texture(0);
-					// renderer.clear_program();
-					// renderer.set_blend_mode(blend_mode::NONE);
-
-					{
-						glEnable(GL_BLEND);
-						glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-						glUseProgram(shader.get_id());
-
-						glUniformMatrix4fv(locations.m_u_MVP, 1, GL_FALSE, &mvp[0][0]);
-						glUniform2f(locations.m_u_Position, (float)texture.m_pos.x, (float)texture.m_pos.y);
-						glUniform2f(locations.m_u_Size, (float)texture.m_texture.get_size().x, (float)texture.m_texture.get_size().y);
-						glUniform3f(locations.m_u_Color, 1.f, 1.f, 1.f);
-						glUniform1i(locations.m_u_TextTexture, 0);
-
-						glActiveTexture(GL_TEXTURE0 + 0);
-						glBindTexture(GL_TEXTURE_2D, texture.m_texture.get_id());
-
-						glBindVertexArray(vertex_array.get_id());
-
-						glDrawArraysInstanced(GL_TRIANGLES, 0, narrow_cast<GLsizei>(vertex_buffer.get_element_count()), 1);
-
-						glBindVertexArray(0);
-
-						glActiveTexture(GL_TEXTURE0 + 0);
-						glBindTexture(GL_TEXTURE_2D, 0);
-						
-						glUseProgram(0);
-
-						glDisable(GL_BLEND);
-					}
+					press_start.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
 
 					app.m_window.swap_buffers();
 				}

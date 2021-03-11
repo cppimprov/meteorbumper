@@ -9,6 +9,5 @@ layout(location = 0) out vec4 out_Color;
 
 void main()
 {
-	float alpha = texture(u_TextTexture, vert_UV).r;
-	out_Color = vec4(u_Color, alpha);
+	out_Color = vec4(u_Color, texture(u_TextTexture, vert_UV).r);
 }

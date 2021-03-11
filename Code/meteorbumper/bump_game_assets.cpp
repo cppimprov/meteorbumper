@@ -121,6 +121,9 @@ namespace bump
 						log_error(shader.get_log());
 						die();
 					}
+
+					for (auto const& object : objects)
+						shader.detach(object);
 					
 					if (!out.m_shaders.insert({ metadata.m_name, std::move(shader) }).second)
 					{

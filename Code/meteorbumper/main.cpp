@@ -22,18 +22,11 @@ int main(int , char* [])
 
 // todo next:
 
-	// move some stuff into the renderer!
-		// blend mode (similar to sdl)
-		// use_shader();
-		// clear_shader();
-		// set_texture();
-		// clear_texture();
-		// set_uniform();
-
-		// draw call?
+	
 
 
 
+// sometime:
 
 	// ui::cell
 		// origin
