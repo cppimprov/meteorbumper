@@ -13,6 +13,7 @@ import math
 
 import bpy
 from bpy.props import (StringProperty)
+from bpy_extras import (node_shader_utils)
 from bpy_extras.io_utils import (ExportHelper, orientation_helper, axis_conversion)
 from mathutils import (Matrix, Vector, Color)
 
@@ -36,12 +37,28 @@ def vector_to_array(vector):
 	return [x for x in vector]
 
 @dataclass
+class MaterialData:
+	name: str()
+	base_color: []
+	emissive_color: []
+	metallic: 0.0
+	specular: 0.0
+	roughness: 0.0
+	alpha: 1.0
+	ior: 1.45
+
+@dataclass
 class VertexData:
 	vertex: []
 	texture_coords: []
 	normal: []
 	tangent: []
 	bitangent: []
+
+@dataclass
+class SumbeshData:
+	vertex_data: []
+	face_data: []
 
 @orientation_helper(axis_forward = '-Z', axis_up = 'Y')
 class ExportMBP(bpy.types.Operator, ExportHelper):
@@ -53,6 +70,53 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 
 	filename_ext = '.mbp_model'
 	filter_glob: StringProperty(default = '*.mbp_model', options = {'HIDDEN'})
+
+	def do_json_export(filepath, material_data, submesh_data):
+		# arrange data for export
+		json_submeshes = []
+		for m, s in zip(material_data, submesh_data):
+
+			# submesh material
+			json_material = {
+				'base_color': m.base_color,
+				'emissive_color': m.emissive_color,
+				'metallic': m.metallic,
+				'specular': m.specular,
+				'roughness': m.roughness,
+				'alpha': m.alpha,
+				'ior': m.ior,
+			}
+
+			# submesh mesh
+			json_mesh = {
+				'vertices': [],
+				'texture_coords': [ [] for l in s.vertex_data[0].texture_coords ],
+				'normals': [],
+				'tangents': [],
+				'bitangents': [],
+				'indices': [],
+			}
+
+			for v in s.vertex_data:
+				json_mesh['vertices'].extend(v.vertex)
+				[json_mesh['texture_coords'][i].extend(v.texture_coords[i]) for i in range(0, len(v.texture_coords))]
+				if has_normals:
+					json_mesh['normals'].extend(v.normal)
+				if has_tangents:
+					json_mesh['tangents'].extend(v.tangent)
+					json_mesh['bitangents'].extend(v.bitangent)
+			
+			for f in s.face_data:
+				json_mesh['indices'].extend(f)
+
+			# add submesh to array
+			json_submesh = { 'material': json_material, 'mesh': json_mesh }
+			json_submeshes.append(json_submesh)
+
+		# write!
+		out_file = open(filepath, 'w')
+		json.dump(json_submeshes, out_file, indent = 4)
+		out_file.close()
 
 	def do_export(self, context, filepath, *, global_matrix):
 		
@@ -87,15 +151,44 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 
 		# calculate tangents (may fail if invalid normals or no uvs)
 		try:
-			eval_mesh.calculate_tangents()
+			eval_mesh.calc_tangents() # todo: specify uv map to use?
 		except:
 			self.report({'INFO'}, 'Failed to calculate tangents for exported object.')
 		
-		# todo: material data! what to do for multiple materials?!
+		# gather material data
+		material_data = []
+		for mat in eval_mesh.materials:
+			eval_mat = node_shader_utils.PrincipledBSDFWrapper(mat, is_readonly = True)
+
+			# no PBSDF - add a dummy material
+			if not eval_mat:
+				self.report({'INFO'}, 'Failed to create PrincipledBSDFWrapper for material: ' + mat.name)
+				
+				m = MaterialData('[missing]', [0.0, 0.0, 0.0], [1.0, 0.0, 1.0], 0.0, 0.0, 0.0, 1.0, 1.0)
+				material_data.append(m)
+				continue
+
+			m = MaterialData(
+				name = mat.name,
+				base_color = eval_mat.base_color[:3],
+				emissive_color = eval_mat.emission_color[:3],
+				metallic = eval_mat.metallic,
+				specular = eval_mat.specular,
+				roughness = eval_mat.roughness,
+				alpha = eval_mat.alpha,
+				ior = eval_mat.ior,
+			)
+
+			material_data.append(m)
+
+		# no materials - add a dummy material
+		if len(material_data) == 0:
+			self.report({'INFO'}, 'No materials found. Using "[missing]" material.')
+			m = MaterialData('[missing]', [0.0, 0.0, 0.0], [1.0, 0.0, 1.0], 0.0, 0.0, 0.0, 1.0, 1.0)
+			material_data.append(m)
 
 		# convert and copy mesh data
-		vertex_data = []
-		face_data = []
+		submesh_data = [SumbeshData([], []) for _ in material_data]
 
 		for polygon in eval_mesh.polygons:
 
@@ -119,7 +212,10 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 				# copy the vertex data
 				v = VertexData(vertex[:], [uv_layer[:] for uv_layer in texture_coords], normal[:], tangent[:], bitangent[:])
 
-				# add to vertex data and get the index (preventing duplicates)
+				# get the vertex data for this material
+				vertex_data = submesh_data[polygon.material_index].vertex_data
+				
+				# add vertex and get the index (preventing duplicates)
 				try:
 					vi = vertex_data.index(v)
 				except ValueError:
@@ -130,6 +226,7 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 				face.append(vi)
 			
 			# store the face
+			face_data = submesh_data[polygon.material_index].face_data
 			face_data.append(face)
 		
 		# cleanup
@@ -158,32 +255,10 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 			self.report({'INFO'}, 'Skipping export of tangents and bitangents.')
 			has_tangents = False
 		
-		# prepare for export (json for now)
-		mesh_data = {
-			'vertices': [],
-			'texture_coords': [ [] for l in vertex_data[0].texture_coords ],
-			'normals': [],
-			'tangents': [],
-			'bitangents': [],
-			'indices': [],
-		}
+		assert len(submesh_data) == len(material_data)
 
-		for v in vertex_data:
-			mesh_data['vertices'].append(v.vertex)
-			[mesh_data['texture_coords'][i].append(v.texture_coords[i]) for i in range(0, len(v.texture_coords))]
-			if has_normals:
-				mesh_data['normals'].append(v.normal)
-			if has_tangents:
-				mesh_data['tangents'].append(v.tangent)
-				mesh_data['bitangents'].append(v.bitangent)
-		
-		for f in face_data:
-			mesh_data['indices'].extend(f)
-
-		# write!
-		out_file = open(filepath, 'w')
-		json.dump(mesh_data, out_file, indent = 4)
-		out_file.close()
+		# export! (json for now)
+		do_json_export(filepath, material_data, submesh_data)
 
 		return {'FINISHED'}
 	
@@ -216,3 +291,12 @@ def unregister():
 
 if __name__ == '__main__':
 	register()
+
+# todo:
+	# put json export into a separate function
+	# load json in game
+
+	# implement binary export
+	# load binary in game
+
+	# remove orientation_helper (we're not using it...)
