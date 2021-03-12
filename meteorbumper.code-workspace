@@ -81,7 +81,8 @@
 			"xtree": "cpp",
 			"xutility": "cpp",
 			"*.rh": "cpp",
-			"coroutine": "cpp"
+			"coroutine": "cpp",
+			"fstream": "cpp"
 		}
 	}
 }

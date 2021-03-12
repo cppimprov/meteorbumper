@@ -19,6 +19,12 @@ namespace bump
 			auto const shaders = std::vector<shader_metadata>
 			{
 				{ "press_start", { "text_quad.vert", "text_quad.frag" } },
+				{ "test_cube", { "default_material.vert", "default_material.frag" } },
+			};
+
+			auto const models = std::vector<model_metadata>
+			{
+				{ "test_cube", "test_cube.mbp_model" },
 			};
 
 		} // unnamed
@@ -31,7 +37,7 @@ namespace bump
 			m_gl_context(m_window),
 			m_glew_context(),
 			m_renderer(),
-			m_assets(load_assets(*this, fonts, sounds, shaders))
+			m_assets(load_assets(*this, fonts, sounds, shaders, models))
 		{
 			m_window.set_min_size({ 640, 360 });
 		}

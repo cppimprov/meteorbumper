@@ -118,6 +118,11 @@ namespace bump
 		{
 			glDrawArraysInstanced(primitive_type, 0, narrow_cast<GLsizei>(primitive_count), narrow_cast<GLsizei>(instance_count));
 		}
+
+		void renderer::draw_indexed(GLenum primitive_type, std::size_t index_count, GLenum index_type, std::size_t instance_count)
+		{
+			glDrawElementsInstanced(primitive_type, narrow_cast<GLsizei>(index_count), index_type, nullptr, narrow_cast<GLsizei>(instance_count));
+		}
 		
 	} // gl
 	

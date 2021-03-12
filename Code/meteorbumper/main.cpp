@@ -22,12 +22,12 @@ int main(int , char* [])
 
 // todo next:
 
-	// blender exporter
-		// 
+	// add set_depth_test to renderer { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL, ALWAYS, NEVER }
+	// use depth mask to prevent depth write
 
-	// load the cube and render!
+	// renderer constructor should set it to always (?)
 
-	// load ship model + render!
+	// load main ship model + render!
 
 	// intro music!
 	// add a skybox... distant stars / nebulae.

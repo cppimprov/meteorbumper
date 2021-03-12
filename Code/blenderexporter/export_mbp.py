@@ -71,13 +71,14 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 	filename_ext = '.mbp_model'
 	filter_glob: StringProperty(default = '*.mbp_model', options = {'HIDDEN'})
 
-	def do_json_export(filepath, material_data, submesh_data):
+	def do_json_export(self, filepath, material_data, submesh_data, has_normals, has_tangents):
 		# arrange data for export
 		json_submeshes = []
 		for m, s in zip(material_data, submesh_data):
 
 			# submesh material
 			json_material = {
+				'name': m.name,
 				'base_color': m.base_color,
 				'emissive_color': m.emissive_color,
 				'metallic': m.metallic,
@@ -258,7 +259,7 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 		assert len(submesh_data) == len(material_data)
 
 		# export! (json for now)
-		do_json_export(filepath, material_data, submesh_data)
+		self.do_json_export(filepath, material_data, submesh_data, has_normals, has_tangents)
 
 		return {'FINISHED'}
 	
@@ -292,8 +293,9 @@ def unregister():
 if __name__ == '__main__':
 	register()
 
+
 # todo:
-	# put json export into a separate function
+
 	# load json in game
 
 	# implement binary export

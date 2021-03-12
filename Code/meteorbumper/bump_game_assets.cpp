@@ -50,7 +50,8 @@ namespace bump
 		assets load_assets(app& app, 
 			std::vector<font_metadata> const& fonts,
 			std::vector<sound_metadata> const& sounds,
-			std::vector<shader_metadata> const& shaders)
+			std::vector<shader_metadata> const& shaders,
+			std::vector<model_metadata> const& models)
 		{
 			auto out = assets();
 
@@ -128,6 +129,20 @@ namespace bump
 					if (!out.m_shaders.insert({ metadata.m_name, std::move(shader) }).second)
 					{
 						log_error("load_assets(): duplicate shader id: " + metadata.m_name);
+						die();
+					}
+				}
+			}
+
+			// load models:
+			{
+				for (auto const& metadata : models)
+				{
+					auto model = load_mbp_model_json("data/models/" + metadata.m_filename);
+
+					if (!out.m_models.insert({ metadata.m_name, std::move(model) }).second)
+					{
+						log_error("load_assets(): duplicate model id: " + metadata.m_name);
 						die();
 					}
 				}

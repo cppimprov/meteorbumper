@@ -5,6 +5,7 @@
 #include "bump_gl.hpp"
 #include "bump_font.hpp"
 #include "bump_log.hpp"
+#include "bump_mbp_model.hpp"
 #include "bump_narrow_cast.hpp"
 #include "bump_render_text.hpp"
 
@@ -100,11 +101,99 @@ namespace bump
 			gl::vertex_array m_vertex_array;
 		};
 
+		class test_cube
+		{
+		public:
+
+			explicit test_cube(mbp_model const& model, gl::shader_program const& shader):
+				m_shader(shader),
+				m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
+				m_u_MVP(shader.get_uniform_location("u_MVP")),
+				m_u_Color(shader.get_uniform_location("u_Color"))
+			{
+				for (auto const& submesh : model.m_submeshes)
+				{
+					auto u = uniform_data{ submesh.m_material.m_base_color };
+					
+					auto m = mesh_data();
+					m.m_vertices.set_data(GL_ARRAY_BUFFER, submesh.m_mesh.m_vertices.data(), 3, submesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
+					m.m_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, submesh.m_mesh.m_indices.data(), 1, submesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
+					m.m_vertex_array.set_array_buffer(m_in_VertexPosition, m.m_vertices);
+					m.m_vertex_array.set_index_buffer(m.m_indices);
+
+					auto s = submesh_data{ std::move(u), std::move(m) };
+					m_submeshes.push_back(std::move(s));
+				}
+			}
+
+			void render(gl::renderer& renderer, glm::vec2 window_size)
+			{
+				auto camera = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 10.f });
+
+				auto view = glm::inverse(camera);
+				auto projection = glm::perspective(glm::radians(45.f), window_size.x / window_size.y, 0.5f, 1000.f);
+				auto model = glm::mat4(1.f);
+
+				auto mvp = projection * view * model;
+
+				glEnable(GL_DEPTH_TEST); // todo: move to renderer!
+
+				renderer.set_viewport({ 0, 0 }, glm::uvec2(window_size));
+
+				renderer.set_program(m_shader);
+
+				for (auto const& submesh : m_submeshes)
+				{
+					renderer.set_uniform_4x4f(m_u_MVP, mvp);
+					renderer.set_uniform_3f(m_u_Color, submesh.m_uniform_data.m_color);
+
+					renderer.set_vertex_array(submesh.m_mesh_data.m_vertex_array);
+
+					renderer.draw_indexed(GL_TRIANGLES, submesh.m_mesh_data.m_indices.get_element_count(), submesh.m_mesh_data.m_indices.get_component_type());
+
+					renderer.clear_vertex_array();
+				}
+
+				renderer.clear_program();
+			}
+
+		private:
+
+			gl::shader_program const& m_shader;
+			GLint m_in_VertexPosition;
+			GLint m_u_MVP;
+			GLint m_u_Color;
+
+			struct uniform_data
+			{
+				glm::vec3 m_color;
+			};
+
+			struct mesh_data
+			{
+				gl::buffer m_vertices;
+				gl::buffer m_indices;
+				gl::vertex_array m_vertex_array;
+			};
+
+			struct submesh_data
+			{
+				uniform_data m_uniform_data;
+				mesh_data m_mesh_data;
+			};
+
+			std::vector<submesh_data> m_submeshes;
+		};
+
 		gamestate do_start(app& app)
 		{
-			auto const& font = app.m_assets.m_fonts.at("press_start");
-			auto const& shader = app.m_assets.m_shaders.at("press_start");
-			auto press_start = press_start_text(font, shader);
+			auto const& press_start_font = app.m_assets.m_fonts.at("press_start");
+			auto const& press_start_shader = app.m_assets.m_shaders.at("press_start");
+			auto press_start = press_start_text(press_start_font, press_start_shader);
+
+			auto const& test_cube_model = app.m_assets.m_models.at("test_cube");
+			auto const& test_cube_shader = app.m_assets.m_shaders.at("test_cube");
+			auto cube = test_cube(test_cube_model, test_cube_shader);
 
 			while (true)
 			{
@@ -141,6 +230,7 @@ namespace bump
 					app.m_renderer.clear_color_buffers({ 1.f, 0.f, 0.f, 1.f });
 					app.m_renderer.clear_depth_buffers();
 
+					cube.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
 					press_start.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
 
 					app.m_window.swap_buffers();
