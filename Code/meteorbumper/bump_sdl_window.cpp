@@ -56,11 +56,25 @@ namespace bump
 			SDL_SetWindowFullscreen(get_handle(), get_sdl_window_flags(mode));
 		}
 
-		void window::set_grab_mode(grab_mode mode)
+		void window::set_cursor_mode(cursor_mode mode)
 		{
 			die_if(!is_valid());
 
-			SDL_SetWindowGrab(get_handle(), (mode == grab_mode::ENABLED) ? SDL_TRUE : SDL_FALSE);
+			if (mode == cursor_mode::FREE)
+			{
+				SDL_SetRelativeMouseMode(SDL_FALSE);
+				SDL_SetWindowGrab(get_handle(), SDL_FALSE);
+			}
+			else if (mode == cursor_mode::GRABBED)
+			{
+				SDL_SetRelativeMouseMode(SDL_FALSE);
+				SDL_SetWindowGrab(get_handle(), SDL_TRUE);
+			}
+			else if (mode == cursor_mode::RELATIVE)
+			{
+				SDL_SetRelativeMouseMode(SDL_TRUE);
+				SDL_SetWindowGrab(get_handle(), SDL_FALSE);
+			}
 		}
 
 		glm::i32vec2 window::get_size() const
@@ -93,13 +107,18 @@ namespace bump
 				display_mode::WINDOWED;
 		}
 
-		window::grab_mode window::get_grab_mode() const
+		window::cursor_mode window::get_cursor_mode() const
 		{
 			die_if(!is_valid());
 
-			auto grab = SDL_GetWindowGrab(get_handle());
-			
-			return (grab == SDL_TRUE ? grab_mode::ENABLED : grab_mode::DISABLED);
+			// note:
+			// SDL lets us use relative and grabbed mode at the same time...
+			// relative mode is more important, so we use that value.
+
+			return 
+				SDL_GetRelativeMouseMode() ? cursor_mode::RELATIVE :
+				SDL_GetWindowGrab(get_handle()) ? cursor_mode::GRABBED :
+				cursor_mode::FREE;
 		}
 
 		void window::swap_buffers() const

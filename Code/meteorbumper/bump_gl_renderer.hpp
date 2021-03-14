@@ -78,6 +78,9 @@ namespace bump
 			enum class depth_write { ENABLED, DISABLED };
 			void set_depth_write(depth_write mode);
 
+			enum class seamless_cubemaps { ENABLED, DISABLED };
+			void set_seamless_cubemaps(seamless_cubemaps mode);
+
 			void set_program(shader_program const& program);
 			void clear_program();
 

@@ -45,9 +45,11 @@ namespace bump
 	{
 		auto out = gl::texture_cubemap();
 
+		// OpenGL uses "Renderman" style coordinates for cubemaps. :(
+		// So we have to flip some textures horizontally and vertically to compensate.
+
 		// pos_x, neg_x, pos_y, neg_y, pos_z, neg_z
-		auto flip_vertically = std::array<bool, 6>{  true, true, false, false, true, true };
-		auto flip_horizontally = std::array<bool, 6>{ true, true, false, false, true, true };
+		auto flip = std::array<bool, 6>{  true, true, false, false, true, true };
 
 		for (auto i = std::size_t{ 0 }; i != files.size(); ++i)
 		{
@@ -72,11 +74,11 @@ namespace bump
 				die();
 			}
 
-			if (flip_vertically[i])
+			if (flip[i])
+			{
 				vflip(pixels, width, height, channels);
-
-			if (flip_horizontally[i])
 				hflip(pixels, width, height, channels);
+			}
 
 			out.set_data(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (int)i, { width, height }, GL_RGB8, 
 				gl::make_texture_data_source(GL_RGB, pixels));
@@ -84,9 +86,9 @@ namespace bump
 			stbi_image_free(pixels);
 		}
 
-		out.set_min_filter(GL_LINEAR);
+		out.set_min_filter(GL_LINEAR_MIPMAP_LINEAR);
 		out.set_mag_filter(GL_LINEAR);
-		//out.generate_mipmaps(); // todo: test mipmaps!
+		out.generate_mipmaps(); // todo: test mipmaps!
 
 		return out;
 	}

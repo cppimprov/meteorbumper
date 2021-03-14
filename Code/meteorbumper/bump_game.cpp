@@ -204,22 +204,27 @@ namespace bump
 				auto model = glm::translate(glm::mat4(1.f), get_position(scene_camera.m_transform));
 				auto mvp = matrices.model_view_projection_matrix(model);
 
+				// note: don't write depth
+				renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
+
 				renderer.set_program(m_shader);
 
 				renderer.set_uniform_4x4f(m_u_MVP, mvp);
-				renderer.set_uniform_1f(m_u_Scale, 500.f);
+				renderer.set_uniform_1f(m_u_Scale, 5.f); // note: ensure we render beyond the camera's near plane!
 				renderer.set_uniform_1i(m_u_CubemapTexture, 0);
 
 				renderer.set_texture_cubemap(0, m_texture);
+				renderer.set_seamless_cubemaps(gl::renderer::seamless_cubemaps::ENABLED);
+				
 				renderer.set_vertex_array(m_vertex_array);
 
 				renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type());
 
 				renderer.clear_vertex_array();
+				renderer.set_seamless_cubemaps(gl::renderer::seamless_cubemaps::DISABLED);
 				renderer.clear_texture_cubemap(0);
 				renderer.clear_program();
-
-				// todo: render last with depth testing trick...
+				renderer.set_depth_write(gl::renderer::depth_write::ENABLED);
 			}
 
 		private:
@@ -322,13 +327,7 @@ namespace bump
 
 		gamestate do_start(app& app)
 		{
-			{
-				auto center = app.m_window.get_size() / 2;
-				SDL_WarpMouseInWindow(app.m_window.get_handle(), center.x, center.y);
-				SDL_SetRelativeMouseMode(SDL_TRUE);
-
-				app.m_window.set_grab_mode(sdl::window::grab_mode::ENABLED);
-			}
+			app.m_window.set_cursor_mode(sdl::window::cursor_mode::RELATIVE);
 
 			auto press_start = press_start_text(app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("press_start"));
 			auto cube = test_cube(app.m_assets.m_models.at("test_cube"), app.m_assets.m_shaders.at("test_cube"));
@@ -350,6 +349,7 @@ namespace bump
 				ui_camera.m_viewport.m_size = size;
 			}
 
+			auto paused = false;
 			auto timer = frame_timer();
 
 			while (true)
@@ -360,11 +360,18 @@ namespace bump
 
 					while (SDL_PollEvent(&e))
 					{
+						// quitting:
 						if (e.type == SDL_QUIT)
+						{
+							app.m_window.set_cursor_mode(sdl::window::cursor_mode::FREE);
 							return { };
+						}
 
 						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_ESCAPE)
+						{
+							app.m_window.set_cursor_mode(sdl::window::cursor_mode::FREE);
 							return { };
+						}
 
 						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN && (e.key.keysym.mod & KMOD_LALT) != 0)
 						{
@@ -374,37 +381,52 @@ namespace bump
 							if (mode != display_mode::FULLSCREEN)
 								app.m_window.set_display_mode(mode == display_mode::BORDERLESS_WINDOWED ? display_mode::WINDOWED : display_mode::BORDERLESS_WINDOWED);
 						}
+
+						// window focus and grabbing:
+						else if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+						{
+							paused = true;
+
+							app.m_window.set_cursor_mode(sdl::window::cursor_mode::FREE);
+						}
+						else if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+						{
+							app.m_window.set_cursor_mode(sdl::window::cursor_mode::RELATIVE);
+
+							paused = false;
+							timer = frame_timer();
+						}
 						
 						// debug camera controls:
-						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_LSHIFT)
+						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_LSHIFT)
 							debug_camera.m_move_fast = true;
-						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_LSHIFT)
+						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_LSHIFT)
 							debug_camera.m_move_fast = false;
-						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
+						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
 							debug_camera.m_move_forwards = true;
-						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_w)
+						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_w)
 							debug_camera.m_move_forwards = false;
-						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s)
+						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s)
 							debug_camera.m_move_backwards = true;
-						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_s)
+						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_s)
 							debug_camera.m_move_backwards = false;
-						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a)
+						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a)
 							debug_camera.m_move_left = true;
-						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_a)
+						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_a)
 							debug_camera.m_move_left = false;
-						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d)
+						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d)
 							debug_camera.m_move_right = true;
-						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_d)
+						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_d)
 							debug_camera.m_move_right = false;
-						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_PAGEUP)
+						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_PAGEUP)
 							debug_camera.m_move_up = true;
-						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_PAGEUP)
+						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_PAGEUP)
 							debug_camera.m_move_up = false;
-						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_PAGEDOWN)
+						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_PAGEDOWN)
 							debug_camera.m_move_down = true;
-						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_PAGEDOWN)
+						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_PAGEDOWN)
 							debug_camera.m_move_down = false;
-						else if (e.type == SDL_MOUSEMOTION)
+						else if (!paused && e.type == SDL_MOUSEMOTION)
 						{
 							debug_camera.m_rotate.x -= e.motion.xrel;
 							debug_camera.m_rotate.y -= e.motion.yrel;
@@ -414,9 +436,10 @@ namespace bump
 
 				// update
 				{
-					// ...
-
-					debug_camera.update(timer.get_last_frame_time());
+					// debug camera:
+					if (!paused)
+						debug_camera.update(timer.get_last_frame_time());
+					
 					scene_camera.m_transform = debug_camera.m_transform;
 				}
 

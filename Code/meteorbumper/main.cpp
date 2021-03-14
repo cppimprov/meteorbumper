@@ -22,11 +22,6 @@ int main(int , char* [])
 
 // todo next:
 
-	// skybox!
-		// glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); ???
-		// test cubemap mipmaps
-		// render skybox last and use depth trick
-	
 	// player ship!
 		// make class
 		// load + render!

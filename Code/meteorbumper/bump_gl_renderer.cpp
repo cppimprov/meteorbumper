@@ -97,6 +97,14 @@ namespace bump
 				glDepthMask(GL_FALSE);
 		}
 		
+		void renderer::set_seamless_cubemaps(seamless_cubemaps mode)
+		{
+			if (mode == seamless_cubemaps::ENABLED)
+				glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+			else
+				glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		}
+		
 		void renderer::set_program(shader_program const& program)
 		{
 			glUseProgram(program.get_id());
