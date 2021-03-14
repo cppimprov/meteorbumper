@@ -53,6 +53,7 @@ namespace bump
 
 		class shader_program;
 		class texture_2d;
+		class texture_cubemap;
 		class texture_2d_array;
 		class texture_3d;
 		class vertex_array;
@@ -61,22 +62,32 @@ namespace bump
 		{
 		public:
 
+			renderer();
+
 			void set_viewport(glm::ivec2 position, glm::uvec2 size);
 
 			void clear_color_buffers(glm::f32vec4 color = { 0.f, 0.f, 0.f, 0.f });
 			void clear_depth_buffers(float depth = 1.f);
 			
-			enum class blend_mode { NONE, BLEND, ADD, MOD };
-			void set_blend_mode(blend_mode mode);
+			enum class blending { NONE, BLEND, ADD, MOD };
+			void set_blending(blending mode);
+
+			enum class depth_test { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL, ALWAYS, NEVER };
+			void set_depth_test(depth_test mode);
+
+			enum class depth_write { ENABLED, DISABLED };
+			void set_depth_write(depth_write mode);
 
 			void set_program(shader_program const& program);
 			void clear_program();
 
 			void set_texture_2d(GLuint location, texture_2d const& texture);
+			void set_texture_cubemap(GLuint location, texture_cubemap const& texture);
 			void set_texture_2d_array(GLuint location, texture_2d_array const& texture);
 			void set_texture_3d(GLuint location, texture_3d const& texture);
 
 			void clear_texture_2d(GLuint location);
+			void clear_texture_cubemap(GLuint location);
 			void clear_texture_2d_array(GLuint location);
 			void clear_texture_3d(GLuint location);
 

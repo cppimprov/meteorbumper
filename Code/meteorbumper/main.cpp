@@ -22,12 +22,20 @@ int main(int , char* [])
 
 // todo next:
 
-	// add set_depth_test to renderer { LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL, ALWAYS, NEVER }
-	// use depth mask to prevent depth write
+	// skybox!
+		// use camera transform
+		// set camera matrices once only
+		// add debug camera controls
+		// glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); ???
+		// test cubemap mipmaps
+	
+	// player ship!
+		// make class
+		// load + render!
 
-	// renderer constructor should set it to always (?)
-
-	// load main ship model + render!
+	// gameplay demo:
+		// load and experiment with tunnel mechanics.
+		// rotation around axis?
 
 	// intro music!
 	// add a skybox... distant stars / nebulae.

@@ -8,11 +8,18 @@
 
 #include <GL/glew.h>
 
+#include <map>
+
 namespace bump
 {
 	
 	namespace gl
 	{
+
+		renderer::renderer()
+		{
+			set_depth_test(depth_test::LESS);
+		}
 
 		void renderer::set_viewport(glm::ivec2 position, glm::uvec2 size)
 		{
@@ -35,27 +42,59 @@ namespace bump
 			die_if_error();
 		}
 
-		void renderer::set_blend_mode(blend_mode mode)
+		void renderer::set_blending(blending mode)
 		{
-			if (mode == blend_mode::NONE)
+			if (mode == blending::NONE)
 			{
 				glDisable(GL_BLEND);
 			}
-			else if (mode == blend_mode::BLEND)
+			else if (mode == blending::BLEND)
 			{
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			}
-			else if (mode == blend_mode::ADD)
+			else if (mode == blending::ADD)
 			{
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_ONE, GL_ONE);
 			}
-			else if (mode == blend_mode::MOD)
+			else if (mode == blending::MOD)
 			{
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_DST_COLOR, GL_ZERO);
 			}
+		}
+
+		void renderer::set_depth_test(depth_test mode)
+		{
+			glEnable(GL_DEPTH_TEST);
+
+			using p = std::tuple<depth_test, GLenum>;
+
+			auto const funcs =
+			{ 
+				p{ depth_test::LESS, GL_LESS }, 
+				p{ depth_test::LESS_EQUAL, GL_LEQUAL }, 
+				p{ depth_test::GREATER, GL_GREATER }, 
+				p{ depth_test::GREATER_EQUAL, GL_GEQUAL }, 
+				p{ depth_test::EQUAL, GL_EQUAL }, 
+				p{ depth_test::NOT_EQUAL, GL_NOTEQUAL }, 
+				p{ depth_test::ALWAYS, GL_ALWAYS }, 
+				p{ depth_test::NEVER, GL_NEVER },
+			};
+
+			auto f = std::find_if(funcs.begin(), funcs.end(), [&] (p p) { return std::get<0>(p) == mode; });
+			die_if(f == funcs.end());
+
+			glDepthFunc(std::get<1>(*f));
+		}
+
+		void renderer::set_depth_write(depth_write mode)
+		{
+			if (mode == depth_write::ENABLED)
+				glDepthMask(GL_TRUE);
+			else
+				glDepthMask(GL_FALSE);
 		}
 		
 		void renderer::set_program(shader_program const& program)
@@ -72,6 +111,12 @@ namespace bump
 		{
 			glActiveTexture(GL_TEXTURE0 + location);
 			glBindTexture(GL_TEXTURE_2D, texture.get_id());
+		}
+		
+		void renderer::set_texture_cubemap(GLuint location, texture_cubemap const& texture)
+		{
+			glActiveTexture(GL_TEXTURE0 + location);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, texture.get_id());
 		}
 
 		void renderer::set_texture_2d_array(GLuint location, texture_2d_array const& texture)
@@ -90,6 +135,12 @@ namespace bump
 		{
 			glActiveTexture(GL_TEXTURE0 + location);
 			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+		
+		void renderer::clear_texture_cubemap(GLuint location)
+		{
+			glActiveTexture(GL_TEXTURE0 + location);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 		}
 
 		void renderer::clear_texture_2d_array(GLuint location)

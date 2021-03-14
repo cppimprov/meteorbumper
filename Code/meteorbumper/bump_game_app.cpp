@@ -20,11 +20,18 @@ namespace bump
 			{
 				{ "press_start", { "text_quad.vert", "text_quad.frag" } },
 				{ "test_cube", { "default_material.vert", "default_material.frag" } },
+				{ "skybox", { "skybox.vert", "skybox.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>
 			{
 				{ "test_cube", "test_cube.mbp_model" },
+				{ "skybox", "skybox.mbp_model" },
+			};
+
+			auto const cubemaps = std::vector<cubemap_metadata>
+			{
+				{ "skybox", { "skybox_x_pos.png", "skybox_x_neg.png", "skybox_y_pos.png", "skybox_y_neg.png", "skybox_z_pos.png", "skybox_z_neg.png" } },
 			};
 
 		} // unnamed
@@ -37,7 +44,7 @@ namespace bump
 			m_gl_context(m_window),
 			m_glew_context(),
 			m_renderer(),
-			m_assets(load_assets(*this, fonts, sounds, shaders, models))
+			m_assets(load_assets(*this, fonts, sounds, shaders, models, cubemaps))
 		{
 			m_window.set_min_size({ 640, 360 });
 		}

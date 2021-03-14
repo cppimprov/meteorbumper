@@ -64,7 +64,7 @@ namespace bump
 				
 				renderer.set_viewport({ 0, 0 }, glm::uvec2(window_size));
 
-				renderer.set_blend_mode(gl::renderer::blend_mode::BLEND);
+				renderer.set_blending(gl::renderer::blending::BLEND);
 				
 				renderer.set_program(m_shader);
 
@@ -83,7 +83,7 @@ namespace bump
 				renderer.clear_vertex_array();
 				renderer.clear_texture_2d(0);
 				renderer.clear_program();
-				renderer.set_blend_mode(gl::renderer::blend_mode::NONE);
+				renderer.set_blending(gl::renderer::blending::NONE);
 			}
 
 		private:
@@ -136,8 +136,6 @@ namespace bump
 
 				auto mvp = projection * view * model;
 
-				glEnable(GL_DEPTH_TEST); // todo: move to renderer!
-
 				renderer.set_viewport({ 0, 0 }, glm::uvec2(window_size));
 
 				renderer.set_program(m_shader);
@@ -185,6 +183,74 @@ namespace bump
 			std::vector<submesh_data> m_submeshes;
 		};
 
+		class skybox
+		{
+		public:
+
+			skybox(mbp_model const& model, gl::shader_program const& shader, gl::texture_cubemap const& texture):
+				m_shader(shader),
+				m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
+				m_u_MVP(shader.get_uniform_location("u_MVP")),
+				m_u_Scale(shader.get_uniform_location("u_Scale")),
+				m_u_CubemapTexture(shader.get_uniform_location("u_CubemapTexture")),
+				m_texture(texture)
+			{
+				die_if(model.m_submeshes.size() != 1);
+
+				auto const& mesh = model.m_submeshes.front();
+
+				m_vertices.set_data(GL_ARRAY_BUFFER, mesh.m_mesh.m_vertices.data(), 3, mesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
+				m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertices);
+
+				m_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, mesh.m_mesh.m_indices.data(), 1, mesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
+				m_vertex_array.set_index_buffer(m_indices);
+			}
+
+			void render(gl::renderer& renderer, glm::vec2 window_size)
+			{
+				auto view = glm::mat4(1.f);
+				auto projection = glm::perspective(glm::radians(45.f), window_size.x / window_size.y, 0.5f, 1000.f);
+				auto model = glm::mat4(1.f);
+
+				auto mvp = projection * view * model;
+
+				renderer.set_viewport({ 0, 0 }, glm::uvec2(window_size));
+
+				renderer.set_program(m_shader);
+
+				renderer.set_uniform_4x4f(m_u_MVP, mvp);
+				renderer.set_uniform_1f(m_u_Scale, 500.f);
+				renderer.set_uniform_1i(m_u_CubemapTexture, 0);
+
+				renderer.set_texture_cubemap(0, m_texture);
+				renderer.set_vertex_array(m_vertex_array);
+
+				renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type());
+
+				renderer.clear_vertex_array();
+				renderer.clear_texture_cubemap(0);
+				renderer.clear_program();
+
+				// todo: render last with depth testing trick...
+				// todo: set viewport only one time!
+				// todo: set scene camera matrices only one time!
+			}
+
+		private:
+
+			gl::shader_program const& m_shader;
+			GLint m_in_VertexPosition;
+			GLint m_u_MVP;
+			GLint m_u_Scale;
+			GLint m_u_CubemapTexture;
+
+			gl::texture_cubemap const& m_texture;
+			
+			gl::buffer m_vertices;
+			gl::buffer m_indices;
+			gl::vertex_array m_vertex_array;
+		};
+
 		gamestate do_start(app& app)
 		{
 			auto const& press_start_font = app.m_assets.m_fonts.at("press_start");
@@ -194,6 +260,11 @@ namespace bump
 			auto const& test_cube_model = app.m_assets.m_models.at("test_cube");
 			auto const& test_cube_shader = app.m_assets.m_shaders.at("test_cube");
 			auto cube = test_cube(test_cube_model, test_cube_shader);
+
+			auto const& skybox_model = app.m_assets.m_models.at("skybox");
+			auto const& skybox_shader = app.m_assets.m_shaders.at("skybox");
+			auto const& skybox_cubemap = app.m_assets.m_cubemaps.at("skybox");
+			auto sky = skybox(skybox_model, skybox_shader, skybox_cubemap);
 
 			while (true)
 			{
@@ -230,7 +301,8 @@ namespace bump
 					app.m_renderer.clear_color_buffers({ 1.f, 0.f, 0.f, 1.f });
 					app.m_renderer.clear_depth_buffers();
 
-					cube.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
+					sky.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
+					//cube.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
 					press_start.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
 
 					app.m_window.swap_buffers();

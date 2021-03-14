@@ -3,8 +3,10 @@
 #include "bump_die.hpp"
 #include "bump_ends_with.hpp"
 #include "bump_game_app.hpp"
+#include "bump_load_gl_cubemap.hpp"
 #include "bump_log.hpp"
 
+#include <array>
 #include <fstream>
 
 namespace bump
@@ -51,7 +53,8 @@ namespace bump
 			std::vector<font_metadata> const& fonts,
 			std::vector<sound_metadata> const& sounds,
 			std::vector<shader_metadata> const& shaders,
-			std::vector<model_metadata> const& models)
+			std::vector<model_metadata> const& models,
+			std::vector<cubemap_metadata> const& cubemaps)
 		{
 			auto out = assets();
 
@@ -143,6 +146,25 @@ namespace bump
 					if (!out.m_models.insert({ metadata.m_name, std::move(model) }).second)
 					{
 						log_error("load_assets(): duplicate model id: " + metadata.m_name);
+						die();
+					}
+				}
+			}
+
+			// load cubemaps:
+			{
+				for (auto const& metadata : cubemaps)
+				{
+					auto files = std::array<std::string, 6>();
+
+					for (auto i = std::size_t{ 0 }; i != files.size(); ++i)
+						files[i] = "data/textures/" + metadata.m_filenames[i];
+
+					auto cubemap = load_gl_cubemap_texture_from_files(files);
+
+					if (!out.m_cubemaps.insert({ metadata.m_name, std::move(cubemap) }).second)
+					{
+						log_error("load_assets(): duplicate cubemap id: " + metadata.m_name);
 						die();
 					}
 				}
