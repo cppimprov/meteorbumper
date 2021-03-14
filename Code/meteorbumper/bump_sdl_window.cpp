@@ -56,6 +56,13 @@ namespace bump
 			SDL_SetWindowFullscreen(get_handle(), get_sdl_window_flags(mode));
 		}
 
+		void window::set_grab_mode(grab_mode mode)
+		{
+			die_if(!is_valid());
+
+			SDL_SetWindowGrab(get_handle(), (mode == grab_mode::ENABLED) ? SDL_TRUE : SDL_FALSE);
+		}
+
 		glm::i32vec2 window::get_size() const
 		{
 			die_if(!is_valid());
@@ -84,6 +91,15 @@ namespace bump
 				(flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP ? display_mode::BORDERLESS_WINDOWED :
 				(flags & SDL_WINDOW_FULLSCREEN) == SDL_WINDOW_FULLSCREEN_DESKTOP ? display_mode::FULLSCREEN :
 				display_mode::WINDOWED;
+		}
+
+		window::grab_mode window::get_grab_mode() const
+		{
+			die_if(!is_valid());
+
+			auto grab = SDL_GetWindowGrab(get_handle());
+			
+			return (grab == SDL_TRUE ? grab_mode::ENABLED : grab_mode::DISABLED);
 		}
 
 		void window::swap_buffers() const

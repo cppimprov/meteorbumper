@@ -23,11 +23,9 @@ int main(int , char* [])
 // todo next:
 
 	// skybox!
-		// use camera transform
-		// set camera matrices once only
-		// add debug camera controls
 		// glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); ???
 		// test cubemap mipmaps
+		// render skybox last and use depth trick
 	
 	// player ship!
 		// make class

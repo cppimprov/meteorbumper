@@ -4,13 +4,50 @@
 #include "bump_die.hpp"
 
 #include <stb_image.h>
+#include <stb_image_write.h>
+
+#include <algorithm>
 
 namespace bump
 {
 
+	namespace
+	{
+
+		void vflip(stbi_uc* pixels, int width, int height, int channels)
+		{
+			for (auto y = 0; y != height / 2; ++y)
+			{
+				auto src = pixels + y * width * channels;
+				auto dst = pixels + ((height - 1) - y) * width * channels;
+				std::swap_ranges(src, src + width * channels, dst);
+			}
+		}
+
+		void hflip(stbi_uc* pixels, int width, int height, int channels)
+		{
+			for (auto y = 0; y != height; ++y)
+			{
+				auto row = pixels + y * width * channels;
+
+				for (auto x = 0; x != width / 2; ++x)
+				{
+					auto src = row + x * channels;
+					auto dst = row + ((width - 1) - x) * channels;
+					std::swap_ranges(src, src + channels, dst);
+				}
+			}
+		}
+
+	} // unnamed
+
 	gl::texture_cubemap load_gl_cubemap_texture_from_files(std::array<std::string, 6> const& files)
 	{
 		auto out = gl::texture_cubemap();
+
+		// pos_x, neg_x, pos_y, neg_y, pos_z, neg_z
+		auto flip_vertically = std::array<bool, 6>{  true, true, false, false, true, true };
+		auto flip_horizontally = std::array<bool, 6>{ true, true, false, false, true, true };
 
 		for (auto i = std::size_t{ 0 }; i != files.size(); ++i)
 		{
@@ -34,6 +71,12 @@ namespace bump
 				log_error("load_gl_cubemap_texture_from_files(): image does not have 3 channels: " + file);
 				die();
 			}
+
+			if (flip_vertically[i])
+				vflip(pixels, width, height, channels);
+
+			if (flip_horizontally[i])
+				hflip(pixels, width, height, channels);
 
 			out.set_data(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (int)i, { width, height }, GL_RGB8, 
 				gl::make_texture_data_source(GL_RGB, pixels));

@@ -9,7 +9,7 @@ out vec3 vert_Normal;
 
 void main()
 {
-	vert_Normal = in_VertexPosition;
+	vert_Normal = in_VertexPosition * 2.0;
 
 	gl_Position = u_MVP * vec4(in_VertexPosition * u_Scale, 1.0);
 }

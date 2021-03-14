@@ -1,5 +1,6 @@
 #include "bump_game.hpp"
 
+#include "bump_camera.hpp"
 #include "bump_die.hpp"
 #include "bump_game_app.hpp"
 #include "bump_gl.hpp"
@@ -8,8 +9,12 @@
 #include "bump_mbp_model.hpp"
 #include "bump_narrow_cast.hpp"
 #include "bump_render_text.hpp"
+#include "bump_time.hpp"
+#include "bump_timer.hpp"
+#include "bump_transform.hpp"
 
 #include <GL/glew.h>
+#include <glm/gtx/transform.hpp>
 #include <glm/glm.hpp>
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -49,11 +54,9 @@ namespace bump
 				m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertex_buffer);
 			}
 
-			void render(gl::renderer& renderer, glm::vec2 window_size)
+			void render(gl::renderer& renderer, camera_matrices const& matrices, glm::vec2 window_size)
 			{
-
-				// note: ortho * view * model... but view and model are both identity
-				auto mvp = glm::ortho(0.f, window_size.x, 0.f, window_size.y, -1.f, 1.f);
+				auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
 
 				auto size = glm::vec2(m_texture.get_size());
 
@@ -61,8 +64,6 @@ namespace bump
 					(window_size.x - size.x) / 2, // center
 					window_size.y / 8.f, // offset from bottom
 				});
-				
-				renderer.set_viewport({ 0, 0 }, glm::uvec2(window_size));
 
 				renderer.set_blending(gl::renderer::blending::BLEND);
 				
@@ -126,17 +127,9 @@ namespace bump
 				}
 			}
 
-			void render(gl::renderer& renderer, glm::vec2 window_size)
+			void render(gl::renderer& renderer, camera_matrices const& matrices)
 			{
-				auto camera = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 10.f });
-
-				auto view = glm::inverse(camera);
-				auto projection = glm::perspective(glm::radians(45.f), window_size.x / window_size.y, 0.5f, 1000.f);
-				auto model = glm::mat4(1.f);
-
-				auto mvp = projection * view * model;
-
-				renderer.set_viewport({ 0, 0 }, glm::uvec2(window_size));
+				auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
 
 				renderer.set_program(m_shader);
 
@@ -206,15 +199,10 @@ namespace bump
 				m_vertex_array.set_index_buffer(m_indices);
 			}
 
-			void render(gl::renderer& renderer, glm::vec2 window_size)
+			void render(gl::renderer& renderer, perspective_camera const& scene_camera, camera_matrices const& matrices)
 			{
-				auto view = glm::mat4(1.f);
-				auto projection = glm::perspective(glm::radians(45.f), window_size.x / window_size.y, 0.5f, 1000.f);
-				auto model = glm::mat4(1.f);
-
-				auto mvp = projection * view * model;
-
-				renderer.set_viewport({ 0, 0 }, glm::uvec2(window_size));
+				auto model = glm::translate(glm::mat4(1.f), get_position(scene_camera.m_transform));
+				auto mvp = matrices.model_view_projection_matrix(model);
 
 				renderer.set_program(m_shader);
 
@@ -232,8 +220,6 @@ namespace bump
 				renderer.clear_program();
 
 				// todo: render last with depth testing trick...
-				// todo: set viewport only one time!
-				// todo: set scene camera matrices only one time!
 			}
 
 		private:
@@ -251,20 +237,120 @@ namespace bump
 			gl::vertex_array m_vertex_array;
 		};
 
+		class debug_camera_controls
+		{
+		public:
+
+			debug_camera_controls();
+
+			void update(high_res_duration_t dt);
+
+			bool m_move_fast;
+			bool m_move_forwards, m_move_backwards;
+			bool m_move_left, m_move_right;
+			bool m_move_up, m_move_down;
+			glm::vec2 m_rotate;
+
+			glm::mat4 m_transform;
+		};
+		
+		debug_camera_controls::debug_camera_controls():
+			m_move_fast(false),
+			m_move_forwards(false), m_move_backwards(false),
+			m_move_left(false), m_move_right(false),
+			m_move_up(false), m_move_down(false),
+			m_rotate(0.f),
+			m_transform(1.f) { }
+			
+		void debug_camera_controls::update(high_res_duration_t dt)
+		{
+			auto const dt_seconds = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
+			auto const movement_speed = 5.f; // metres per second
+			auto const rotation_speed = 100.f; // degrees per mouse input unit per second (?)
+			auto const speed_modifier = m_move_fast ? 5.f : 1.f;
+
+			if (m_rotate.y != 0.f)
+			{
+				auto const amount = rotation_speed * m_rotate.y * dt_seconds;
+				rotate_around_local_axis(m_transform, { 1.f, 0.f, 0.f }, glm::radians(amount));
+			}
+
+			if (m_rotate.x != 0.f)
+			{
+				auto const amount = rotation_speed * m_rotate.x * dt_seconds;
+				rotate_around_world_axis(m_transform, { 0.f, 1.f, 0.f }, glm::radians(amount));
+			}
+
+			m_rotate = glm::vec2(0.f);
+
+			if (m_move_forwards)
+			{
+				auto const amount = movement_speed * speed_modifier * dt_seconds;
+				translate_in_local(m_transform, glm::vec3{ 0.f, 0.f, -1.f } * amount);
+			}
+
+			if (m_move_backwards)
+			{
+				auto const amount = movement_speed * speed_modifier * dt_seconds;
+				translate_in_local(m_transform, glm::vec3{ 0.f, 0.f, 1.f } * amount);
+			}
+
+			if (m_move_left)
+			{
+				auto const amount = movement_speed * speed_modifier * dt_seconds;
+				translate_in_local(m_transform, glm::vec3{ -1.f, 0.f, 0.f } * amount);
+			}
+
+			if (m_move_right)
+			{
+				auto const amount = movement_speed * speed_modifier * dt_seconds;
+				translate_in_local(m_transform, glm::vec3{ 1.f, 0.f, 0.f } * amount);
+			}
+
+			if (m_move_up)
+			{
+				auto const amount = movement_speed * speed_modifier * dt_seconds;
+				translate_in_local(m_transform, glm::vec3{ 0.f, 1.f, 0.f } * amount);
+			}
+
+			if (m_move_down)
+			{
+				auto const amount = movement_speed * speed_modifier * dt_seconds;
+				translate_in_local(m_transform, glm::vec3{ 0.f, -1.f, 0.f } * amount);
+			}
+		}
+
 		gamestate do_start(app& app)
 		{
-			auto const& press_start_font = app.m_assets.m_fonts.at("press_start");
-			auto const& press_start_shader = app.m_assets.m_shaders.at("press_start");
-			auto press_start = press_start_text(press_start_font, press_start_shader);
+			{
+				auto center = app.m_window.get_size() / 2;
+				SDL_WarpMouseInWindow(app.m_window.get_handle(), center.x, center.y);
+				SDL_SetRelativeMouseMode(SDL_TRUE);
 
-			auto const& test_cube_model = app.m_assets.m_models.at("test_cube");
-			auto const& test_cube_shader = app.m_assets.m_shaders.at("test_cube");
-			auto cube = test_cube(test_cube_model, test_cube_shader);
+				app.m_window.set_grab_mode(sdl::window::grab_mode::ENABLED);
+			}
 
-			auto const& skybox_model = app.m_assets.m_models.at("skybox");
-			auto const& skybox_shader = app.m_assets.m_shaders.at("skybox");
-			auto const& skybox_cubemap = app.m_assets.m_cubemaps.at("skybox");
-			auto sky = skybox(skybox_model, skybox_shader, skybox_cubemap);
+			auto press_start = press_start_text(app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("press_start"));
+			auto cube = test_cube(app.m_assets.m_models.at("test_cube"), app.m_assets.m_shaders.at("test_cube"));
+			auto sky = skybox(app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
+
+			auto scene_camera = perspective_camera();
+			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 10.f });
+
+			auto debug_camera = debug_camera_controls();
+			debug_camera.m_transform = scene_camera.m_transform;
+
+			auto ui_camera = orthographic_camera();
+
+			{
+				auto const size = glm::vec2(app.m_window.get_size());
+				scene_camera.m_projection.m_size = size;
+				scene_camera.m_viewport.m_size = size;
+				ui_camera.m_projection.m_size = size;
+				ui_camera.m_viewport.m_size = size;
+			}
+
+			auto timer = frame_timer();
 
 			while (true)
 			{
@@ -277,10 +363,10 @@ namespace bump
 						if (e.type == SDL_QUIT)
 							return { };
 
-						if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_ESCAPE)
+						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_ESCAPE)
 							return { };
 
-						if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN && (e.key.keysym.mod & KMOD_LALT) != 0)
+						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN && (e.key.keysym.mod & KMOD_LALT) != 0)
 						{
 							auto mode = app.m_window.get_display_mode();
 							using display_mode = sdl::window::display_mode;
@@ -288,12 +374,50 @@ namespace bump
 							if (mode != display_mode::FULLSCREEN)
 								app.m_window.set_display_mode(mode == display_mode::BORDERLESS_WINDOWED ? display_mode::WINDOWED : display_mode::BORDERLESS_WINDOWED);
 						}
+						
+						// debug camera controls:
+						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_LSHIFT)
+							debug_camera.m_move_fast = true;
+						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_LSHIFT)
+							debug_camera.m_move_fast = false;
+						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
+							debug_camera.m_move_forwards = true;
+						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_w)
+							debug_camera.m_move_forwards = false;
+						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s)
+							debug_camera.m_move_backwards = true;
+						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_s)
+							debug_camera.m_move_backwards = false;
+						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a)
+							debug_camera.m_move_left = true;
+						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_a)
+							debug_camera.m_move_left = false;
+						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d)
+							debug_camera.m_move_right = true;
+						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_d)
+							debug_camera.m_move_right = false;
+						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_PAGEUP)
+							debug_camera.m_move_up = true;
+						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_PAGEUP)
+							debug_camera.m_move_up = false;
+						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_PAGEDOWN)
+							debug_camera.m_move_down = true;
+						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_PAGEDOWN)
+							debug_camera.m_move_down = false;
+						else if (e.type == SDL_MOUSEMOTION)
+						{
+							debug_camera.m_rotate.x -= e.motion.xrel;
+							debug_camera.m_rotate.y -= e.motion.yrel;
+						}
 					}
 				}
 
 				// update
 				{
 					// ...
+
+					debug_camera.update(timer.get_last_frame_time());
+					scene_camera.m_transform = debug_camera.m_transform;
 				}
 
 				// render
@@ -301,12 +425,27 @@ namespace bump
 					app.m_renderer.clear_color_buffers({ 1.f, 0.f, 0.f, 1.f });
 					app.m_renderer.clear_depth_buffers();
 
-					sky.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
-					//cube.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
-					press_start.render(app.m_renderer, glm::vec2(app.m_window.get_size()));
+					{
+						auto const size = glm::vec2(app.m_window.get_size());
+						scene_camera.m_projection.m_size = size;
+						scene_camera.m_viewport.m_size = size;
+						ui_camera.m_projection.m_size = size;
+						ui_camera.m_viewport.m_size = size;
+					}
+
+					app.m_renderer.set_viewport({ 0, 0 }, glm::uvec2(app.m_window.get_size()));
+					
+					auto scene_camera_matrices = camera_matrices(scene_camera);
+					sky.render(app.m_renderer, scene_camera, scene_camera_matrices);
+					cube.render(app.m_renderer, scene_camera_matrices);
+
+					auto ui_camera_matrices = camera_matrices(ui_camera);
+					press_start.render(app.m_renderer, ui_camera_matrices, glm::vec2(app.m_window.get_size()));
 
 					app.m_window.swap_buffers();
 				}
+
+				timer.tick();
 			}
 
 			return { };
