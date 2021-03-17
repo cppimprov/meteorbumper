@@ -19,14 +19,16 @@ namespace bump
 			auto const shaders = std::vector<shader_metadata>
 			{
 				{ "press_start", { "text_quad.vert", "text_quad.frag" } },
-				{ "test_cube", { "default_material.vert", "default_material.frag" } },
 				{ "skybox", { "skybox.vert", "skybox.frag" } },
+				{ "player_ship", { "default_material.vert", "default_material.frag" } },
+				{ "asteroid", { "asteroid.vert", "asteroid.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>
 			{
-				{ "test_cube", "test_cube.mbp_model" },
 				{ "skybox", "skybox.mbp_model" },
+				{ "player_ship", "player_ship.mbp_model" },
+				{ "asteroid", "asteroid.mbp_model" },
 			};
 
 			auto const cubemaps = std::vector<cubemap_metadata>

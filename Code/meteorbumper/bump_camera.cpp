@@ -22,7 +22,7 @@ namespace bump
 	perspective_projection::perspective_projection():
 		m_size(1.f),
 		m_fov_degrees(45.f),
-		m_near(0.5f), m_far(1000.f) { }
+		m_near(0.5f), m_far(10000.f) { }
 
 	float perspective_projection::aspect_ratio() const
 	{

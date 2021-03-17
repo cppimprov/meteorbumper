@@ -229,6 +229,9 @@ class PlatformMSVC:
 
 		self.write_rules(n)
 
+		entt = ProjectStaticLib.from_name('entt', self, build_type)
+		# header only - don't write
+
 		json = ProjectStaticLib.from_name('json', self, build_type)
 		# header only - don't write
 		
@@ -476,6 +479,7 @@ class PlatformMSVC:
 		meteorbumper = ProjectExe.from_name('meteorbumper', self, build_type)
 		meteorbumper.defines = freetype.defines + harfbuzz.defines + glew.defines + stb.defines + glm.defines + sdl.defines + [ 'MUSIC_WAV' ]
 		meteorbumper.inc_dirs = [
+			entt.code_dir,
 			json.code_dir,
 			join_dir(freetype.code_dir, 'include'),
 			join_dir(harfbuzz.code_dir, 'src'),

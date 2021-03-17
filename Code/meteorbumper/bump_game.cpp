@@ -3,6 +3,9 @@
 #include "bump_camera.hpp"
 #include "bump_die.hpp"
 #include "bump_game_app.hpp"
+#include "bump_game_debug_camera.hpp"
+#include "bump_game_ecs_physics.hpp"
+#include "bump_game_ecs_render.hpp"
 #include "bump_gl.hpp"
 #include "bump_font.hpp"
 #include "bump_log.hpp"
@@ -13,8 +16,10 @@
 #include "bump_timer.hpp"
 #include "bump_transform.hpp"
 
+#include <entt.hpp>
 #include <GL/glew.h>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <glm/glm.hpp>
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -23,6 +28,7 @@
 #include <chrono>
 #include <deque>
 #include <iterator>
+#include <iostream>
 #include <random>
 #include <string>
 
@@ -102,242 +108,233 @@ namespace bump
 			gl::vertex_array m_vertex_array;
 		};
 
-		class test_cube
+		struct player_controls
 		{
-		public:
+			player_controls():
+				m_roll_left(false), m_roll_right(false),
+				m_pitch_up(false), m_pitch_down(false),
+				m_boost(false),
+				m_window_cursor(0) { }
 
-			explicit test_cube(mbp_model const& model, gl::shader_program const& shader):
-				m_shader(shader),
-				m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
-				m_u_MVP(shader.get_uniform_location("u_MVP")),
-				m_u_Color(shader.get_uniform_location("u_Color"))
+			// input
+			bool m_roll_left, m_roll_right;
+			bool m_pitch_up, m_pitch_down;
+			bool m_boost;
+			glm::i32vec2 m_window_cursor;
+
+			// scaling
+			// float m_boost_time;
+			// float m_boost_time_multiplier;
+
+			void apply(ecs::physics_component& physics, high_res_duration_t dt)
 			{
-				for (auto const& submesh : model.m_submeshes)
+				auto dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
+
+				auto transform = physics.get_transform();
+
+				auto world_right = right(transform);
+				auto world_up = up(transform);
+				auto world_forward = forwards(transform);
+
+				auto roll_force = 3500.f;
+				auto pitch_force = 1000.f;
+				auto boost_force = 1000.f;
+
+				if (m_roll_left)
 				{
-					auto u = uniform_data{ submesh.m_material.m_base_color };
-					
-					auto m = mesh_data();
-					m.m_vertices.set_data(GL_ARRAY_BUFFER, submesh.m_mesh.m_vertices.data(), 3, submesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
-					m.m_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, submesh.m_mesh.m_indices.data(), 1, submesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
-					m.m_vertex_array.set_array_buffer(m_in_VertexPosition, m.m_vertices);
-					m.m_vertex_array.set_index_buffer(m.m_indices);
+					auto max_roll = 5.f;
+					auto current_roll = glm::dot(physics.get_angular_velocity(), -world_forward);
+					auto current_roll_factor = glm::clamp(current_roll / max_roll, 0.f, 1.f);
+					auto roll_scale = 1.f - current_roll_factor * current_roll_factor;
 
-					auto s = submesh_data{ std::move(u), std::move(m) };
-					m_submeshes.push_back(std::move(s));
+					//std::cout << current_roll << " " << current_roll_factor << " " << roll_scale << std::endl;
+
+					physics.add_torque(-world_forward * roll_force * dt_s * roll_scale);
 				}
-			}
-
-			void render(gl::renderer& renderer, camera_matrices const& matrices)
-			{
-				auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
-
-				renderer.set_program(m_shader);
-
-				for (auto const& submesh : m_submeshes)
+				
+				if (m_roll_right)
 				{
-					renderer.set_uniform_4x4f(m_u_MVP, mvp);
-					renderer.set_uniform_3f(m_u_Color, submesh.m_uniform_data.m_color);
+					auto max_roll = 5.f;
+					auto current_roll = glm::dot(physics.get_angular_velocity(), world_forward);
+					auto current_roll_factor = glm::clamp(current_roll / max_roll, 0.f, 1.f);
+					auto roll_scale = 1.f - current_roll_factor * current_roll_factor;
 
-					renderer.set_vertex_array(submesh.m_mesh_data.m_vertex_array);
+					//std::cout << current_roll << " " << current_roll_factor << " " << roll_scale << std::endl;
 
-					renderer.draw_indexed(GL_TRIANGLES, submesh.m_mesh_data.m_indices.get_element_count(), submesh.m_mesh_data.m_indices.get_component_type());
-
-					renderer.clear_vertex_array();
+					physics.add_torque(world_forward * roll_force * dt_s * roll_scale);
 				}
+				
+				if (m_pitch_down)
+					physics.add_torque(-world_right * pitch_force * dt_s);
 
-				renderer.clear_program();
+				if (m_pitch_up)
+					physics.add_torque(world_right * pitch_force * dt_s);
+				
+				if (m_boost)
+					physics.add_force(world_forward * boost_force * dt_s);
+
+				
+				// boost:
+					// gradually increase force as boost is held.
+					// when released, gradually decrease boost.
+					// start w/ fast increase, then slower, then fast again.
+					// start smooth, then randomly vary direction a little then level out again.
+
+				// yaw slightly towards cursor direction?
+
+				// drag forces:
+
+					// at max speed, drag force should equal -thrust force (?)
+					// apply drag down to a certain "coasting" speed?
+
+					// at max roll speed, drag force should equal -roll force
+					// at max pitch speed, drag force should equal -pitch force
+
+					// "lift" force?
+					// when velocity is forwards, it's zero.
+					// when velocity doesn't match the forward direction
+						// apply some thrust in the up ship direction?
+
+					// so if we're "drifting" perpendicular to the 
+
 			}
+		};
 
-		private:
+		namespace ecs
+		{
 
-			gl::shader_program const& m_shader;
-			GLint m_in_VertexPosition;
-			GLint m_u_MVP;
-			GLint m_u_Color;
-
-			struct uniform_data
+			class asteroid_data
 			{
+			public:
+
+				glm::mat4 m_transform;
 				glm::vec3 m_color;
 			};
 
-			struct mesh_data
-			{
-				gl::buffer m_vertices;
-				gl::buffer m_indices;
-				gl::vertex_array m_vertex_array;
-			};
+		} // ecs
 
-			struct submesh_data
-			{
-				uniform_data m_uniform_data;
-				mesh_data m_mesh_data;
-			};
-
-			std::vector<submesh_data> m_submeshes;
-		};
-
-		class skybox
+		class asteroid_field
 		{
 		public:
 
-			skybox(mbp_model const& model, gl::shader_program const& shader, gl::texture_cubemap const& texture):
-				m_shader(shader),
-				m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
-				m_u_MVP(shader.get_uniform_location("u_MVP")),
-				m_u_Scale(shader.get_uniform_location("u_Scale")),
-				m_u_CubemapTexture(shader.get_uniform_location("u_CubemapTexture")),
-				m_texture(texture)
-			{
-				die_if(model.m_submeshes.size() != 1);
+			explicit asteroid_field(entt::registry& registry, mbp_model const& model, gl::shader_program const& shader);
 
-				auto const& mesh = model.m_submeshes.front();
-
-				m_vertices.set_data(GL_ARRAY_BUFFER, mesh.m_mesh.m_vertices.data(), 3, mesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
-				m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertices);
-
-				m_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, mesh.m_mesh.m_indices.data(), 1, mesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
-				m_vertex_array.set_index_buffer(m_indices);
-			}
-
-			void render(gl::renderer& renderer, perspective_camera const& scene_camera, camera_matrices const& matrices)
-			{
-				auto model = glm::translate(glm::mat4(1.f), get_position(scene_camera.m_transform));
-				auto mvp = matrices.model_view_projection_matrix(model);
-
-				// note: don't write depth
-				renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
-
-				renderer.set_program(m_shader);
-
-				renderer.set_uniform_4x4f(m_u_MVP, mvp);
-				renderer.set_uniform_1f(m_u_Scale, 5.f); // note: ensure we render beyond the camera's near plane!
-				renderer.set_uniform_1i(m_u_CubemapTexture, 0);
-
-				renderer.set_texture_cubemap(0, m_texture);
-				renderer.set_seamless_cubemaps(gl::renderer::seamless_cubemaps::ENABLED);
-				
-				renderer.set_vertex_array(m_vertex_array);
-
-				renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type());
-
-				renderer.clear_vertex_array();
-				renderer.set_seamless_cubemaps(gl::renderer::seamless_cubemaps::DISABLED);
-				renderer.clear_texture_cubemap(0);
-				renderer.clear_program();
-				renderer.set_depth_write(gl::renderer::depth_write::ENABLED);
-			}
+			void render(entt::registry& registry, gl::renderer& renderer, camera_matrices const& matrices);
 
 		private:
 
-			gl::shader_program const& m_shader;
-			GLint m_in_VertexPosition;
-			GLint m_u_MVP;
-			GLint m_u_Scale;
-			GLint m_u_CubemapTexture;
+			gl::shader_program const* m_shader;
 
-			gl::texture_cubemap const& m_texture;
+			GLint m_in_VertexPosition;
+			GLint m_in_MVP;
+			GLint m_in_Color;
 			
 			gl::buffer m_vertices;
 			gl::buffer m_indices;
+			gl::buffer m_transforms;
+			gl::buffer m_colors;
 			gl::vertex_array m_vertex_array;
+
+			std::vector<glm::mat4> m_instance_transforms;
+			std::vector<glm::vec3> m_instance_colors;
 		};
 
-		class debug_camera_controls
+		asteroid_field::asteroid_field(entt::registry& registry, mbp_model const& model, gl::shader_program const& shader):
+			m_shader(&shader),
+			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
+			m_in_MVP(shader.get_attribute_location("in_MVP")),
+			m_in_Color(shader.get_attribute_location("in_Color"))
 		{
-		public:
+			// setup mesh buffers
+			die_if(model.m_submeshes.size() != 1);
 
-			debug_camera_controls();
+			auto const& mesh = model.m_submeshes.front();
 
-			void update(high_res_duration_t dt);
+			m_vertices.set_data(GL_ARRAY_BUFFER, mesh.m_mesh.m_vertices.data(), 3, mesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
+			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertices);
 
-			bool m_move_fast;
-			bool m_move_forwards, m_move_backwards;
-			bool m_move_left, m_move_right;
-			bool m_move_up, m_move_down;
-			glm::vec2 m_rotate;
+			m_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, mesh.m_mesh.m_indices.data(), 1, mesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
+			m_vertex_array.set_index_buffer(m_indices);
 
-			glm::mat4 m_transform;
-		};
-		
-		debug_camera_controls::debug_camera_controls():
-			m_move_fast(false),
-			m_move_forwards(false), m_move_backwards(false),
-			m_move_left(false), m_move_right(false),
-			m_move_up(false), m_move_down(false),
-			m_rotate(0.f),
-			m_transform(1.f) { }
+			// set up instance buffers
+			m_transforms.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 16, 0, GL_STREAM_DRAW);
+			m_vertex_array.set_array_buffer(m_in_MVP, m_transforms, 1);
+			m_colors.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
+			m_vertex_array.set_array_buffer(m_in_Color, m_colors, 1);
+
+			// create asteroids
+			auto spacing = 50.f;
+			auto grid_size = glm::ivec3(10);
+
+			auto rng = std::mt19937(std::random_device()());
+			auto base_color = glm::vec3(0.8f);
+			auto max_color_offset = glm::vec3(0.2f);
+			auto dist = std::uniform_real_distribution<float>(-1.f, 1.f);
+
+			for (auto z = 0; z != grid_size.z; ++z)
+			{
+				for (auto y = 0; y != grid_size.y; ++y)
+				{
+					for (auto x = 0; x != grid_size.x; ++x)
+					{
+						auto transform = glm::mat4(1.f);
+						set_position(transform, glm::vec3(x, y, -(z + 1)) * spacing);
+						
+						auto color = base_color + glm::vec3(dist(rng), dist(rng), dist(rng)) * max_color_offset;
+
+						auto id = registry.create();
+						registry.emplace<ecs::asteroid_data>(id, transform, color);
+					}
+				}
+			}
+		}
+
+		void asteroid_field::render(entt::registry& registry, gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			// get instance data from components
+			auto view = registry.view<ecs::asteroid_data>();
+
+			if (view.empty())
+				return;
+
+			for (auto id : view)
+			{
+				auto const& data = view.get<ecs::asteroid_data>(id);
+				m_instance_transforms.push_back(matrices.model_view_projection_matrix(data.m_transform));
+				m_instance_colors.push_back(data.m_color);
+			}
+
+			// upload instance data to buffers
+			static_assert(sizeof(glm::mat4) == sizeof(float) * 16, "Unexpected matrix size.");
+			m_transforms.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_transforms.front()), 16, m_instance_transforms.size(), GL_STREAM_DRAW);
 			
-		void debug_camera_controls::update(high_res_duration_t dt)
-		{
-			auto const dt_seconds = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
-			auto const movement_speed = 5.f; // metres per second
-			auto const rotation_speed = 100.f; // degrees per mouse input unit per second (?)
-			auto const speed_modifier = m_move_fast ? 5.f : 1.f;
+			static_assert(sizeof(glm::vec3) == sizeof(float) * 3, "Unexpected vector size.");
+			m_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_colors.front()), 3, m_instance_colors.size(), GL_STREAM_DRAW);
 
-			if (m_rotate.y != 0.f)
-			{
-				auto const amount = rotation_speed * m_rotate.y * dt_seconds;
-				rotate_around_local_axis(m_transform, { 1.f, 0.f, 0.f }, glm::radians(amount));
-			}
+			// render
+			renderer.set_program(*m_shader);
+			renderer.set_vertex_array(m_vertex_array);
 
-			if (m_rotate.x != 0.f)
-			{
-				auto const amount = rotation_speed * m_rotate.x * dt_seconds;
-				rotate_around_world_axis(m_transform, { 0.f, 1.f, 0.f }, glm::radians(amount));
-			}
+			renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type(), view.size());
 
-			m_rotate = glm::vec2(0.f);
+			renderer.clear_vertex_array();
+			renderer.clear_program();
 
-			if (m_move_forwards)
-			{
-				auto const amount = movement_speed * speed_modifier * dt_seconds;
-				translate_in_local(m_transform, glm::vec3{ 0.f, 0.f, -1.f } * amount);
-			}
-
-			if (m_move_backwards)
-			{
-				auto const amount = movement_speed * speed_modifier * dt_seconds;
-				translate_in_local(m_transform, glm::vec3{ 0.f, 0.f, 1.f } * amount);
-			}
-
-			if (m_move_left)
-			{
-				auto const amount = movement_speed * speed_modifier * dt_seconds;
-				translate_in_local(m_transform, glm::vec3{ -1.f, 0.f, 0.f } * amount);
-			}
-
-			if (m_move_right)
-			{
-				auto const amount = movement_speed * speed_modifier * dt_seconds;
-				translate_in_local(m_transform, glm::vec3{ 1.f, 0.f, 0.f } * amount);
-			}
-
-			if (m_move_up)
-			{
-				auto const amount = movement_speed * speed_modifier * dt_seconds;
-				translate_in_local(m_transform, glm::vec3{ 0.f, 1.f, 0.f } * amount);
-			}
-
-			if (m_move_down)
-			{
-				auto const amount = movement_speed * speed_modifier * dt_seconds;
-				translate_in_local(m_transform, glm::vec3{ 0.f, -1.f, 0.f } * amount);
-			}
+			// clear instance data
+			m_instance_transforms.clear();
+			m_instance_colors.clear();
 		}
 
 		gamestate do_start(app& app)
 		{
 			app.m_window.set_cursor_mode(sdl::window::cursor_mode::RELATIVE);
 
-			auto press_start = press_start_text(app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("press_start"));
-			auto cube = test_cube(app.m_assets.m_models.at("test_cube"), app.m_assets.m_shaders.at("test_cube"));
-			auto sky = skybox(app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
+			auto registry = entt::registry();
+			auto physics_system = ecs::physics_system();
+			auto render_system = ecs::render_system();
 
 			auto scene_camera = perspective_camera();
 			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 10.f });
-
-			auto debug_camera = debug_camera_controls();
-			debug_camera.m_transform = scene_camera.m_transform;
 
 			auto ui_camera = orthographic_camera();
 
@@ -348,6 +345,18 @@ namespace bump
 				ui_camera.m_projection.m_size = size;
 				ui_camera.m_viewport.m_size = size;
 			}
+			
+			auto skybox = registry.create();
+			registry.emplace<ecs::skybox_renderable>(skybox, app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
+
+			auto player = registry.create();
+			registry.emplace<ecs::basic_renderable>(player, app.m_assets.m_models.at("player_ship"), app.m_assets.m_shaders.at("player_ship"));
+			registry.emplace<ecs::physics_component>(player);
+			auto controls = player_controls();
+
+			auto asteroids = asteroid_field(registry, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
+
+			auto press_start = press_start_text(app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("press_start"));
 
 			auto paused = false;
 			auto timer = frame_timer();
@@ -367,80 +376,114 @@ namespace bump
 							return { };
 						}
 
-						else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_ESCAPE)
+						if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_ESCAPE)
 						{
 							app.m_window.set_cursor_mode(sdl::window::cursor_mode::FREE);
 							return { };
 						}
 
-						else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN && (e.key.keysym.mod & KMOD_LALT) != 0)
+						if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN && (e.key.keysym.mod & KMOD_LALT) != 0)
 						{
 							auto mode = app.m_window.get_display_mode();
 							using display_mode = sdl::window::display_mode;
 							
 							if (mode != display_mode::FULLSCREEN)
 								app.m_window.set_display_mode(mode == display_mode::BORDERLESS_WINDOWED ? display_mode::WINDOWED : display_mode::BORDERLESS_WINDOWED);
+							
+							continue;
 						}
 
 						// window focus and grabbing:
-						else if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+						if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
 						{
 							paused = true;
 
 							app.m_window.set_cursor_mode(sdl::window::cursor_mode::FREE);
+							continue;
 						}
-						else if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+						if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
 						{
 							app.m_window.set_cursor_mode(sdl::window::cursor_mode::RELATIVE);
 
 							paused = false;
 							timer = frame_timer();
+							continue;
 						}
-						
-						// debug camera controls:
-						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_LSHIFT)
-							debug_camera.m_move_fast = true;
-						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_LSHIFT)
-							debug_camera.m_move_fast = false;
-						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
-							debug_camera.m_move_forwards = true;
-						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_w)
-							debug_camera.m_move_forwards = false;
-						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s)
-							debug_camera.m_move_backwards = true;
-						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_s)
-							debug_camera.m_move_backwards = false;
-						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a)
-							debug_camera.m_move_left = true;
-						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_a)
-							debug_camera.m_move_left = false;
-						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d)
-							debug_camera.m_move_right = true;
-						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_d)
-							debug_camera.m_move_right = false;
-						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_PAGEUP)
-							debug_camera.m_move_up = true;
-						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_PAGEUP)
-							debug_camera.m_move_up = false;
-						else if (!paused && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_PAGEDOWN)
-							debug_camera.m_move_down = true;
-						else if (!paused && e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_PAGEDOWN)
-							debug_camera.m_move_down = false;
-						else if (!paused && e.type == SDL_MOUSEMOTION)
+
+						if (!paused)
 						{
-							debug_camera.m_rotate.x -= e.motion.xrel;
-							debug_camera.m_rotate.y -= e.motion.yrel;
+							if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
+							{
+								controls.m_pitch_down = true;
+								continue;
+							}
+							if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_w)
+							{
+								controls.m_pitch_down = false;
+								continue;
+							}
+							if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s)
+							{
+								controls.m_pitch_up = true;
+								continue;
+							}
+							if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_s)
+							{
+								controls.m_pitch_up = false;
+								continue;
+							}
+							if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a)
+							{
+								controls.m_roll_left = true;
+								continue;
+							}
+							if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_a)
+							{
+								controls.m_roll_left = false;
+								continue;
+							}
+							if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d)
+							{
+								controls.m_roll_right = true;
+								continue;
+							}
+							if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_d)
+							{
+								controls.m_roll_right = false;
+								continue;
+							}
+							if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_SPACE)
+							{
+								controls.m_boost = true;
+								continue;
+							}
+							if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_SPACE)
+							{
+								controls.m_boost = false;
+								continue;
+							}
 						}
 					}
 				}
 
 				// update
 				{
-					// debug camera:
+					auto dt = timer.get_last_frame_time();
+
 					if (!paused)
-						debug_camera.update(timer.get_last_frame_time());
-					
-					scene_camera.m_transform = debug_camera.m_transform;
+					{
+						// apply player input:
+						auto& player_physics = registry.get<ecs::physics_component>(player);
+						controls.apply(player_physics, dt);
+
+						// physics:
+						physics_system.update(registry, dt);
+
+						// update camera position
+						auto transform = player_physics.get_transform();
+						translate_in_local(transform, { 0.f, 3.f, 50.f });
+						scene_camera.m_transform = transform;
+					}
 				}
 
 				// render
@@ -459,8 +502,8 @@ namespace bump
 					app.m_renderer.set_viewport({ 0, 0 }, glm::uvec2(app.m_window.get_size()));
 					
 					auto scene_camera_matrices = camera_matrices(scene_camera);
-					sky.render(app.m_renderer, scene_camera, scene_camera_matrices);
-					cube.render(app.m_renderer, scene_camera_matrices);
+					render_system.render(registry, app.m_renderer, scene_camera, scene_camera_matrices);
+					asteroids.render(registry, app.m_renderer, scene_camera_matrices);
 
 					auto ui_camera_matrices = camera_matrices(ui_camera);
 					press_start.render(app.m_renderer, ui_camera_matrices, glm::vec2(app.m_window.get_size()));

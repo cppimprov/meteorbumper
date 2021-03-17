@@ -67,8 +67,10 @@ namespace bump
 		viewport m_viewport;
 	};
 
-	struct camera_matrices
+	class camera_matrices
 	{
+	public:
+		
 		template<class CameraT>
 		camera_matrices(CameraT const& camera);
 

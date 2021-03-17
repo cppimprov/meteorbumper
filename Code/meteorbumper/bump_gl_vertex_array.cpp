@@ -19,12 +19,11 @@ namespace bump
 			reset(id, [] (GLuint id) { glDeleteVertexArrays(1, &id); });
 		}
 
-		// todo:
-		// max 4 floats components (floats???) per location
-		// so for 4x4matrix buffers, we need to do this 4 times!
 		void vertex_array::set_array_buffer(GLuint location, buffer const& buffer, GLuint divisor)
 		{
 			die_if(!is_valid());
+			die_if(location == (GLuint)-1);
+			die_if(!buffer.is_valid());
 
 			glBindVertexArray(get_id());
 			glBindBuffer(GL_ARRAY_BUFFER, buffer.get_id());
@@ -34,20 +33,28 @@ namespace bump
 
 			auto const integers = std::initializer_list<GLenum>{ GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT, GL_UNSIGNED_INT };
 
-			if (component_type == GL_FLOAT)
-				glVertexAttribPointer(location, component_count, component_type, GL_FALSE, 0, nullptr);
+			for (auto i = 0; i != (component_count + 3) / 4; ++i)
+			{
+				auto index = location + i;
+				auto size = std::min(component_count - i * 4, 4);
+				auto stride = narrow_cast<GLsizei>(buffer.get_element_size_bytes());
+				auto pointer = (void*)(i * 4 * buffer.get_component_size_bytes());
 
-			else if (component_type == GL_DOUBLE)
-				glVertexAttribLPointer(location, component_count, component_type, 0, nullptr);
+				if (component_type == GL_FLOAT)
+					glVertexAttribPointer(index, size, component_type, GL_FALSE, stride, pointer);
 
-			else if (std::find(integers.begin(), integers.end(), component_type) != integers.end())
-				glVertexAttribIPointer(location, component_count, component_type, 0, nullptr);
+				else if (component_type == GL_DOUBLE)
+					glVertexAttribLPointer(index, size, component_type, stride, pointer);
 
-			else
-				die();
+				else if (std::find(integers.begin(), integers.end(), component_type) != integers.end())
+					glVertexAttribIPointer(index, size, component_type, stride, pointer);
 
-			glVertexAttribDivisor(location, divisor);
-			glEnableVertexAttribArray(location);
+				else
+					die();
+
+				glVertexAttribDivisor(index, divisor);
+				glEnableVertexAttribArray(index);
+			}
 
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			glBindVertexArray(0);

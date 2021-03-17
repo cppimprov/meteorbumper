@@ -71,27 +71,34 @@ namespace bump
 		try
 		{
 			auto file = std::ifstream(filename, std::ios_base::binary); // todo: widen filename for windows!
+
+			if (!file.is_open())
+			{
+				log_error("Failed to open mbp_model file: " + filename);
+				die();
+			}
+
 			auto j = nlohmann::json::parse(file);
 
 			return parse_mbp_model_json(j);
 		}
 		catch (nlohmann::json::parse_error const& e)
 		{
-			log_error("Failed to parse json in mesh file: " + filename);
+			log_error("Failed to parse json in mbp_model file: " + filename);
 			log_error("Error id: " + std::to_string(e.id));
 			log_error("Error message: \n" + std::string(e.what()));
 			die();
 		}
 		catch (nlohmann::json::exception const& e)
 		{
-			log_error("Failed to parse mesh file: " + filename);
+			log_error("Failed to parse mbp_model file: " + filename);
 			log_error("Error id: " + std::to_string(e.id));
 			log_error("Error message:\n" + std::string(e.what()));
 			die();
 		}
 		catch (std::runtime_error const& e)
 		{
-			log_error("Failed to parse mesh data in file: " + filename);
+			log_error("Failed to parse mesh data in mbp_model file: " + filename);
 			log_error("Error message:\n" + std::string(e.what()));
 			die();
 		}
