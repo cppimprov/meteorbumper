@@ -22,13 +22,10 @@ int main(int , char* [])
 
 // todo next:
 
-	// gamepad support:
-		// need to keep track of sdl controllers -> open when attached, get device 
-
 	// player controls / physics:
-		// ???
-		// try xbox controller!
-		// fighter style pitch (mouse) + roll (a d), ws to speed up / slow down.?
+		// add rotational drag
+		// try denser air?
+		// better inertia tensor
 		// click to fire.
 	
 	// asteroids!

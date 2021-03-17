@@ -217,14 +217,55 @@ namespace bump
 			{
 				auto dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
 				(void)dt_s;
+
+				// apply deadzone to axes (todo: move this to input handling?)
+				auto const deadzone = 0.1f;
+				m_roll_axis = glm::abs(m_roll_axis) < deadzone ? 0.f : m_roll_axis;
+				m_pitch_axis = glm::abs(m_pitch_axis) < deadzone ? 0.f : m_pitch_axis;
+
+				//std::cout << m_roll_axis << " " << m_pitch_axis << std::endl;
+
 				auto transform = physics.get_transform();
-				(void)transform;
+				auto const world_right = right(transform);
+				auto const world_up = up(transform);
+				auto const world_forward = forwards(transform);
+				
+				// apply boost
+				auto const boost_force_N = 20000.f;
+				physics.add_force(world_forward * boost_force_N * m_boost_axis);
 
-				// ...
+				// apply roll!
+				auto const roll_torque = 10000.f;
+				physics.add_torque(world_forward * roll_torque * m_roll_axis);
+				
+				// apply pitch!
+				auto const pitch_torque = 10000.f;
+				physics.add_torque(world_right * pitch_torque * m_pitch_axis);
 
-				std::cout << m_roll_axis << " " << m_pitch_axis << " " << m_boost_axis << std::endl;
+				// apply drag
+				{
+					// Fd (drag force) = 0.5 * rho * v^2 * cd * A, where:
+					// rho = fluid mass density (mass / Volume)
+					// v = speed relative to fluid
+					// cd = drag coefficient (based on shape of object)
+					// A = cross-sectional area
 
-				// ok... so boost!
+					auto const rho_kg_per_m3 = 1.255f; // density of air
+					auto const v_m_per_s = transform_vector_to_local(transform, physics.get_velocity()); // in local space
+					auto const cd = glm::vec3{ 0.6f, 1.5f, 0.05f }; // unitless multipliers over each primary axis
+					auto const A_m2 = glm::vec3{ 4.f, 20.f, 2.5f }; // very approx surface area
+
+					auto Fd = 0.5f * rho_kg_per_m3 * v_m_per_s * v_m_per_s * cd * A_m2; // in local space, always positive
+					Fd *= -glm::sign(v_m_per_s); // apply in opposite direction to velocity
+
+					//std::cout << glm::to_string(v_m_per_s) << " " << glm::to_string(Fd) << std::endl;
+					physics.add_force(transform_vector_to_world(transform, Fd));
+				}
+
+				// todo: rotational drag?
+
+				// boost:
+					// todo: judder? (smooth, judder at mid speeds, smooth at high speeds).
 			}
 
 		};
@@ -252,8 +293,13 @@ namespace bump
 			auto skybox = game::skybox(app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
 
 			auto player = registry.create();
-			registry.emplace<ecs::basic_renderable>(player, app.m_assets.m_models.at("player_ship"), app.m_assets.m_shaders.at("player_ship"));
-			registry.emplace<ecs::physics_component>(player);
+			{
+				registry.emplace<ecs::basic_renderable>(player, app.m_assets.m_models.at("player_ship"), app.m_assets.m_shaders.at("player_ship"));
+				auto& player_physics = registry.emplace<ecs::physics_component>(player);
+				player_physics.set_mass(4000.f);
+				player_physics.set_local_inertia_tensor(ecs::make_sphere_inertia_tensor(4000.f, 3.f));
+			}
+
 			auto controls = player_controls();
 
 			auto asteroids = asteroid_field(registry, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
@@ -263,7 +309,7 @@ namespace bump
 			auto paused = false;
 			auto timer = frame_timer();
 
-			std::vector<sdl::gamepad> game_pads;
+			std::vector<sdl::gamepad> gamepads;
 
 			while (true)
 			{
@@ -317,17 +363,17 @@ namespace bump
 						// controller connection / disconnection:
 						if (e.type == SDL_CONTROLLERDEVICEADDED)
 						{
-							game_pads.push_back(sdl::gamepad(e.cdevice.which));
+							gamepads.push_back(sdl::gamepad(e.cdevice.which));
 							continue;
 						}
 						if (e.type == SDL_CONTROLLERDEVICEREMOVED)
 						{
-							auto entry = std::find_if(game_pads.begin(), game_pads.end(),
+							auto entry = std::find_if(gamepads.begin(), gamepads.end(),
 								[&] (sdl::gamepad const& p) { return p.get_joystick_id() == e.cdevice.which; });
 							
-							die_if(entry == game_pads.end());
+							die_if(entry == gamepads.end());
 
-							game_pads.erase(entry);
+							gamepads.erase(entry);
 							continue;
 						}
 						// todo: how to handle SDL_CONTROLLERDEVICEREMAPPED events?
