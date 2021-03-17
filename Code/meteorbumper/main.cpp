@@ -22,14 +22,8 @@ int main(int , char* [])
 
 // todo next:
 
-	// move basic_renderable transform update to update phase
-	// move stuff out of "rendersystem" render function. delete rendersystem class.
-	// move skybox out of ecs.
-
-	// asteroids!
-		// physics component for each asteroid!
-		// randomly deform sphere for each asteroid
-		// more "normal" colors
+	// gamepad support:
+		// need to keep track of sdl controllers -> open when attached, get device 
 
 	// player controls / physics:
 		// ???
@@ -37,6 +31,11 @@ int main(int , char* [])
 		// fighter style pitch (mouse) + roll (a d), ws to speed up / slow down.?
 		// click to fire.
 	
+	// asteroids!
+		// physics component for each asteroid!
+		// randomly deform sphere for each asteroid
+		// more "normal" colors
+
 	// camera:
 		// spring attaching camera to fixed offset from player
 		// which direction should the spring be? (same as fixed offset, or just backwards?)
