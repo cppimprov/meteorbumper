@@ -111,100 +111,6 @@ namespace bump
 			gl::vertex_array m_vertex_array;
 		};
 
-		// struct player_controls
-		// {
-		// 	player_controls():
-		// 		m_roll_left(false), m_roll_right(false),
-		// 		m_pitch_up(false), m_pitch_down(false),
-		// 		m_boost(false),
-		// 		m_window_cursor(0) { }
-
-		// 	// input
-		// 	bool m_roll_left, m_roll_right;
-		// 	bool m_pitch_up, m_pitch_down;
-		// 	bool m_boost;
-		// 	glm::i32vec2 m_window_cursor;
-
-		// 	// scaling
-		// 	// float m_boost_time;
-		// 	// float m_boost_time_multiplier;
-
-		// 	void apply(ecs::physics_component& physics, high_res_duration_t dt)
-		// 	{
-		// 		auto dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
-
-		// 		auto transform = physics.get_transform();
-
-		// 		auto world_right = right(transform);
-		// 		auto world_up = up(transform);
-		// 		auto world_forward = forwards(transform);
-
-		// 		auto roll_force = 3500.f;
-		// 		auto pitch_force = 1000.f;
-		// 		auto boost_force = 1000.f;
-
-		// 		if (m_roll_left)
-		// 		{
-		// 			auto max_roll = 5.f;
-		// 			auto current_roll = glm::dot(physics.get_angular_velocity(), -world_forward);
-		// 			auto current_roll_factor = glm::clamp(current_roll / max_roll, 0.f, 1.f);
-		// 			auto roll_scale = 1.f - current_roll_factor * current_roll_factor;
-
-		// 			//std::cout << current_roll << " " << current_roll_factor << " " << roll_scale << std::endl;
-
-		// 			physics.add_torque(-world_forward * roll_force * dt_s * roll_scale);
-		// 		}
-				
-		// 		if (m_roll_right)
-		// 		{
-		// 			auto max_roll = 5.f;
-		// 			auto current_roll = glm::dot(physics.get_angular_velocity(), world_forward);
-		// 			auto current_roll_factor = glm::clamp(current_roll / max_roll, 0.f, 1.f);
-		// 			auto roll_scale = 1.f - current_roll_factor * current_roll_factor;
-
-		// 			//std::cout << current_roll << " " << current_roll_factor << " " << roll_scale << std::endl;
-
-		// 			physics.add_torque(world_forward * roll_force * dt_s * roll_scale);
-		// 		}
-				
-		// 		if (m_pitch_down)
-		// 			physics.add_torque(-world_right * pitch_force * dt_s);
-
-		// 		if (m_pitch_up)
-		// 			physics.add_torque(world_right * pitch_force * dt_s);
-				
-		// 		if (m_boost)
-		// 			physics.add_force(world_forward * boost_force * dt_s);
-
-				
-		// 		// boost:
-		// 			// gradually increase force as boost is held.
-		// 			// when released, gradually decrease boost.
-		// 			// start w/ fast increase, then slower, then fast again.
-		// 			// start smooth, then randomly vary direction a little then level out again.
-
-		// 		// yaw slightly towards cursor direction?
-
-		// 		// drag forces:
-
-		// 			// at max speed, drag force should equal -thrust force (?)
-		// 			// apply drag down to a certain "coasting" speed?
-
-		// 			// at max roll speed, drag force should equal -roll force
-		// 			// at max pitch speed, drag force should equal -pitch force
-
-		// 			// "lift" force?
-		// 			// when velocity is forwards, it's zero.
-		// 			// when velocity doesn't match the forward direction
-		// 				// apply some thrust in the up ship direction?
-
-		// 			// so if we're "drifting" perpendicular to the 
-
-		// 	}
-		// };
-
-	
-
 		class player_controls
 		{
 		public:
@@ -242,27 +148,55 @@ namespace bump
 				auto const pitch_torque = 10000.f;
 				physics.add_torque(world_right * pitch_torque * m_pitch_axis);
 
-				// apply drag
+				// linear drag
 				{
-					// Fd (drag force) = 0.5 * rho * v^2 * cd * A, where:
-					// rho = fluid mass density (mass / Volume)
+					// Fd (drag force) = 0.5 * rho * v^2 * Cd * A, where:
+					// rho = fluid mass density (mass / volume)
 					// v = speed relative to fluid
-					// cd = drag coefficient (based on shape of object)
+					// Cd = drag coefficient (based on shape of object)
 					// A = cross-sectional area
 
 					auto const rho_kg_per_m3 = 1.255f; // density of air
 					auto const v_m_per_s = transform_vector_to_local(transform, physics.get_velocity()); // in local space
-					auto const cd = glm::vec3{ 0.6f, 1.5f, 0.05f }; // unitless multipliers over each primary axis
+					auto const Cd = glm::vec3{ 0.6f, 1.5f, 0.05f }; // unitless multipliers over each primary axis
 					auto const A_m2 = glm::vec3{ 4.f, 20.f, 2.5f }; // very approx surface area
 
-					auto Fd = 0.5f * rho_kg_per_m3 * v_m_per_s * v_m_per_s * cd * A_m2; // in local space, always positive
+					auto Fd = 0.5f * rho_kg_per_m3 * v_m_per_s * v_m_per_s * Cd * A_m2; // in local space, always positive
 					Fd *= -glm::sign(v_m_per_s); // apply in opposite direction to velocity
 
 					//std::cout << glm::to_string(v_m_per_s) << " " << glm::to_string(Fd) << std::endl;
 					physics.add_force(transform_vector_to_world(transform, Fd));
 				}
 
-				// todo: rotational drag?
+				// rotational drag
+				{
+					// Td (drag torque) = rho * (2 * pi * w * r)^2 * A * r * Cd, where:
+					// rho = fluid mass density (mass / volume)
+					// w = angular velocity relative to fluid
+					// r = radius
+					// A = effective area
+					// Cd = drag coefficient (based on object shape)
+
+					// for this implementation:
+					// Ar = area multiplied by radius
+					// Cr = distance from axis (multiplier for speed)
+
+					// todo: fix pitch!!!!!
+
+					auto const rho_kg_per_m3 = 1.255f;
+					auto const w_per_s = transform_vector_to_local(transform, physics.get_angular_velocity()); // in local space
+					auto const Cr_m = glm::vec3{ 1.75f, 1.f, 2.f }; // very approx average radius for surface around each axis
+					auto const Cd = glm::vec3{ 1.2f, 0.4f, 0.75f }; // unitless shape multipliers
+					auto const Ar_m3 = glm::vec3{ 40.f, 24.f, 28.f }; // very approx surface area * radius
+
+					auto Td = rho_kg_per_m3 * glm::pow(2.f * glm::pi<float>() * w_per_s * Cr_m, glm::vec3(2.f)) * Ar_m3 * Cd;
+					Td *= -glm::sign(w_per_s);
+
+					std::cout << glm::to_string(w_per_s) << " " << glm::to_string(Td) << std::endl;
+					physics.add_torque(transform_vector_to_world(transform, Td));
+				}
+
+				// todo: some kind of translation of "pancake" movement into forward movement?
 
 				// boost:
 					// todo: judder? (smooth, judder at mid speeds, smooth at high speeds).

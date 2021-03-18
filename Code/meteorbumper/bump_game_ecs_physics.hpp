@@ -88,6 +88,7 @@ namespace bump
 			void add_torque(glm::vec3 torque) { m_torque += torque; }
 			void clear_torque() { m_torque = glm::vec3(0.f); }
 
+			// todo: is this correct? should point be in object coordinates?
 			void add_force_at_point(glm::vec3 force, glm::vec3 point) { add_force(force); add_torque(glm::cross(point - m_position, force)); }
 
 			glm::vec3 get_force() const { return m_force; }
