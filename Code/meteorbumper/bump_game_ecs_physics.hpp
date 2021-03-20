@@ -17,7 +17,7 @@ namespace bump
 		inline glm::mat3 make_sphere_inertia_tensor(float mass, float radius)
 		{
 			auto value = (2.f * mass * (radius * radius)) / 5.f;
-			return glm::mat3(glm::scale(glm::mat4(1.f), glm::vec3(value)));
+			return glm::mat3(value);
 		}
 
 		// todo: other inertia tensors!
@@ -60,11 +60,15 @@ namespace bump
 			void set_infinite_mass() { m_inverse_mass = 0.f; }
 
 			void set_local_inertia_tensor(glm::mat3 inertia_tensor) { m_local_inertia_tensor = inertia_tensor; }
+			glm::mat3 get_local_inertia_tensor() const { return has_mass() ? m_local_inertia_tensor : glm::mat3(0.f); }
 			glm::mat3 get_inverse_inertia_tensor() const { return has_mass() ? glm::inverse(glm::mat3_cast(m_orientation) * m_local_inertia_tensor) : glm::mat3(0.f); }
 
 			// movement
-			void set_damping(float multiplier) { m_damping = glm::clamp(multiplier, 0.f, 1.f); }
-			float get_damping() const { return m_damping; }
+			void set_linear_damping(float multiplier) { m_linear_damping = glm::clamp(multiplier, 0.f, 1.f); }
+			float get_linear_damping() const { return m_linear_damping; }
+
+			void set_angular_damping(float multiplier) { m_angular_damping = glm::clamp(multiplier, 0.f, 1.f); }
+			float get_angular_damping() const { return m_angular_damping; }
 
 			void set_position(glm::vec3 position) { m_position = position; }
 			glm::vec3 get_position() const { return m_position; }
@@ -115,7 +119,8 @@ namespace bump
 			glm::quat m_orientation;
 			glm::vec3 m_velocity;
 			glm::vec3 m_angular_velocity;
-			float m_damping;
+			float m_linear_damping;
+			float m_angular_damping;
 		
 			// forces
 			glm::vec3 m_force;

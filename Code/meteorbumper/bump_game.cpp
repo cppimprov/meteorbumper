@@ -110,7 +110,7 @@ namespace bump
 			gl::buffer m_vertex_buffer;
 			gl::vertex_array m_vertex_array;
 		};
-
+		
 		class player_controls
 		{
 		public:
@@ -148,24 +148,22 @@ namespace bump
 				auto const pitch_torque = 10000.f;
 				physics.add_torque(world_right * pitch_torque * m_pitch_axis);
 
+				auto const rho_kg_per_m3 = 1.255f; // density of air
+
 				// linear drag
 				{
-					// Fd (drag force) = 0.5 * rho * v^2 * Cd * A, where:
-					// rho = fluid mass density (mass / volume)
-					// v = speed relative to fluid
-					// Cd = drag coefficient (based on shape of object)
-					// A = cross-sectional area
-
-					auto const rho_kg_per_m3 = 1.255f; // density of air
-					auto const v_m_per_s = transform_vector_to_local(transform, physics.get_velocity()); // in local space
-					auto const Cd = glm::vec3{ 0.6f, 1.5f, 0.05f }; // unitless multipliers over each primary axis
-					auto const A_m2 = glm::vec3{ 4.f, 20.f, 2.5f }; // very approx surface area
-
-					auto Fd = 0.5f * rho_kg_per_m3 * v_m_per_s * v_m_per_s * Cd * A_m2; // in local space, always positive
-					Fd *= -glm::sign(v_m_per_s); // apply in opposite direction to velocity
+					// Fd = 0.5 * v^2 * rho * Cd * A;
+					// v = object velocity relative to fluid (m/s)
+					// rho = fluid density (kg/m3)
+					// Cd = drag coefficient (unitless - related to shape) 0.05 is v. low, 2.0 is v. high
+					// A = cross-sectional area (m2)
+					auto const v_m_per_s = transform_vector_to_local(transform, physics.get_velocity());
+					auto const Cd = glm::vec3{ 0.6f, 1.5f, 0.05f }; // unitless shape multiplier
+					auto const A_m2 = glm::vec3{ 4.f, 20.f, 2.5f }; // approx cross-sectional area
+					auto Fd_kg_m_per_s = 0.5f * v_m_per_s * v_m_per_s * rho_kg_per_m3 * Cd * A_m2 * -glm::sign(v_m_per_s);
 
 					//std::cout << glm::to_string(v_m_per_s) << " " << glm::to_string(Fd) << std::endl;
-					physics.add_force(transform_vector_to_world(transform, Fd));
+					physics.add_force(transform_vector_to_world(transform, Fd_kg_m_per_s));
 				}
 
 				// rotational drag
@@ -181,22 +179,27 @@ namespace bump
 					// Ar = area multiplied by radius
 					// Cr = distance from axis (multiplier for speed)
 
-					// todo: fix pitch!!!!!
+					auto const w_per_s = transform_vector_to_local(transform, physics.get_angular_velocity());
 
-					auto const rho_kg_per_m3 = 1.255f;
-					auto const w_per_s = transform_vector_to_local(transform, physics.get_angular_velocity()); // in local space
-					auto const Cr_m = glm::vec3{ 1.75f, 1.f, 2.f }; // very approx average radius for surface around each axis
-					auto const Cd = glm::vec3{ 1.2f, 0.4f, 0.75f }; // unitless shape multipliers
-					auto const Ar_m3 = glm::vec3{ 40.f, 24.f, 28.f }; // very approx surface area * radius
+					// if (!glm::all(glm::epsilonEqual(w_per_s, glm::vec3(0.f), glm::epsilon<float>())))
+					// {
+					// 	auto const Cr_m = glm::vec3{ 1.75f, 1.f, 2.f }; // very approx average radius for surface around each axis
+					// 	auto const Cd = glm::vec3{ 1.2f, 0.4f, 0.75f }; // unitless shape multipliers
+					// 	auto const Ar_m3 = glm::vec3{ 40.f, 24.f, 28.f }; // very approx surface area * radius
 
-					auto Td = rho_kg_per_m3 * glm::pow(2.f * glm::pi<float>() * w_per_s * Cr_m, glm::vec3(2.f)) * Ar_m3 * Cd;
-					Td *= -glm::sign(w_per_s);
+					// 	// project onto axis of rotation
+					// 	auto const Cr_m_w = glm::dot(Cr_m, glm::normalize(w_per_s));
+					// 	auto const Cd_w = glm::dot(Cd, glm::normalize(w_per_s));
+					// 	auto const Ar_m3_w = glm::dot(Ar_m3, glm::normalize(w_per_s));
 
-					std::cout << glm::to_string(w_per_s) << " " << glm::to_string(Td) << std::endl;
-					physics.add_torque(transform_vector_to_world(transform, Td));
+					// 	auto Td_w = rho_kg_per_m3 * glm::pow(2.f * glm::pi<float>() * glm::length(w_per_s) * Cr_m_w, 2.f) * Ar_m3_w * Cd_w;
+					// 	auto Td = - glm::normalize(w_per_s) * Td_w;
+
+					// 	//std::cout << Cr_m_w << " " << Cd_w << " " << Ar_m3_w << " " << Td_w << std::endl;
+					// 	std::cout << glm::to_string(w_per_s) << " " << Td_w << " " << glm::to_string(Td) << std::endl;
+					// 	physics.add_torque(transform_vector_to_world(transform, Td));
+					// }
 				}
-
-				// todo: some kind of translation of "pancake" movement into forward movement?
 
 				// boost:
 					// todo: judder? (smooth, judder at mid speeds, smooth at high speeds).
@@ -212,7 +215,7 @@ namespace bump
 			auto physics_system = ecs::physics_system();
 
 			auto scene_camera = perspective_camera();
-			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 10.f });
+			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 50.f });
 
 			auto ui_camera = orthographic_camera();
 
@@ -321,6 +324,23 @@ namespace bump
 								controls.m_roll_axis = e.caxis.value > 0 ? (float)e.caxis.value / 32767.f : (float)e.caxis.value / 32768.f;
 							else if (e.type == SDL_CONTROLLERAXISMOTION && e.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
 								controls.m_pitch_axis = e.caxis.value > 0 ? (float)e.caxis.value / 32767.f : (float)e.caxis.value / 32768.f;
+
+							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
+								controls.m_pitch_axis = -1.f;
+							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_w)
+								controls.m_pitch_axis = 0.f;
+							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s)
+								controls.m_pitch_axis = 1.f;
+							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_s)
+								controls.m_pitch_axis = 0.f;
+							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a)
+								controls.m_roll_axis = -1.f;
+							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_a)
+								controls.m_roll_axis = 0.f;
+							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d)
+								controls.m_roll_axis = 1.f;
+							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_d)
+								controls.m_roll_axis = 0.f;
 						}
 
 						// if (!paused)
@@ -393,9 +413,9 @@ namespace bump
 						physics_system.update(registry, dt);
 
 						// update camera position
-						auto transform = player_physics.get_transform();
-						translate_in_local(transform, { 0.f, 3.f, 50.f });
-						scene_camera.m_transform = transform;
+						//auto transform = player_physics.get_transform();
+						//translate_in_local(transform, { 0.f, 3.f, 50.f });
+						//scene_camera.m_transform = transform;
 						
 						// update basic_renderable transforms for physics objects
 						{

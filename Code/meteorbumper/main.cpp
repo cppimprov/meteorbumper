@@ -22,6 +22,12 @@ int main(int , char* [])
 
 // todo next:
 
+	// debug physics:
+		// write out equations that we have, so we know what we've got!
+		// add vector rendering to visualize issue.
+		// does applying a torque opposite to the angular velocity actually decellerate the object?
+		// what's angular momentum???
+
 	// player controls / physics:
 		// add rotational drag
 		// try denser air?
