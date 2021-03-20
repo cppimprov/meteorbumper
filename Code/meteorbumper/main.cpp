@@ -22,26 +22,27 @@ int main(int , char* [])
 
 // todo next:
 
-	// debug physics:
-		// write out equations that we have, so we know what we've got!
-		// add vector rendering to visualize issue.
-		// does applying a torque opposite to the angular velocity actually decellerate the object?
-		// what's angular momentum???
+	// disable glm default constructors!!! make sure values are always initialized.
+	// move physics out of ecs (and game) namespace into physics namespace
 
-	// player controls / physics:
-		// add rotational drag
-		// try denser air?
-		// better inertia tensor
-		// click to fire.
-	
+	// more physics collision shapes...
+
 	// asteroids!
 		// physics component for each asteroid!
-		// randomly deform sphere for each asteroid
+		// asteroid motion
+		// asteroid collision!
+		// randomly deform sphere for each asteroid?
 		// more "normal" colors
 
 	// camera:
 		// spring attaching camera to fixed offset from player
 		// which direction should the spring be? (same as fixed offset, or just backwards?)
+	
+	// player physics:
+		// add collision!
+		// decrease damping at lower velocities
+		// aiming w/ right stick, add yaw / pitch from aiming (if aiming past the edge of the screen?)
+		// click to fire.
 	
 	
 	// level:

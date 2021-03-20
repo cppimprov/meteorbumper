@@ -115,9 +115,10 @@ namespace bump
 		{
 		public:
 
-			float m_roll_axis = 0.f;
-			float m_pitch_axis = 0.f;
 			float m_boost_axis = 0.f;
+			float m_pitch_axis = 0.f;
+			float m_roll_axis = 0.f;
+			float m_yaw_axis = 0.f;
 
 			void apply(ecs::physics_component& physics, high_res_duration_t dt)
 			{
@@ -137,16 +138,20 @@ namespace bump
 				auto const world_forward = forwards(transform);
 				
 				// apply boost
-				auto const boost_force_N = 20000.f;
+				auto const boost_force_N = 250000.f;
 				physics.add_force(world_forward * boost_force_N * m_boost_axis);
 
-				// apply roll!
-				auto const roll_torque = 10000.f;
-				physics.add_torque(world_forward * roll_torque * m_roll_axis);
-				
-				// apply pitch!
+				// apply pitch
 				auto const pitch_torque = 10000.f;
 				physics.add_torque(world_right * pitch_torque * m_pitch_axis);
+
+				// apply roll
+				auto const roll_torque = 10000.f;
+				physics.add_torque(world_forward * roll_torque * m_roll_axis);
+								
+				// apply yaw
+				auto const yaw_torque = 5000.f;
+				physics.add_torque(-world_up * yaw_torque * m_yaw_axis);
 
 				auto const rho_kg_per_m3 = 1.255f; // density of air
 
@@ -166,40 +171,10 @@ namespace bump
 					physics.add_force(transform_vector_to_world(transform, Fd_kg_m_per_s));
 				}
 
-				// rotational drag
-				{
-					// Td (drag torque) = rho * (2 * pi * w * r)^2 * A * r * Cd, where:
-					// rho = fluid mass density (mass / volume)
-					// w = angular velocity relative to fluid
-					// r = radius
-					// A = effective area
-					// Cd = drag coefficient (based on object shape)
+				// todo: rotational drag?
 
-					// for this implementation:
-					// Ar = area multiplied by radius
-					// Cr = distance from axis (multiplier for speed)
 
-					auto const w_per_s = transform_vector_to_local(transform, physics.get_angular_velocity());
 
-					// if (!glm::all(glm::epsilonEqual(w_per_s, glm::vec3(0.f), glm::epsilon<float>())))
-					// {
-					// 	auto const Cr_m = glm::vec3{ 1.75f, 1.f, 2.f }; // very approx average radius for surface around each axis
-					// 	auto const Cd = glm::vec3{ 1.2f, 0.4f, 0.75f }; // unitless shape multipliers
-					// 	auto const Ar_m3 = glm::vec3{ 40.f, 24.f, 28.f }; // very approx surface area * radius
-
-					// 	// project onto axis of rotation
-					// 	auto const Cr_m_w = glm::dot(Cr_m, glm::normalize(w_per_s));
-					// 	auto const Cd_w = glm::dot(Cd, glm::normalize(w_per_s));
-					// 	auto const Ar_m3_w = glm::dot(Ar_m3, glm::normalize(w_per_s));
-
-					// 	auto Td_w = rho_kg_per_m3 * glm::pow(2.f * glm::pi<float>() * glm::length(w_per_s) * Cr_m_w, 2.f) * Ar_m3_w * Cd_w;
-					// 	auto Td = - glm::normalize(w_per_s) * Td_w;
-
-					// 	//std::cout << Cr_m_w << " " << Cd_w << " " << Ar_m3_w << " " << Td_w << std::endl;
-					// 	std::cout << glm::to_string(w_per_s) << " " << Td_w << " " << glm::to_string(Td) << std::endl;
-					// 	physics.add_torque(transform_vector_to_world(transform, Td));
-					// }
-				}
 
 				// boost:
 					// todo: judder? (smooth, judder at mid speeds, smooth at high speeds).
@@ -233,8 +208,17 @@ namespace bump
 			{
 				registry.emplace<ecs::basic_renderable>(player, app.m_assets.m_models.at("player_ship"), app.m_assets.m_shaders.at("player_ship"));
 				auto& player_physics = registry.emplace<ecs::physics_component>(player);
-				player_physics.set_mass(4000.f);
-				player_physics.set_local_inertia_tensor(ecs::make_sphere_inertia_tensor(4000.f, 3.f));
+				player_physics.set_mass(2000.f);
+
+				auto T = glm::mat3(glm::rotate(glm::radians(90.f), glm::vec3{ 1.f, 0.f, 0.f }));
+				auto I1 = T * ecs::make_cylinder_inertia_tensor(2000.f, 1.f, 3.f);
+				auto I2 = ecs::make_cuboid_inertia_tensor(2000.f, glm::vec3{ 5.f, 1.f, 3.f });
+				player_physics.set_local_inertia_tensor(I1 + I2);
+				player_physics.set_linear_damping(0.99f);
+				player_physics.set_angular_damping(0.998f);
+
+				auto& player_collision = registry.emplace<ecs::collision_component>(player);
+				player_collision.set_shape({ ecs::sphere_shape{ 5.f } });
 			}
 
 			auto controls = player_controls();
@@ -320,10 +304,19 @@ namespace bump
 						{
 							if (e.type == SDL_CONTROLLERAXISMOTION && e.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
 								controls.m_boost_axis = (float)e.caxis.value / 32767;
-							else if (e.type == SDL_CONTROLLERAXISMOTION && e.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
-								controls.m_roll_axis = e.caxis.value > 0 ? (float)e.caxis.value / 32767.f : (float)e.caxis.value / 32768.f;
+							
 							else if (e.type == SDL_CONTROLLERAXISMOTION && e.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
 								controls.m_pitch_axis = e.caxis.value > 0 ? (float)e.caxis.value / 32767.f : (float)e.caxis.value / 32768.f;
+
+							else if (e.type == SDL_CONTROLLERAXISMOTION && e.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
+								controls.m_roll_axis = e.caxis.value > 0 ? (float)e.caxis.value / 32767.f : (float)e.caxis.value / 32768.f;
+							
+							// ...
+
+							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_SPACE)
+								controls.m_boost_axis = 1.f;
+							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_SPACE)
+								controls.m_boost_axis = 0.f;
 
 							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
 								controls.m_pitch_axis = -1.f;
@@ -333,6 +326,7 @@ namespace bump
 								controls.m_pitch_axis = 1.f;
 							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_s)
 								controls.m_pitch_axis = 0.f;
+
 							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a)
 								controls.m_roll_axis = -1.f;
 							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_a)
@@ -341,6 +335,7 @@ namespace bump
 								controls.m_roll_axis = 1.f;
 							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_d)
 								controls.m_roll_axis = 0.f;
+
 						}
 
 						// if (!paused)
@@ -413,9 +408,9 @@ namespace bump
 						physics_system.update(registry, dt);
 
 						// update camera position
-						//auto transform = player_physics.get_transform();
-						//translate_in_local(transform, { 0.f, 3.f, 50.f });
-						//scene_camera.m_transform = transform;
+						auto transform = player_physics.get_transform();
+						translate_in_local(transform, { 0.f, 2.f, 15.f });
+						scene_camera.m_transform = transform;
 						
 						// update basic_renderable transforms for physics objects
 						{

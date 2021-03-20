@@ -2,6 +2,7 @@
 
 #include "bump_camera.hpp"
 #include "bump_die.hpp"
+#include "bump_game_ecs_physics.hpp"
 #include "bump_mbp_model.hpp"
 #include "bump_transform.hpp"
 
@@ -38,7 +39,7 @@ namespace bump
 
 			// create asteroids
 			auto spacing = 50.f;
-			auto grid_size = glm::ivec3(10);
+			auto grid_size = glm::ivec3(4);
 
 			auto rng = std::mt19937(std::random_device()());
 			auto base_color = glm::vec3(0.8f);
@@ -58,6 +59,18 @@ namespace bump
 
 						auto id = registry.create();
 						registry.emplace<ecs::asteroid_data>(id, transform, color);
+
+						// TODO:
+						// update asteroid transform from physics component!
+						// set physics component position at start!
+						// add random velocity to asteroids at start
+
+						auto& physics = registry.emplace<ecs::physics_component>(id);
+						physics.set_mass(200000.f);
+						physics.set_local_inertia_tensor(ecs::make_sphere_inertia_tensor(200000.f, 10.f));
+						
+						auto& collision = registry.emplace<ecs::collision_component>(id);
+						collision.set_shape({ ecs::sphere_shape{ 10.f } });
 					}
 				}
 			}
