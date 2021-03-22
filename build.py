@@ -298,7 +298,7 @@ class PlatformMSVC:
 		self.write_static_lib(n, build_type, stb, '0')
 
 		glm = ProjectStaticLib.from_name('glm', self, build_type)
-		glm.defines = [ 'GLM_FORCE_EXPLICIT_CTOR', 'GLM_FORCE_XYZW_ONLY', 'GLM_FORCE_SIZE_T_LENGTH', 'GLM_FORCE_SILENT_WARNINGS' ]
+		glm.defines = [ 'GLM_FORCE_EXPLICIT_CTOR', 'GLM_FORCE_XYZW_ONLY', 'GLM_FORCE_SIZE_T_LENGTH', 'GLM_FORCE_SILENT_WARNINGS', 'GLM_FORCE_CTOR_INIT=2' ]
 		glm.inc_dirs = [ glm.code_dir ]
 		self.write_static_lib(n, build_type, glm, '4')
 

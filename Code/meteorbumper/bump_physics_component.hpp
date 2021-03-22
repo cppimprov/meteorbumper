@@ -4,60 +4,15 @@
 #include "bump_time.hpp"
 #include "bump_transform.hpp"
 
-#include <entt.hpp>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-
-#include <variant>
 
 namespace bump
 {
-
-	namespace game::ecs
-	{
-
-		inline glm::mat3 make_sphere_inertia_tensor(float mass, float radius)
-		{
-			auto s = (2.f * mass * (radius * radius)) / 5.f;
-			return glm::mat3(s);
-		}
-
-		inline glm::mat3 make_cuboid_inertia_tensor(float mass, glm::vec3 size)
-		{
-			auto m = mass / 12.f;
-			auto s = size * size;
-			return glm::mat3(glm::scale(glm::vec3{ m * (s.y + s.z), m * (s.x + s.z), m * (s.x + s.y) }));
-		}
-
-		inline glm::mat3 make_cylinder_inertia_tensor(float mass, float radius, float height)
-		{
-			auto v1 = (mass / 12.f) * (height * height) + (mass / 4.f) * (radius * radius);
-			auto v2 = (mass / 2.f) * (radius * radius);
-
-			return glm::mat3(glm::scale(glm::vec3{ v1, v2, v1 }));
-		}
-
-		class physics_component;
 	
-		class physics_system
-		{
-		public:
-
-			physics_system(high_res_duration_t update_time = 
-				std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f / 120.f)));
-
-			void update(entt::registry& registry, high_res_duration_t dt);
-
-		private:
-
-			high_res_duration_t m_update_time;
-			high_res_duration_t m_accumulator;
-
-			// todo: collision pairs / data
-			// todo: force generators
-		};
-
+	namespace physics
+	{
+		
 		class physics_component
 		{
 		public:
@@ -135,44 +90,7 @@ namespace bump
 			glm::vec3 m_force;
 			glm::vec3 m_torque;
 		};
-
-		struct sphere_shape
-		{
-			float m_radius = 1.f;
-		};
-
-		struct cuboid_shape
-		{
-			glm::vec3 m_half_size;
-		};
-
-		class collision_component
-		{
-		public:
-
-			using shape_type = std::variant<sphere_shape, cuboid_shape>;
-
-			collision_component();
-
-			void set_shape(shape_type shape) { m_shape = shape; }
-			shape_type get_shape() const { return m_shape; }
-
-			void set_restitution(float value) { m_restitution = glm::clamp(value, 0.f, 1.f); }
-			float get_restitution() const { return m_restitution; }
-			
-		private:
-
-			float m_restitution;
-			shape_type m_shape;
-		};
-
-		struct collision_data
-		{
-			glm::vec3 m_point;
-			glm::vec3 m_normal;
-			float m_penetration;
-		};
-
-	} // game::ecs
+		
+	} // physics
 	
 } // bump

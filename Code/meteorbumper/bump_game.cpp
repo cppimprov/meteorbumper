@@ -5,7 +5,6 @@
 #include "bump_game_app.hpp"
 #include "bump_game_asteroids.hpp"
 #include "bump_game_debug_camera.hpp"
-#include "bump_game_ecs_physics.hpp"
 #include "bump_game_ecs_render.hpp"
 #include "bump_game_skybox.hpp"
 #include "bump_gl.hpp"
@@ -13,6 +12,7 @@
 #include "bump_log.hpp"
 #include "bump_mbp_model.hpp"
 #include "bump_narrow_cast.hpp"
+#include "bump_physics.hpp"
 #include "bump_render_text.hpp"
 #include "bump_time.hpp"
 #include "bump_timer.hpp"
@@ -120,7 +120,7 @@ namespace bump
 			float m_roll_axis = 0.f;
 			float m_yaw_axis = 0.f;
 
-			void apply(ecs::physics_component& physics, high_res_duration_t dt)
+			void apply(physics::physics_component& physics, high_res_duration_t dt)
 			{
 				auto dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
 				(void)dt_s;
@@ -138,42 +138,51 @@ namespace bump
 				auto const world_forward = forwards(transform);
 				
 				// apply boost
-				auto const boost_force_N = 250000.f;
+				auto const boost_force_N = 2500.f;
 				physics.add_force(world_forward * boost_force_N * m_boost_axis);
 
 				// apply pitch
-				auto const pitch_torque = 10000.f;
+				auto const pitch_torque = 1000.f;
 				physics.add_torque(world_right * pitch_torque * m_pitch_axis);
 
 				// apply roll
-				auto const roll_torque = 10000.f;
+				auto const roll_torque = 1000.f;
 				physics.add_torque(world_forward * roll_torque * m_roll_axis);
 								
 				// apply yaw
-				auto const yaw_torque = 5000.f;
+				auto const yaw_torque = 500.f;
 				physics.add_torque(-world_up * yaw_torque * m_yaw_axis);
 
 				auto const rho_kg_per_m3 = 1.255f; // density of air
 
-				// linear drag
+				// simple linear drag
 				{
-					// Fd = 0.5 * v^2 * rho * Cd * A;
-					// v = object velocity relative to fluid (m/s)
-					// rho = fluid density (kg/m3)
-					// Cd = drag coefficient (unitless - related to shape) 0.05 is v. low, 2.0 is v. high
-					// A = cross-sectional area (m2)
-					auto const v_m_per_s = transform_vector_to_local(transform, physics.get_velocity());
-					auto const Cd = glm::vec3{ 0.6f, 1.5f, 0.05f }; // unitless shape multiplier
-					auto const A_m2 = glm::vec3{ 4.f, 20.f, 2.5f }; // approx cross-sectional area
-					auto Fd_kg_m_per_s = 0.5f * v_m_per_s * v_m_per_s * rho_kg_per_m3 * Cd * A_m2 * -glm::sign(v_m_per_s);
+					auto const k1 = 2.f;
+					auto const k2 = 0.2f;
+					auto const v = physics.get_velocity();
+					auto const l = glm::length(v);
 
-					//std::cout << glm::to_string(v_m_per_s) << " " << glm::to_string(Fd) << std::endl;
-					physics.add_force(transform_vector_to_world(transform, Fd_kg_m_per_s));
+					if (!glm::epsilonEqual(l, 0.f, glm::epsilon<float>()))
+					{
+						auto drag_factor = k1 * l + k2 * l * l;
+						auto drag = -glm::normalize(v) * drag_factor;
+						physics.add_force(drag);
+					}
 				}
 
-				// todo: rotational drag?
+				// lower damping for lower velocity
+				{
+					auto const min_damping = 0.99999f;
+					auto const max_damping = 0.998f;
+					auto const min_damping_speed = 5.f;
+					auto const max_damping_speed = 50.f;
+					auto const speed = glm::length(physics.get_velocity());
+					auto const speed_factor = glm::clamp((speed - min_damping_speed) / (max_damping_speed - min_damping_speed), 0.f, 1.f);
+					auto const damping = glm::mix(min_damping, max_damping, speed_factor);
 
-
+					//std::cout << glm::length(physics.get_velocity()) << " " << damping << std::endl;
+					physics.set_linear_damping(damping);
+				}
 
 
 				// boost:
@@ -182,12 +191,12 @@ namespace bump
 
 		};
 
+
+
 		gamestate do_start(app& app)
 		{
-			app.m_window.set_cursor_mode(sdl::window::cursor_mode::RELATIVE);
-
 			auto registry = entt::registry();
-			auto physics_system = ecs::physics_system();
+			auto physics_system = physics::physics_system();
 
 			auto scene_camera = perspective_camera();
 			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 50.f });
@@ -207,18 +216,15 @@ namespace bump
 			auto player = registry.create();
 			{
 				registry.emplace<ecs::basic_renderable>(player, app.m_assets.m_models.at("player_ship"), app.m_assets.m_shaders.at("player_ship"));
-				auto& player_physics = registry.emplace<ecs::physics_component>(player);
-				player_physics.set_mass(2000.f);
+				auto& player_physics = registry.emplace<physics::physics_component>(player);
+				player_physics.set_mass(20.f);
 
-				auto T = glm::mat3(glm::rotate(glm::radians(90.f), glm::vec3{ 1.f, 0.f, 0.f }));
-				auto I1 = T * ecs::make_cylinder_inertia_tensor(2000.f, 1.f, 3.f);
-				auto I2 = ecs::make_cuboid_inertia_tensor(2000.f, glm::vec3{ 5.f, 1.f, 3.f });
-				player_physics.set_local_inertia_tensor(I1 + I2);
-				player_physics.set_linear_damping(0.99f);
+				player_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(20.f, 10.f));
+				player_physics.set_linear_damping(0.998f);
 				player_physics.set_angular_damping(0.998f);
 
-				auto& player_collision = registry.emplace<ecs::collision_component>(player);
-				player_collision.set_shape({ ecs::sphere_shape{ 5.f } });
+				auto& player_collision = registry.emplace<physics::collision_component>(player);
+				player_collision.set_shape({ physics::sphere_shape{ 5.f } });
 			}
 
 			auto controls = player_controls();
@@ -236,162 +242,33 @@ namespace bump
 			{
 				// input
 				{
-					SDL_Event e;
+					auto quit = false;
+					auto callbacks = input::input_callbacks();
+					callbacks.m_quit = [&] () { quit = true; };
+					callbacks.m_pause = [&] (bool pause) { paused = pause; if (!paused) timer = frame_timer(); };
 
-					while (SDL_PollEvent(&e))
+					callbacks.m_input = [&] (input::control_id id, input::raw_input in)
 					{
-						// quitting:
-						if (e.type == SDL_QUIT)
-						{
-							app.m_window.set_cursor_mode(sdl::window::cursor_mode::FREE);
-							return { };
-						}
+						if (paused) return;
 
-						if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_ESCAPE)
-						{
-							app.m_window.set_cursor_mode(sdl::window::cursor_mode::FREE);
-							return { };
-						}
+						using input::control_id;
 
-						if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN && (e.key.keysym.mod & KMOD_LALT) != 0)
-						{
-							auto mode = app.m_window.get_display_mode();
-							using display_mode = sdl::window::display_mode;
-							
-							if (mode != display_mode::FULLSCREEN)
-								app.m_window.set_display_mode(mode == display_mode::BORDERLESS_WINDOWED ? display_mode::WINDOWED : display_mode::BORDERLESS_WINDOWED);
-							
-							continue;
-						}
+						if (id == control_id::GAMEPADTRIGGER_LEFT) controls.m_boost_axis = in.m_value;
+						else if (id == control_id::GAMEPADSTICK_LEFTY) controls.m_pitch_axis = in.m_value;
+						else if (id == control_id::GAMEPADSTICK_LEFTX) controls.m_roll_axis = in.m_value;
+						else if (id == control_id::KEYBOARDKEY_SPACE) controls.m_boost_axis = in.m_value;
+						else if (id == control_id::KEYBOARDKEY_W) controls.m_pitch_axis = -in.m_value;
+						else if (id == control_id::KEYBOARDKEY_S) controls.m_pitch_axis = in.m_value;
+						else if (id == control_id::KEYBOARDKEY_A) controls.m_roll_axis = -in.m_value;
+						else if (id == control_id::KEYBOARDKEY_D) controls.m_roll_axis = in.m_value;
 
-						// window focus and grabbing:
-						if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
-						{
-							paused = true;
+						if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
+					};
 
-							app.m_window.set_cursor_mode(sdl::window::cursor_mode::FREE);
-							continue;
-						}
-						if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-						{
-							app.m_window.set_cursor_mode(sdl::window::cursor_mode::RELATIVE);
+					app.m_input_handler.poll_input(callbacks);
 
-							paused = false;
-							timer = frame_timer();
-							continue;
-						}
-
-						// controller connection / disconnection:
-						if (e.type == SDL_CONTROLLERDEVICEADDED)
-						{
-							gamepads.push_back(sdl::gamepad(e.cdevice.which));
-							continue;
-						}
-						if (e.type == SDL_CONTROLLERDEVICEREMOVED)
-						{
-							auto entry = std::find_if(gamepads.begin(), gamepads.end(),
-								[&] (sdl::gamepad const& p) { return p.get_joystick_id() == e.cdevice.which; });
-							
-							die_if(entry == gamepads.end());
-
-							gamepads.erase(entry);
-							continue;
-						}
-						// todo: how to handle SDL_CONTROLLERDEVICEREMAPPED events?
-
-						// player input:
-						if (!paused)
-						{
-							if (e.type == SDL_CONTROLLERAXISMOTION && e.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
-								controls.m_boost_axis = (float)e.caxis.value / 32767;
-							
-							else if (e.type == SDL_CONTROLLERAXISMOTION && e.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
-								controls.m_pitch_axis = e.caxis.value > 0 ? (float)e.caxis.value / 32767.f : (float)e.caxis.value / 32768.f;
-
-							else if (e.type == SDL_CONTROLLERAXISMOTION && e.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
-								controls.m_roll_axis = e.caxis.value > 0 ? (float)e.caxis.value / 32767.f : (float)e.caxis.value / 32768.f;
-							
-							// ...
-
-							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_SPACE)
-								controls.m_boost_axis = 1.f;
-							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_SPACE)
-								controls.m_boost_axis = 0.f;
-
-							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
-								controls.m_pitch_axis = -1.f;
-							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_w)
-								controls.m_pitch_axis = 0.f;
-							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s)
-								controls.m_pitch_axis = 1.f;
-							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_s)
-								controls.m_pitch_axis = 0.f;
-
-							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a)
-								controls.m_roll_axis = -1.f;
-							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_a)
-								controls.m_roll_axis = 0.f;
-							else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d)
-								controls.m_roll_axis = 1.f;
-							else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_d)
-								controls.m_roll_axis = 0.f;
-
-						}
-
-						// if (!paused)
-						// {
-						// 	if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_w)
-						// 	{
-						// 		controls.m_pitch_down = true;
-						// 		continue;
-						// 	}
-						// 	if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_w)
-						// 	{
-						// 		controls.m_pitch_down = false;
-						// 		continue;
-						// 	}
-						// 	if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_s)
-						// 	{
-						// 		controls.m_pitch_up = true;
-						// 		continue;
-						// 	}
-						// 	if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_s)
-						// 	{
-						// 		controls.m_pitch_up = false;
-						// 		continue;
-						// 	}
-						// 	if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_a)
-						// 	{
-						// 		controls.m_roll_left = true;
-						// 		continue;
-						// 	}
-						// 	if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_a)
-						// 	{
-						// 		controls.m_roll_left = false;
-						// 		continue;
-						// 	}
-						// 	if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d)
-						// 	{
-						// 		controls.m_roll_right = true;
-						// 		continue;
-						// 	}
-						// 	if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_d)
-						// 	{
-						// 		controls.m_roll_right = false;
-						// 		continue;
-						// 	}
-						// 	if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_SPACE)
-						// 	{
-						// 		controls.m_boost = true;
-						// 		continue;
-						// 	}
-						// 	if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_SPACE)
-						// 	{
-						// 		controls.m_boost = false;
-						// 		continue;
-						// 	}
-						// }
-					}
+					if (quit)
+						return { };
 				}
 
 				// update
@@ -401,7 +278,7 @@ namespace bump
 					if (!paused)
 					{
 						// apply player input:
-						auto& player_physics = registry.get<ecs::physics_component>(player);
+						auto& player_physics = registry.get<physics::physics_component>(player);
 						controls.apply(player_physics, dt);
 
 						// physics:
@@ -414,10 +291,13 @@ namespace bump
 						
 						// update basic_renderable transforms for physics objects
 						{
-							auto view = registry.view<ecs::physics_component, ecs::basic_renderable>();
+							auto view = registry.view<physics::physics_component, ecs::basic_renderable>();
 							for (auto id : view)
-								view.get<ecs::basic_renderable>(id).set_transform(view.get<ecs::physics_component>(id).get_transform());
+								view.get<ecs::basic_renderable>(id).set_transform(view.get<physics::physics_component>(id).get_transform());
 						}
+
+						// update asteroid transforms
+						asteroids.update(registry);
 					}
 				}
 
@@ -466,6 +346,10 @@ namespace bump
 
 			return { };
 		}
+
+
+
+
 
 	} // game
 	

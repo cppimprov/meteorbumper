@@ -22,47 +22,87 @@ int main(int , char* [])
 
 // todo next:
 
-	// disable glm default constructors!!! make sure values are always initialized.
-	// move physics out of ecs (and game) namespace into physics namespace
-
-	// more physics collision shapes...
-
-	// asteroids!
-		// physics component for each asteroid!
-		// asteroid motion
-		// asteroid collision!
-		// randomly deform sphere for each asteroid?
-		// more "normal" colors
+	// start screen:
+		// separate from game state
+		// draw a single "asteroid" in the center of the screen (just a sphere for now)
+		// make a nice text shader
+		// add some background music
+		// key press or button press goes to game state
+	
+// design:
 
 	// camera:
-		// spring attaching camera to fixed offset from player
-		// which direction should the spring be? (same as fixed offset, or just backwards?)
+		// top-down, center on player
+		// [stretch: if player moving quickly, position camera ahead slightly to increase visibility]
 	
-	// player physics:
-		// add collision!
-		// decrease damping at lower velocities
-		// aiming w/ right stick, add yaw / pitch from aiming (if aiming past the edge of the screen?)
-		// click to fire.
-	
-	
+	// player:
+		// model
+			// visually more similar to a "helicopter" (no rotors) - stubby wings
+			// add lasers!
+
+		// controls
+			// rotate model to face mouse -> directly set position, rather than using torque?
+			// a, d strafe, w, s control speed, 
+			// [stretch: space to break hard?]
+			// mouse 1 to shoot?
+		
+		// shields / armor system
+
+	// weapons:
+		// lasers
+		// missiles
+		// [stretch: others...]
+
+	// physics:
+		// add cuboid shape collision
+		// add ray shape and collision
+		// add cylinder shape and collision
+		// add arbitrary mesh collision (for space station)
+		// [stretch: better broadphase - quadtree / octree?]
+
 	// level:
-		// cylindrical force-field to keep player in range -> collidable
-		// force field to push player downwards? (might not need it with fixed max angle...)
+		// space station
+			// agglomerate of space station pieces.
+			// also docked ships.
+		
+		// model reusable space-station parts in blender
+		// export as one model for now!
+
+		// export physics collision shape as one model? (needs arbitrary mesh collision)
+
+	// asteroids:
+		// better random-color generation.
+		// can we randomly deform a sphere for each asteroid? (needs arbitrary mesh collision)
+		// take damage from weapons and split into smaller asteroids / debris
+		// damage player / space-station
 	
-	// gameplay demo:
-		// load and experiment with tunnel mechanics.
-		// rotation around axis?
+	// effects:
+		// laser / weapon effects
+		// smoke trails
+		// engine trails (trails / particles)
+		// explosions
+		// space dust / speed effect
 
-	// lighting
-	// reflection / refraction materials?
+	// rendering:
+		// lighting
+		// [stretch: background (distant planet / sun?, other space stations)]
+		// [stretch: reflection effects off some materials? (glass / shiny metal)]
+	
+	// ui:
+		// player status
+		// weapons status (cooldown effects)
+		// minimap
+		// space-station health
+		// score
 
-	// intro music!
-
-
-
-// sometime:
-
-	// ui::cell
-		// origin
-		// rel_pos, size
-		// abs_pos
+	// sound:
+		// weapon effects
+		// ui effects
+		// explosion sounds
+		// hit sounds
+		// background music
+	
+	// intro screen
+		// nice text shader
+		// background music
+		// asteroid travelling through space

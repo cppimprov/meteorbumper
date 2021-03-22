@@ -20,6 +20,12 @@ namespace bump
 
 			explicit basic_renderable(mbp_model const& model, gl::shader_program const& shader);
 
+			basic_renderable(basic_renderable const&) = delete;
+			basic_renderable& operator=(basic_renderable const&) = delete;
+			
+			basic_renderable(basic_renderable&&) = default;
+			basic_renderable& operator=(basic_renderable&&) = default;
+
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
 			void set_transform(glm::mat4 const& transform) { m_transform = transform; }

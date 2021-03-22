@@ -33,6 +33,8 @@ namespace bump
 
 			explicit asteroid_field(entt::registry& registry, mbp_model const& model, gl::shader_program const& shader);
 
+			void update(entt::registry& registry);
+
 			void render(entt::registry& registry, gl::renderer& renderer, camera_matrices const& matrices);
 
 		private:

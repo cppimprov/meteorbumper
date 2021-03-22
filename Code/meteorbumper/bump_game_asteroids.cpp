@@ -2,8 +2,8 @@
 
 #include "bump_camera.hpp"
 #include "bump_die.hpp"
-#include "bump_game_ecs_physics.hpp"
 #include "bump_mbp_model.hpp"
+#include "bump_physics.hpp"
 #include "bump_transform.hpp"
 
 #include <random>
@@ -53,7 +53,8 @@ namespace bump
 					for (auto x = 0; x != grid_size.x; ++x)
 					{
 						auto transform = glm::mat4(1.f);
-						set_position(transform, glm::vec3(x, y, -(z + 1)) * spacing);
+						auto position = glm::vec3(x, y, -(z + 1)) * spacing;
+						set_position(transform, position);
 						
 						auto color = base_color + glm::vec3(dist(rng), dist(rng), dist(rng)) * max_color_offset;
 
@@ -62,18 +63,26 @@ namespace bump
 
 						// TODO:
 						// update asteroid transform from physics component!
-						// set physics component position at start!
 						// add random velocity to asteroids at start
 
-						auto& physics = registry.emplace<ecs::physics_component>(id);
-						physics.set_mass(200000.f);
-						physics.set_local_inertia_tensor(ecs::make_sphere_inertia_tensor(200000.f, 10.f));
+						auto& physics = registry.emplace<physics::physics_component>(id);
+						physics.set_position(position);
+						physics.set_mass(2000.f);
+						physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(200.f, 10.f));
 						
-						auto& collision = registry.emplace<ecs::collision_component>(id);
-						collision.set_shape({ ecs::sphere_shape{ 10.f } });
+						auto& collision = registry.emplace<physics::collision_component>(id);
+						collision.set_shape({ physics::sphere_shape{ 10.f } });
 					}
 				}
 			}
+		}
+
+		void asteroid_field::update(entt::registry& registry)
+		{
+			auto view = registry.view<ecs::asteroid_data, physics::physics_component>();
+
+			for (auto id : view)
+				view.get<ecs::asteroid_data>(id).m_transform = view.get<physics::physics_component>(id).get_transform();
 		}
 
 		void asteroid_field::render(entt::registry& registry, gl::renderer& renderer, camera_matrices const& matrices)
