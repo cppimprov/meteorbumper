@@ -16,6 +16,11 @@ namespace bump
 
 			auto const sounds = std::vector<sound_metadata>{ };
 
+			auto const music = std::vector<music_metadata>
+			{
+				{ "intro", "intro.wav" },
+			};
+
 			auto const shaders = std::vector<shader_metadata>
 			{
 				{ "press_start", { "text_quad.vert", "text_quad.frag" } },
@@ -47,7 +52,7 @@ namespace bump
 			m_gl_context(m_window),
 			m_glew_context(),
 			m_renderer(),
-			m_assets(load_assets(*this, fonts, sounds, shaders, models, cubemaps))
+			m_assets(load_assets(*this, fonts, sounds, music, shaders, models, cubemaps))
 		{
 			m_window.set_min_size({ 640, 360 });
 			m_window.set_cursor_mode(sdl::window::cursor_mode::RELATIVE);

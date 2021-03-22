@@ -2,6 +2,7 @@
 
 #include "bump_font_asset.hpp"
 #include "bump_sdl_mixer_chunk.hpp"
+#include "bump_sdl_mixer_music.hpp"
 #include "bump_gl_shader.hpp"
 #include "bump_mbp_model.hpp"
 #include "bump_gl_texture.hpp"
@@ -33,6 +34,12 @@ namespace bump
 			std::string m_filename;
 		};
 
+		struct music_metadata
+		{
+			std::string m_name;
+			std::string m_filename;
+		};
+
 		struct shader_metadata
 		{
 			std::string m_name;
@@ -57,6 +64,7 @@ namespace bump
 
 			std::unordered_map<std::string, font::font_asset> m_fonts;
 			std::unordered_map<std::string, sdl::mixer_chunk> m_sounds;
+			std::unordered_map<std::string, sdl::mixer_music> m_music;
 			std::unordered_map<std::string, gl::shader_program> m_shaders;
 			std::unordered_map<std::string, mbp_model> m_models;
 			std::unordered_map<std::string, gl::texture_cubemap> m_cubemaps;
@@ -65,6 +73,7 @@ namespace bump
 		assets load_assets(app& app, 
 			std::vector<font_metadata> const& fonts,
 			std::vector<sound_metadata> const& sounds,
+			std::vector<music_metadata> const& music,
 			std::vector<shader_metadata> const& shaders,
 			std::vector<model_metadata> const& models,
 			std::vector<cubemap_metadata> const& cubemaps

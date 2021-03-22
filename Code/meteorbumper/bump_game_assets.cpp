@@ -52,6 +52,7 @@ namespace bump
 		assets load_assets(app& app, 
 			std::vector<font_metadata> const& fonts,
 			std::vector<sound_metadata> const& sounds,
+			std::vector<music_metadata> const& music,
 			std::vector<shader_metadata> const& shaders,
 			std::vector<model_metadata> const& models,
 			std::vector<cubemap_metadata> const& cubemaps)
@@ -84,6 +85,20 @@ namespace bump
 					if (!out.m_sounds.insert({ metadata.m_name, std::move(chunk) }).second)
 					{
 						log_error("load_assets(): duplicate sound id: " + metadata.m_name);
+						die(); 
+					}
+				}
+			}
+			
+			// load music:
+			{
+				for (auto const& metadata : music)
+				{
+					auto chunk = sdl::mixer_music("data/music/" + metadata.m_filename);
+
+					if (!out.m_music.insert({ metadata.m_name, std::move(chunk) }).second)
+					{
+						log_error("load_assets(): duplicate music id: " + metadata.m_name);
 						die(); 
 					}
 				}

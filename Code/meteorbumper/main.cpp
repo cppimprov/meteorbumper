@@ -23,10 +23,12 @@ int main(int , char* [])
 // todo next:
 
 	// start screen:
-		// draw a single "asteroid" in the center of the screen (just a sphere for now)
 		// make a nice text shader
-		// add some background music
-		// key press or button press goes to game state
+		// create asteroid swarm
+			// one asteroid in center of screen
+			// camera rotates slowly around that asteroid
+			// other asteroids "follow" the first one?
+			// (space dust shows movement)
 	
 // design:
 
@@ -104,4 +106,4 @@ int main(int , char* [])
 	// intro screen
 		// nice text shader
 		// background music
-		// asteroid travelling through space
+		// asteroid(s) travelling through space

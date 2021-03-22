@@ -345,6 +345,10 @@ namespace bump
 
 		gamestate do_start(app& app)
 		{
+			auto const& intro_music = app.m_assets.m_music.at("intro");
+			app.m_mixer_context.play_music(intro_music);
+			app.m_mixer_context.set_music_volume(MIX_MAX_VOLUME / 2);
+
 			auto scene_camera = perspective_camera();
 			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 50.f });
 
@@ -391,7 +395,10 @@ namespace bump
 						return { };
 
 					if (enter_game)
+					{
+						app.m_mixer_context.stop_music();
 						return { do_game };
+					}
 				}
 
 				// todo: update
