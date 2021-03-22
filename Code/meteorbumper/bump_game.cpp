@@ -193,7 +193,7 @@ namespace bump
 
 
 
-		gamestate do_start(app& app)
+		gamestate do_game(app& app)
 		{
 			auto registry = entt::registry();
 			auto physics_system = physics::physics_system();
@@ -231,12 +231,8 @@ namespace bump
 
 			auto asteroids = asteroid_field(registry, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
 
-			auto press_start = press_start_text(app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("press_start"));
-
 			auto paused = false;
 			auto timer = frame_timer();
-
-			std::vector<sdl::gamepad> gamepads;
 
 			while (true)
 			{
@@ -262,7 +258,7 @@ namespace bump
 						else if (id == control_id::KEYBOARDKEY_A) controls.m_roll_axis = -in.m_value;
 						else if (id == control_id::KEYBOARDKEY_D) controls.m_roll_axis = in.m_value;
 
-						if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
+						else if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
 					};
 
 					app.m_input_handler.poll_input(callbacks);
@@ -335,6 +331,97 @@ namespace bump
 					}
 
 					// render ui
+					//auto ui_camera_matrices = camera_matrices(ui_camera);
+					//...
+
+					app.m_window.swap_buffers();
+				}
+
+				timer.tick();
+			}
+
+			return { };
+		}
+
+		gamestate do_start(app& app)
+		{
+			auto scene_camera = perspective_camera();
+			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 50.f });
+
+			auto ui_camera = orthographic_camera();
+
+			{
+				auto const size = glm::vec2(app.m_window.get_size());
+				scene_camera.m_projection.m_size = size;
+				scene_camera.m_viewport.m_size = size;
+				ui_camera.m_projection.m_size = size;
+				ui_camera.m_viewport.m_size = size;
+			}
+			
+			auto skybox = game::skybox(app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
+			auto press_start = press_start_text(app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("press_start"));
+
+			auto paused = false;
+			auto timer = frame_timer();
+			
+			while (true)
+			{
+				
+				// input
+				{
+					auto quit = false;
+					auto enter_game = false;
+					auto callbacks = input::input_callbacks();
+					callbacks.m_quit = [&] () { quit = true; };
+					callbacks.m_pause = [&] (bool pause) { paused = pause; if (!paused) timer = frame_timer(); };
+
+					callbacks.m_input = [&] (input::control_id id, input::raw_input in)
+					{
+						if (paused) return;
+
+						using input::control_id;
+
+						if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
+						else enter_game = true;
+					};
+
+					app.m_input_handler.poll_input(callbacks);
+
+					if (quit)
+						return { };
+
+					if (enter_game)
+						return { do_game };
+				}
+
+				// todo: update
+
+				// render
+				{
+					app.m_renderer.clear_color_buffers({ 1.f, 0.f, 0.f, 1.f });
+					app.m_renderer.clear_depth_buffers();
+
+					{
+						auto const size = glm::vec2(app.m_window.get_size());
+						scene_camera.m_projection.m_size = size;
+						scene_camera.m_viewport.m_size = size;
+						ui_camera.m_projection.m_size = size;
+						ui_camera.m_viewport.m_size = size;
+					}
+
+					app.m_renderer.set_viewport({ 0, 0 }, glm::uvec2(app.m_window.get_size()));
+					
+					// render scene
+					{
+						auto scene_camera_matrices = camera_matrices(scene_camera);
+
+						// render skybox
+						skybox.render(app.m_renderer, scene_camera, scene_camera_matrices);
+
+						// render asteroids...
+					}
+
+					// render ui
 					auto ui_camera_matrices = camera_matrices(ui_camera);
 					press_start.render(app.m_renderer, ui_camera_matrices, glm::vec2(app.m_window.get_size()));
 
@@ -346,10 +433,6 @@ namespace bump
 
 			return { };
 		}
-
-
-
-
 
 	} // game
 	

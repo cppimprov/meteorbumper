@@ -23,7 +23,6 @@ int main(int , char* [])
 // todo next:
 
 	// start screen:
-		// separate from game state
 		// draw a single "asteroid" in the center of the screen (just a sphere for now)
 		// make a nice text shader
 		// add some background music
