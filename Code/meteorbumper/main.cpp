@@ -24,6 +24,7 @@ int main(int , char* [])
 
 	// start screen:
 		// make a nice text shader
+			// yellow / red flashy (?), diagonal shiny highlight moves from right to left, pixely
 		// create asteroid swarm
 			// one asteroid in center of screen
 			// camera rotates slowly around that asteroid

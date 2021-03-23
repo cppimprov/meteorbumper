@@ -23,7 +23,8 @@ namespace bump
 
 			auto const shaders = std::vector<shader_metadata>
 			{
-				{ "press_start", { "text_quad.vert", "text_quad.frag" } },
+				{ "text_quad", { "text_quad.vert", "text_quad.frag" } },
+				{ "press_start", { "press_start_text.vert", "press_start_text.frag" } },
 				{ "skybox", { "skybox.vert", "skybox.frag" } },
 				{ "player_ship", { "default_material.vert", "default_material.frag" } },
 				{ "asteroid", { "asteroid.vert", "asteroid.frag" } },
