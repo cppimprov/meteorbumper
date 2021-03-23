@@ -45,7 +45,7 @@ namespace bump
 		{
 		public:
 
-			explicit press_start_text(font::font_asset const& font, gl::shader_program const& shader):
+			explicit press_start_text(font::ft_context const& ft_context, font::font_asset const& font, gl::shader_program const& shader):
 				m_shader(shader),
 				m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
 				m_u_MVP(shader.get_uniform_location("u_MVP")),
@@ -53,7 +53,7 @@ namespace bump
 				m_u_Size(shader.get_uniform_location("u_Size")),
 				m_u_Color(shader.get_uniform_location("u_Color")),
 				m_u_TextTexture(shader.get_uniform_location("u_TextTexture")),
-				m_texture(render_text_to_gl_texture(font, "Press any key to start!").m_texture),
+				m_texture(render_text_outline_to_gl_texture(ft_context, font, "Press any key to start!", 2.0).m_texture),
 				m_vertex_buffer(),
 				m_vertex_array()
 			{
@@ -363,7 +363,7 @@ namespace bump
 			}
 			
 			auto skybox = game::skybox(app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
-			auto press_start = press_start_text(app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("press_start"));
+			auto press_start = press_start_text(app.m_ft_context, app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("press_start"));
 
 			auto paused = false;
 			auto timer = frame_timer();
@@ -386,6 +386,8 @@ namespace bump
 						using input::control_id;
 
 						if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
+						else if (id == control_id::GAMEPADSTICK_LEFTX || id == control_id::GAMEPADSTICK_LEFTY || id == control_id::GAMEPADSTICK_RIGHTX || id == control_id::GAMEPADSTICK_RIGHTY) return;
+						else if (id == control_id::MOUSEPOSITION_X || id == control_id::MOUSEPOSITION_Y || id == control_id::MOUSEMOTION_X || id == control_id::MOUSEMOTION_Y) return;
 						else enter_game = true;
 					};
 

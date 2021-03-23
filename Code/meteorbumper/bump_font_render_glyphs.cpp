@@ -1,6 +1,7 @@
 #include "bump_font_render_glyphs.hpp"
 
 #include "bump_font_conversions.hpp"
+#include "bump_font_ft_context.hpp"
 #include "bump_font_ft_font.hpp"
 #include "bump_font_hb_font.hpp"
 #include "bump_font_hb_shaper.hpp"
@@ -13,6 +14,7 @@
 #include FT_GLYPH_H
 #include FT_OUTLINE_H
 #include FT_BBOX_H
+#include FT_STROKER_H
 
 #include <glm/glm.hpp>
 
@@ -91,7 +93,7 @@ namespace bump
 			return out;
 		}
 
-		std::vector<glyph_image> render_glyphs(ft_font const& ft_font, hb_font const& , hb_shaper const& hb_shaper)
+		std::vector<glyph_image> render_glyphs(ft_context const& ft_context, ft_font const& ft_font, hb_font const& , hb_shaper const& hb_shaper, std::optional<double> stroke_width)
 		{
 			auto const glyph_info = hb_shaper.get_glyph_info();
 			auto const glyph_positions = hb_shaper.get_glyph_positions();
@@ -117,6 +119,19 @@ namespace bump
 
 			auto pen = glm::f64vec2(0.0);
 
+			auto stroker = (FT_Stroker)nullptr;
+
+			if (stroke_width)
+			{
+				if (auto err = FT_Stroker_New(ft_context.get_handle(), &stroker))
+				{
+					log_error("FT_Stroker_New() failed: " + std::string(FT_Error_String(err)));
+					die();
+				}
+
+				FT_Stroker_Set(stroker, (FT_Fixed)(stroke_width.value() * 64.0), FT_STROKER_LINECAP_ROUND, FT_STROKER_LINEJOIN_ROUND, 0);
+			}
+
 			for (auto i = std::size_t{ 0 }; i != glyph_info.size(); ++i)
 			{
 				auto const glyph_index = glyph_info.at(i).codepoint;
@@ -139,10 +154,19 @@ namespace bump
 					die();
 				}
 
+				if (stroke_width)
+				{
+					if (auto err = FT_Glyph_Stroke(&glyph, stroker, true))
+					{
+						log_error("FT_Glyph_Stroke() failed: " + std::string(FT_Error_String(err)));
+						die();
+					}
+				}
+
 				auto const p = (baseline + pen + offset) * 64.0;
 				auto origin = FT_Vector{ (FT_Pos)p.x, (FT_Pos)p.y };
 
-				if (auto err = FT_Glyph_To_Bitmap(&glyph, FT_RENDER_MODE_LIGHT, &origin, false))
+				if (auto err = FT_Glyph_To_Bitmap(&glyph, FT_RENDER_MODE_LIGHT, &origin, true))
 				{
 					log_error("FT_Glyph_To_Bitmap() failed: " + std::string(FT_Error_String(err)));
 					die();
@@ -163,6 +187,9 @@ namespace bump
 
 				pen += advance;
 			}
+
+			if (stroke_width)
+				FT_Stroker_Done(stroker);
 
 			return out;
 		}
