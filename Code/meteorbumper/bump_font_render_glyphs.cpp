@@ -49,13 +49,19 @@ namespace bump
 			return out;
 		}
 
-		void blit_image(image<std::uint8_t>& dst, glm::size2 dst_pos, image<std::uint8_t> const& src)
+		void blit_image(image<std::uint8_t>& dst, glm::size2 dst_pos, image<std::uint8_t> const& src, blit_mode mode)
 		{
 			die_if(dst.channels() != src.channels());
 			die_if(glm::any(glm::greaterThan(dst_pos + src.size(), dst.size())));
 
 			auto const src_pixels = src.data();
 			auto const dst_pixels = dst.data();
+
+			auto const op_add = [] (std::uint8_t dst, std::uint8_t src) { return (std::uint8_t)std::clamp(dst + src, 0, 255); };
+			auto const op_max = [] (std::uint8_t dst, std::uint8_t src) { return std::max(dst, src); };
+
+			using op_t = std::function<std::uint8_t(std::uint8_t, std::uint8_t)>;
+			auto const op = (mode == blit_mode::ADD ? op_t{ op_add } : op_t{ op_max });
 
 			for (auto y = std::size_t{ 0 }; y != src.size().y; ++y)
 			{
@@ -65,12 +71,12 @@ namespace bump
 					auto const dst_index = ((dst_pos.y + y) * dst.size().x + (dst_pos.x + x)) * dst.channels();
 
 					for (auto c = std::size_t{ 0 }; c != src.channels(); ++c)
-						dst_pixels[dst_index + c] = src_pixels[src_index + c];
+						dst_pixels[dst_index + c] = op(dst_pixels[dst_index + c], src_pixels[src_index + c]);
 				}
 			}
 		}
 
-		glyph_image blit_glyphs(std::vector<glyph_image> const& glyphs)
+		glyph_image blit_glyphs(std::vector<glyph_image> const& glyphs, blit_mode mode)
 		{
 			if (glyphs.empty())
 				return { { 0, 0 }, image<std::uint8_t>() };
@@ -88,7 +94,7 @@ namespace bump
 			auto out = glyph_image{ min, image<std::uint8_t>(1, image_size) };
 
 			for (auto const& g : glyphs)
-				blit_image(out.m_image, narrow_cast<glm::size2>(g.m_pos - out.m_pos), g.m_image);
+				blit_image(out.m_image, narrow_cast<glm::size2>(g.m_pos - out.m_pos), g.m_image, mode);
 
 			return out;
 		}

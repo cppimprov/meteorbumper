@@ -24,7 +24,9 @@ namespace bump
 		};
 		
 		std::vector<glyph_image> render_glyphs(ft_context const& ft_context, ft_font const& ft_font, hb_font const& hb_font, hb_shaper const& hb_shaper, std::optional<double> stroke_width = { });
-		glyph_image blit_glyphs(std::vector<glyph_image> const& glyphs);
+		
+		enum class blit_mode { ADD, MAX };
+		glyph_image blit_glyphs(std::vector<glyph_image> const& glyphs, blit_mode mode);
 
 	} // font
 	
