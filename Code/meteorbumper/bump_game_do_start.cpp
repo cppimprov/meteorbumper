@@ -29,11 +29,14 @@ namespace bump
 				m_shader(shader),
 				m_radius(radius),
 				m_position(0.f),
+				m_base_color_rgb(1.f),
+				m_color_variation_hsv(0.f),
 				m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
 				m_u_MVP(shader.get_uniform_location("u_MVP")),
 				m_u_Radius(shader.get_uniform_location("u_Radius")),
 				m_u_Offset(shader.get_uniform_location("u_Offset")),
-				m_u_Color(shader.get_uniform_location("u_Color"))
+				m_u_BaseColorRGB(shader.get_uniform_location("u_BaseColorRGB")),
+				m_u_ColorVariationHSV(shader.get_uniform_location("u_ColorVariationHSV"))
 			{
 				die_if(grid_size == 0);
 
@@ -67,6 +70,12 @@ namespace bump
 			void set_position(glm::vec3 position) { m_position = position; }
 			glm::vec3 get_position() const { return m_position; }
 
+			void set_base_color_rgb(glm::vec3 base_color_rgb) { m_base_color_rgb = base_color_rgb; }
+			glm::vec3 get_base_color_rgb() const { return m_base_color_rgb; }
+
+			void set_color_variation_hsv(glm::vec3 color_variation_hsv) { m_color_variation_hsv = color_variation_hsv; }
+			glm::vec3 get_color_variation_hsv() { return m_color_variation_hsv; }
+
 			void render(gl::renderer& renderer, camera_matrices const& matrices)
 			{
 				// transparency / sorting?
@@ -76,12 +85,9 @@ namespace bump
 				glm::vec3 origin = glm::floor(m_position / diameter) * diameter;
 				glm::vec3 offset = glm::mod(m_position, diameter) / diameter;
 
-				std::cout << glm::to_string(offset) << std::endl;
-
 				auto m = glm::translate(glm::mat4(1.f), origin);
 				auto mvp = matrices.model_view_projection_matrix(m);
 
-				glEnable(GL_PROGRAM_POINT_SIZE); // todo: add mode to renderer!
 				renderer.set_blending(gl::renderer::blending::BLEND);
 
 				renderer.set_program(m_shader);
@@ -89,7 +95,8 @@ namespace bump
 				renderer.set_uniform_4x4f(m_u_MVP, mvp);
 				renderer.set_uniform_1f(m_u_Radius, m_radius);
 				renderer.set_uniform_3f(m_u_Offset, offset);
-				renderer.set_uniform_3f(m_u_Color, glm::vec3{ 1.f, 0.f, 0.f });
+				renderer.set_uniform_3f(m_u_BaseColorRGB, m_base_color_rgb);
+				renderer.set_uniform_3f(m_u_ColorVariationHSV, m_color_variation_hsv);
 
 				renderer.set_vertex_array(m_vertex_array);
 
@@ -106,12 +113,15 @@ namespace bump
 
 			float m_radius;
 			glm::vec3 m_position;
+			glm::vec3 m_base_color_rgb;
+			glm::vec3 m_color_variation_hsv;
 
 			GLint m_in_VertexPosition;
 			GLint m_u_MVP;
 			GLint m_u_Radius;
 			GLint m_u_Offset;
-			GLint m_u_Color;
+			GLint m_u_BaseColorRGB;
+			GLint m_u_ColorVariationHSV;
 
 			gl::buffer m_vertices;
 			gl::vertex_array m_vertex_array;
@@ -141,6 +151,8 @@ namespace bump
 			
 			auto skybox = game::skybox(app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
 			auto particles = particle_field(app.m_assets.m_shaders.at("particle_field"), 5.f, 20);
+			particles.set_base_color_rgb({ 0.75, 0.60, 0.45 });
+			particles.set_color_variation_hsv({ 0.05, 0.25, 0.05 });
 			auto press_start = press_start_text(app.m_ft_context, app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("text_quad"), app.m_assets.m_shaders.at("press_start"));
 
 			auto paused = false;

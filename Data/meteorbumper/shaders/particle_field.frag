@@ -1,7 +1,5 @@
 #version 400
 
-uniform vec3 u_Color;
-
 in vec3 vert_Color;
 in float vert_Alpha;
 

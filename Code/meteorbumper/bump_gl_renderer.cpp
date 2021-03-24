@@ -19,6 +19,7 @@ namespace bump
 		renderer::renderer()
 		{
 			set_depth_test(depth_test::LESS);
+			set_point_size_mode(point_size_mode::PROGRAM);
 		}
 
 		void renderer::set_viewport(glm::ivec2 position, glm::uvec2 size)
@@ -40,6 +41,14 @@ namespace bump
 			glClear(GL_DEPTH_BUFFER_BIT);
 
 			die_if_error();
+		}
+
+		void renderer::set_point_size_mode(point_size_mode mode)
+		{
+			if (mode == point_size_mode::PROGRAM)
+				glEnable(GL_PROGRAM_POINT_SIZE);
+			else
+				glDisable(GL_PROGRAM_POINT_SIZE);
 		}
 
 		void renderer::set_blending(blending mode)

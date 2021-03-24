@@ -24,6 +24,7 @@ int main(int , char* [])
 
 	// particle field:
 		// color (random, persistent w/ particle)
+			// base color, variation in hsv
 			// how to pick a nice random color?
 			// use different random value for size and color!
 		// [stretch: movement - slow, brownian motion style?]
