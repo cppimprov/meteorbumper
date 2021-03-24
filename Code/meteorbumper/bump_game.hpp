@@ -10,6 +10,7 @@ namespace bump
 
 		class app;
 		
+		gamestate do_game(app& app);
 		gamestate do_start(app& app);
 		
 	} // game

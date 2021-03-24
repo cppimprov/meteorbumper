@@ -22,9 +22,14 @@ int main(int , char* [])
 
 // todo next:
 
+	// particle field:
+		// alpha based on radius / distance from position
+		// randomness (color, size, "brownian motion")
+		// texture? [stretch: lighting?]
+
+	// we want an asteroid... slowly tumbling through space... we wanted some stuff in the background too... and a space station
+
 	// start screen:
-		// make a nice text shader
-			// yellow / red flashy (?), diagonal shiny highlight moves from right to left, pixely
 		// create asteroid swarm
 			// one asteroid in center of screen
 			// camera rotates slowly around that asteroid

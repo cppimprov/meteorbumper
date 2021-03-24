@@ -21,7 +21,6 @@ void main()
 		// rescale texture coords
 		vec2 tex_size = textureSize(u_TextTexture, 0);
 		vec2 coord = vert_UV * tex_size; // back to pixel coords
-
 		vec2 uv = coord / 500.0; // set pixel scale
 		uv = floor(uv * 64.0) / 64.0; // blockify
 
@@ -31,7 +30,7 @@ void main()
 		vec3 c = mix(c1, c2, s);
 		c = floor(c * 16.0) / 16.0; // only use pixel values of 256 / 16
 
-		// intermittent highlight
+		// intermittent highlight silver / yellow highlight
 		float hd = uv.x + -uv.y + floor((u_Time / 2.0) * 64.0) / 64.0;
 		float hs = sin(hd * 10.0) * step(fract(((hd * 20.0) / PI) * 0.05), 0.1); // long space between sin peaks
 		vec3 hc = mix(hc1, hc2, hs) * hs;

@@ -28,6 +28,7 @@ namespace bump
 				{ "skybox", { "skybox.vert", "skybox.frag" } },
 				{ "player_ship", { "default_material.vert", "default_material.frag" } },
 				{ "asteroid", { "asteroid.vert", "asteroid.frag" } },
+				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>

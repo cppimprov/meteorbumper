@@ -1,7 +1,6 @@
 #include "bump_game_ecs_render.hpp"
 
 #include "bump_camera.hpp"
-#include "bump_game_ecs_physics.hpp"
 #include "bump_mbp_model.hpp"
 
 namespace bump
