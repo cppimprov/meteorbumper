@@ -8,6 +8,7 @@
 #include "bump_physics.hpp"
 #include "bump_timer.hpp"
 
+#include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
 namespace bump
@@ -101,8 +102,15 @@ namespace bump
 			auto registry = entt::registry();
 			auto physics_system = physics::physics_system();
 
+
+			auto const camera_height = 150.f;
 			auto scene_camera = perspective_camera();
-			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 50.f });
+
+			{
+				auto translation = glm::translate(glm::mat4(1.f), { 0.f, camera_height, 0.f });
+				auto rotation = glm::rotate(glm::mat4(1.f), glm::radians(-90.f), { 1.f, 0.f, 0.f });
+				scene_camera.m_transform = rotation * translation;
+			}
 
 			auto ui_camera = orthographic_camera();
 
@@ -184,9 +192,8 @@ namespace bump
 						physics_system.update(registry, dt);
 
 						// update camera position
-						auto transform = player_physics.get_transform();
-						translate_in_local(transform, { 0.f, 2.f, 15.f });
-						scene_camera.m_transform = transform;
+						auto player_position = get_position(player_physics.get_transform());
+						set_position(scene_camera.m_transform, player_position + glm::vec3{ 0.f, camera_height, 0.f });
 						
 						// update basic_renderable transforms for physics objects
 						{

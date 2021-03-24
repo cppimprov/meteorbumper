@@ -22,23 +22,47 @@ int main(int , char* [])
 
 // todo next:
 
-	// particle field:
-		// color (random, persistent w/ particle)
-			// base color, variation in hsv
-			// how to pick a nice random color?
-			// use different random value for size and color!
-		// [stretch: movement - slow, brownian motion style?]
-		// [stretch: lighting?]
+	// main game state:
 
-	// we want an asteroid... slowly tumbling through space... we wanted some stuff in the background too... and a space station
+		// change player movement
+			// wasd for manouvering
+			// boost for powerful forward thrust
+			// m
+
+
+	// ...
+
+
+	// start screen - asteroid field
+		// asteroids, slowly rotating and moving.
+		// ... how to make them look good, and look unique?
+		// randomly deform a sphere, add craters?
+
+		// i guess it's just a sphere, and we can deform the points however?
+		// then we get the values back?
+
+	// blender or procedural generation?
+	// issues: physics (collision w/ concave shapes, lock movement to y=0 plane),
+
 
 	// start screen:
 		// create asteroid swarm
 			// one asteroid in center of screen
 			// camera rotates slowly around that asteroid
-			// other asteroids "follow" the first one?
+			// other asteroids move with the first one
 			// (space dust shows movement)
+
+		// space station... moves away at the same speed as the main asteroid (!) so it never gets closer
 	
+
+// todo sometime:
+	
+	// particle field:
+		// make more shader variables uniforms (e.g. point size stuff)
+		// [stretch: movement - slow, brownian motion style?]
+		// [stretch: lighting?]
+
+
 // design:
 
 	// camera:
