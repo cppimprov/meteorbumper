@@ -70,9 +70,7 @@ namespace bump
 			void render(gl::renderer& renderer, camera_matrices const& matrices)
 			{
 				// transparency / sorting?
-
-				// if it's > 0.5 away from offset?, 1.0 - that?
-
+				
 				float radius = m_radius;
 				float diameter = 2.f * radius;
 				glm::vec3 origin = glm::floor(m_position / diameter) * diameter;
@@ -83,6 +81,9 @@ namespace bump
 				auto m = glm::translate(glm::mat4(1.f), origin);
 				auto mvp = matrices.model_view_projection_matrix(m);
 
+				glEnable(GL_PROGRAM_POINT_SIZE); // todo: add mode to renderer!
+				renderer.set_blending(gl::renderer::blending::BLEND);
+
 				renderer.set_program(m_shader);
 
 				renderer.set_uniform_4x4f(m_u_MVP, mvp);
@@ -90,15 +91,13 @@ namespace bump
 				renderer.set_uniform_3f(m_u_Offset, offset);
 				renderer.set_uniform_3f(m_u_Color, glm::vec3{ 1.f, 0.f, 0.f });
 
-				glDisable(GL_PROGRAM_POINT_SIZE); // todo: do this in the shader w/ gl_PointSize!
-				glPointSize(10.f);
-
 				renderer.set_vertex_array(m_vertex_array);
 
 				renderer.draw_arrays(GL_POINTS, m_vertices.get_element_count());
 
 				renderer.clear_vertex_array();
 				renderer.clear_program();
+				renderer.set_blending(gl::renderer::blending::NONE);
 			}
 
 		private:
@@ -125,6 +124,7 @@ namespace bump
 			//app.m_mixer_context.set_music_volume(MIX_MAX_VOLUME / 8);
 
 			auto scene_camera = perspective_camera();
+			scene_camera.m_projection.m_near = 0.1f;
 			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 0.f });
 
 			auto debug_cam = debug_camera_controls();

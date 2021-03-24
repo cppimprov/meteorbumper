@@ -23,9 +23,11 @@ int main(int , char* [])
 // todo next:
 
 	// particle field:
-		// alpha based on radius / distance from position
-		// randomness (color, size, "brownian motion")
-		// texture? [stretch: lighting?]
+		// color (random, persistent w/ particle)
+			// how to pick a nice random color?
+			// use different random value for size and color!
+		// [stretch: movement - slow, brownian motion style?]
+		// [stretch: lighting?]
 
 	// we want an asteroid... slowly tumbling through space... we wanted some stuff in the background too... and a space station
 
