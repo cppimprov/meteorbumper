@@ -4,12 +4,17 @@
 #include "bump_game_app.hpp"
 #include "bump_game_asteroids.hpp"
 #include "bump_game_ecs_render.hpp"
+#include "bump_game_particle_field.hpp"
 #include "bump_game_skybox.hpp"
 #include "bump_physics.hpp"
 #include "bump_timer.hpp"
 
+#include <glm/gtx/vector_angle.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
+
+#include <iostream>
 
 namespace bump
 {
@@ -25,7 +30,7 @@ namespace bump
 
 			glm::vec2 m_position;
 			glm::vec2 m_size;
-			glm::vec3 m_color;
+			glm::vec4 m_color;
 
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
@@ -44,8 +49,8 @@ namespace bump
 
 		crosshair::crosshair(gl::shader_program const& shader):
 			m_position(0.f),
-			m_size(20.f),
-			m_color(1.f),
+			m_size(30.f),
+			m_color{ 1.f, 0.f, 0.f, 1.f },
 			m_shader(shader),
 			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
 			m_u_MVP(shader.get_uniform_location("u_MVP")),
@@ -70,7 +75,7 @@ namespace bump
 			renderer.set_uniform_4x4f(m_u_MVP, mvp);
 			renderer.set_uniform_2f(m_u_Position, m_position);
 			renderer.set_uniform_2f(m_u_Size, m_size);
-			renderer.set_uniform_3f(m_u_Color, glm::vec3(1.f));
+			renderer.set_uniform_4f(m_u_Color, m_color);
 			renderer.set_vertex_array(m_vertex_array);
 
 			renderer.draw_arrays(GL_TRIANGLES, m_vertex_buffer.get_element_count());
@@ -94,12 +99,9 @@ namespace bump
 
 			glm::vec2 m_mouse_motion;
 			glm::vec2 m_controller_position;
-
-			void apply(physics::physics_component& physics, crosshair& crosshair, glm::vec2 window_size, high_res_duration_t dt)
+			
+			void apply(physics::physics_component& physics, crosshair& crosshair, glm::vec2 window_size, camera_matrices const& matrices)
 			{
-				auto dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
-				(void)dt_s;
-				
 				auto const player_transform = physics.get_transform();
 
 				// apply maneuvering forces
@@ -167,11 +169,56 @@ namespace bump
 
 					if (m_controller_update)
 					{
-						auto const vector = glm::length(m_controller_position) <= 1.f ? m_controller_position : glm::normalize(m_controller_position);
+						auto vector = m_controller_position;
+
+						// ignore inputs in deadzone
+						auto const deadzone = 0.1f;
+						vector = glm::length(vector) > deadzone ? vector : glm::vec2(0.f);
+						// clamp input to a circle (looks neater)
+						vector = glm::length(vector) <= 1.f ? vector : glm::normalize(vector);
+
 						crosshair.m_position = (window_size * 0.5f) + vector * glm::min(window_size.x, window_size.y) * 0.5f;
 						crosshair.m_position = glm::clamp(crosshair.m_position, glm::vec2(0.f), window_size);
 
 						m_controller_update = false;
+					}
+				}
+
+				// rotate to face crosshair
+				{
+					// unproject from screen space to world space (point on the near plane of the camera)
+					auto cross_screen = glm::vec4{ crosshair.m_position.x, crosshair.m_position.y, 1.f, 1.f };
+					auto cross_clip = matrices.m_inv_viewport * cross_screen;
+					auto cross_world = matrices.m_inv_view_projection * cross_clip;
+					cross_world.x /= cross_world.w;
+					cross_world.y /= cross_world.w;
+					cross_world.z /= cross_world.w;
+					cross_world.w = 1.f;
+
+					// project ray from camera position through the near-plane point
+					auto ray_origin = get_position(matrices.m_inv_view);
+					auto ray_dir = glm::normalize(glm::vec3(cross_world) - ray_origin);
+					
+					// intersect ray with y = 0 plane (find target aim point on plane)
+					auto plane_point = glm::vec3(0.f);
+					auto plane_normal = glm::vec3{ 0.f, 1.f, 0.f };
+					auto p1 = glm::dot(ray_origin - plane_point, plane_normal);
+					auto p2 = glm::dot(ray_dir, plane_normal);
+					auto target_pos = ray_origin - (ray_dir * (p1 / p2));
+
+					// get direction from player to target
+					auto target_dir = target_pos - physics.get_position();
+
+					if (glm::length(target_dir) > 0.1f) // avoid div by zero and also controller jitter
+					{
+						target_dir = glm::normalize(target_dir);
+
+						// set player orientation to point in target_dir
+						auto up = glm::vec3{ 0.f, 0.f, -1.f };
+						auto target_angle = glm::orientedAngle(up, target_dir, glm::vec3{ 0.f, 1.f, 0.f });
+						auto target_orientation = glm::angleAxis(target_angle, glm::vec3{ 0.f, 1.f, 0.f });
+
+						physics.set_orientation(target_orientation); // todo: move towards it over time?
 					}
 				}
 			}
@@ -222,7 +269,16 @@ namespace bump
 
 			auto asteroids = asteroid_field(registry, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
 
+			auto particles = particle_field(app.m_assets.m_shaders.at("particle_field"), 25.f, 20);
+			particles.set_base_color_rgb({ 0.75, 0.60, 0.45 });
+			particles.set_color_variation_hsv({ 0.05, 0.25, 0.05 });
+
 			auto crosshair = game::crosshair(app.m_assets.m_shaders.at("crosshair"));
+			crosshair.m_position = glm::vec2
+			{
+				(float)app.m_window.get_size().x / 2.f,
+				(float)app.m_window.get_size().y * (5.f / 8.f),
+			};
 
 			auto paused = false;
 			auto timer = frame_timer();
@@ -273,7 +329,7 @@ namespace bump
 					{
 						// apply player input:
 						auto& player_physics = registry.get<physics::physics_component>(player);
-						controls.apply(player_physics, crosshair, glm::vec2(app.m_window.get_size()), dt);
+						controls.apply(player_physics, crosshair, glm::vec2(app.m_window.get_size()), camera_matrices(scene_camera));
 
 						// physics:
 						physics_system.update(registry, dt);
@@ -281,6 +337,9 @@ namespace bump
 						// update camera position
 						auto player_position = get_position(player_physics.get_transform());
 						set_position(scene_camera.m_transform, player_position + glm::vec3{ 0.f, camera_height, 0.f });
+						
+						// update particle field position
+						particles.set_position(get_position(scene_camera.m_transform));
 						
 						// update basic_renderable transforms for physics objects
 						{
@@ -323,8 +382,10 @@ namespace bump
 							for (auto id : view)
 								view.get<ecs::basic_renderable>(id).render(app.m_renderer, scene_camera_matrices);
 						}
-
+						
 						asteroids.render(registry, app.m_renderer, scene_camera_matrices);
+						
+						particles.render(app.m_renderer, scene_camera_matrices);
 					}
 
 					// render ui

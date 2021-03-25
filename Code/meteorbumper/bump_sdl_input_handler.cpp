@@ -334,33 +334,9 @@ namespace bump
 					auto id = sdl_controlleraxis_to_control_id(e.caxis.axis);
 					auto value = sdl_controller_axis_value_to_float(e.caxis.value);
 
-					// awful hack! deadzone implementation
-					// we don't want to clamp only a single axis to zero, because then we get a cross-shape of clamping.
-					// we need to check the length of the vector (x_axis_value, y_axis_value) against the deadzone.
-					auto entry = std::find_if(m_gamepads.begin(), m_gamepads.end(), 
-						[&] (gamepad const& g) { return g.get_joystick_id() == e.caxis.which; });
-
-					if (entry != m_gamepads.end())
-					{
-						if (e.caxis.axis != SDL_CONTROLLER_AXIS_TRIGGERLEFT && e.caxis.axis != SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
-						{
-							auto other_axis =
-								e.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX ? SDL_CONTROLLER_AXIS_LEFTY :
-								e.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY ? SDL_CONTROLLER_AXIS_LEFTX :
-								e.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX ? SDL_CONTROLLER_AXIS_RIGHTY :
-								e.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY ? SDL_CONTROLLER_AXIS_RIGHTX : (SDL_GameControllerAxis)e.caxis.axis;
-							
-							auto other_value = sdl_controller_axis_value_to_float(SDL_GameControllerGetAxis(entry->get_handle(), other_axis));
-
-							auto const deadzone = 0.1f;
-							if (glm::length(glm::vec2{ value, other_value }) < deadzone)
-								value = 0.f;
-						}
-					}
-
 					if (callbacks.m_input)
 						callbacks.m_input(id, { value, true });
-						
+					
 					continue;
 				}
 				if (e.type == SDL_CONTROLLERBUTTONUP || e.type == SDL_CONTROLLERBUTTONDOWN)

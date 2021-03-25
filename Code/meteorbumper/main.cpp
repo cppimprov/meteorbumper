@@ -24,16 +24,8 @@ int main(int , char* [])
 
 	// main game state:
 
-		// cursor:
-			// add aiming crosshair (circle with lines at 4 points + dot in middle)?
-			// render custom aiming cursor make sure it works with alt-tabbing.
-
-		// change player movement
-
-			// mouse
-				// directly set rotation to aim at mouse position?
-				// won't this cause problems with physics?
-				// apply torque to turn fast instead ???
+		// player movement:
+			// turn player to face mouse
 
 	// ...
 
