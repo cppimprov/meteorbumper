@@ -24,6 +24,10 @@ int main(int , char* [])
 
 	// main game state:
 
+		// cursor:
+			// add aiming crosshair (circle with lines at 4 points + dot in middle)?
+			// render custom aiming cursor make sure it works with alt-tabbing.
+
 		// change player movement
 
 			// mouse

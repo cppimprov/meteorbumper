@@ -29,6 +29,7 @@ namespace bump
 				{ "player_ship", { "default_material.vert", "default_material.frag" } },
 				{ "asteroid", { "asteroid.vert", "asteroid.frag" } },
 				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
+				{ "crosshair", { "crosshair.vert", "crosshair.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>

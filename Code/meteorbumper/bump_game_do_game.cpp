@@ -16,6 +16,70 @@ namespace bump
 	
 	namespace game
 	{
+
+		class crosshair
+		{
+		public:
+
+			explicit crosshair(gl::shader_program const& shader);
+
+			glm::vec2 m_position;
+			glm::vec2 m_size;
+			glm::vec3 m_color;
+
+			void render(gl::renderer& renderer, camera_matrices const& matrices);
+
+		private:
+
+			gl::shader_program const& m_shader;
+			GLint m_in_VertexPosition;
+			GLint m_u_MVP;
+			GLint m_u_Position;
+			GLint m_u_Size;
+			GLint m_u_Color;
+
+			gl::buffer m_vertex_buffer;
+			gl::vertex_array m_vertex_array;
+		};
+
+		crosshair::crosshair(gl::shader_program const& shader):
+			m_position(0.f),
+			m_size(20.f),
+			m_color(1.f),
+			m_shader(shader),
+			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
+			m_u_MVP(shader.get_uniform_location("u_MVP")),
+			m_u_Position(shader.get_uniform_location("u_Position")),
+			m_u_Size(shader.get_uniform_location("u_Size")),
+			m_u_Color(shader.get_uniform_location("u_Color"))
+		{
+			auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
+			m_vertex_buffer.set_data(GL_ARRAY_BUFFER, vertices.begin(), 2, 6, GL_STATIC_DRAW);
+
+			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertex_buffer);
+		}
+
+		void crosshair::render(gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			auto const mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
+
+			renderer.set_blending(gl::renderer::blending::BLEND);
+			renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
+
+			renderer.set_program(m_shader);
+			renderer.set_uniform_4x4f(m_u_MVP, mvp);
+			renderer.set_uniform_2f(m_u_Position, m_position);
+			renderer.set_uniform_2f(m_u_Size, m_size);
+			renderer.set_uniform_3f(m_u_Color, glm::vec3(1.f));
+			renderer.set_vertex_array(m_vertex_array);
+
+			renderer.draw_arrays(GL_TRIANGLES, m_vertex_buffer.get_element_count());
+
+			renderer.clear_vertex_array();
+			renderer.clear_program();
+			renderer.set_depth_test(gl::renderer::depth_test::LESS);
+			renderer.set_blending(gl::renderer::blending::NONE);
+		}
 		
 		class player_controls
 		{
@@ -25,19 +89,18 @@ namespace bump
 			float m_vertical_axis = 0.f;
 			float m_horizontal_axis = 0.f;
 
-			void apply(physics::physics_component& physics, high_res_duration_t dt)
+			bool m_mouse_update = false;
+			bool m_controller_update = false;
+
+			glm::vec2 m_mouse_motion;
+			glm::vec2 m_controller_position;
+
+			void apply(physics::physics_component& physics, crosshair& crosshair, glm::vec2 window_size, high_res_duration_t dt)
 			{
 				auto dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
 				(void)dt_s;
 				
 				auto const player_transform = physics.get_transform();
-
-				// apply deadzone to axes (todo: move this to input handling?)
-				{
-					auto const deadzone = 0.1f;
-					m_vertical_axis = glm::abs(m_vertical_axis) < deadzone ? 0.f : m_vertical_axis;
-					m_horizontal_axis = glm::abs(m_horizontal_axis) < deadzone ? 0.f : m_horizontal_axis;
-				}
 
 				// apply maneuvering forces
 				{
@@ -53,6 +116,7 @@ namespace bump
 				}
 
 				// apply boost force
+				// todo: judder? (smooth, judder at mid speeds, smooth at high speeds).
 				{
 					auto const boost_dir = forwards(player_transform);
 					auto const boost_force_N = 2500.f;
@@ -89,9 +153,27 @@ namespace bump
 					physics.set_linear_damping(damping);
 				}
 
+				// crosshair
+				{
+					if (m_mouse_update)
+					{
+						auto const move = m_mouse_motion * window_size;
+						crosshair.m_position += move;
+						crosshair.m_position = glm::clamp(crosshair.m_position, glm::vec2(0.f), window_size);
 
-				// boost:
-					// todo: judder? (smooth, judder at mid speeds, smooth at high speeds).
+						m_mouse_motion = glm::vec2(0.f);
+						m_mouse_update = false;
+					}
+
+					if (m_controller_update)
+					{
+						auto const vector = glm::length(m_controller_position) <= 1.f ? m_controller_position : glm::normalize(m_controller_position);
+						crosshair.m_position = (window_size * 0.5f) + vector * glm::min(window_size.x, window_size.y) * 0.5f;
+						crosshair.m_position = glm::clamp(crosshair.m_position, glm::vec2(0.f), window_size);
+
+						m_controller_update = false;
+					}
+				}
 			}
 
 		};
@@ -100,7 +182,6 @@ namespace bump
 		{
 			auto registry = entt::registry();
 			auto physics_system = physics::physics_system();
-
 
 			auto const camera_height = 150.f;
 			auto scene_camera = perspective_camera();
@@ -141,6 +222,8 @@ namespace bump
 
 			auto asteroids = asteroid_field(registry, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
 
+			auto crosshair = game::crosshair(app.m_assets.m_shaders.at("crosshair"));
+
 			auto paused = false;
 			auto timer = frame_timer();
 
@@ -160,14 +243,18 @@ namespace bump
 						using input::control_id;
 
 						if (id == control_id::GAMEPADTRIGGER_LEFT) controls.m_boost_axis = in.m_value;
-						else if (id == control_id::GAMEPADSTICK_LEFTY) controls.m_vertical_axis = -in.m_value;
 						else if (id == control_id::GAMEPADSTICK_LEFTX) controls.m_horizontal_axis = in.m_value;
+						else if (id == control_id::GAMEPADSTICK_LEFTY) controls.m_vertical_axis = -in.m_value;
+						else if (id == control_id::GAMEPADSTICK_RIGHTX) { controls.m_controller_position.x = in.m_value; controls.m_controller_update = true; }
+						else if (id == control_id::GAMEPADSTICK_RIGHTY) { controls.m_controller_position.y = -in.m_value; controls.m_controller_update = true; }
 
 						else if (id == control_id::KEYBOARDKEY_W) controls.m_vertical_axis = in.m_value;
 						else if (id == control_id::KEYBOARDKEY_S) controls.m_vertical_axis = -in.m_value;
 						else if (id == control_id::KEYBOARDKEY_A) controls.m_horizontal_axis = -in.m_value;
 						else if (id == control_id::KEYBOARDKEY_D) controls.m_horizontal_axis = in.m_value;
 						else if (id == control_id::KEYBOARDKEY_SPACE) controls.m_boost_axis = in.m_value;
+						else if (id == control_id::MOUSEMOTION_X) { controls.m_mouse_motion.x = (in.m_value / app.m_window.get_size().x); controls.m_mouse_update = true; }
+						else if (id == control_id::MOUSEMOTION_Y) { controls.m_mouse_motion.y = (in.m_value / app.m_window.get_size().y); controls.m_mouse_update = true; }
 
 						else if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
 					};
@@ -186,7 +273,7 @@ namespace bump
 					{
 						// apply player input:
 						auto& player_physics = registry.get<physics::physics_component>(player);
-						controls.apply(player_physics, dt);
+						controls.apply(player_physics, crosshair, glm::vec2(app.m_window.get_size()), dt);
 
 						// physics:
 						physics_system.update(registry, dt);
@@ -212,7 +299,7 @@ namespace bump
 					app.m_renderer.clear_color_buffers({ 1.f, 0.f, 0.f, 1.f });
 					app.m_renderer.clear_depth_buffers();
 
-					{
+					{ 
 						auto const size = glm::vec2(app.m_window.get_size());
 						scene_camera.m_projection.m_size = size;
 						scene_camera.m_viewport.m_size = size;
@@ -241,8 +328,8 @@ namespace bump
 					}
 
 					// render ui
-					//auto ui_camera_matrices = camera_matrices(ui_camera);
-					//...
+					auto ui_camera_matrices = camera_matrices(ui_camera);
+					crosshair.render(app.m_renderer, ui_camera_matrices);
 
 					app.m_window.swap_buffers();
 				}
