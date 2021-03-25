@@ -25,10 +25,11 @@ int main(int , char* [])
 	// main game state:
 
 		// change player movement
-			// wasd for manouvering
-			// boost for powerful forward thrust
-			// m
 
+			// mouse
+				// directly set rotation to aim at mouse position?
+				// won't this cause problems with physics?
+				// apply torque to turn fast instead ???
 
 	// ...
 

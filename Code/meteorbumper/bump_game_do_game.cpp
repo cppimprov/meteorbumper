@@ -22,44 +22,43 @@ namespace bump
 		public:
 
 			float m_boost_axis = 0.f;
-			float m_pitch_axis = 0.f;
-			float m_roll_axis = 0.f;
-			float m_yaw_axis = 0.f;
+			float m_vertical_axis = 0.f;
+			float m_horizontal_axis = 0.f;
 
 			void apply(physics::physics_component& physics, high_res_duration_t dt)
 			{
 				auto dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
 				(void)dt_s;
+				
+				auto const player_transform = physics.get_transform();
 
 				// apply deadzone to axes (todo: move this to input handling?)
-				auto const deadzone = 0.1f;
-				m_roll_axis = glm::abs(m_roll_axis) < deadzone ? 0.f : m_roll_axis;
-				m_pitch_axis = glm::abs(m_pitch_axis) < deadzone ? 0.f : m_pitch_axis;
+				{
+					auto const deadzone = 0.1f;
+					m_vertical_axis = glm::abs(m_vertical_axis) < deadzone ? 0.f : m_vertical_axis;
+					m_horizontal_axis = glm::abs(m_horizontal_axis) < deadzone ? 0.f : m_horizontal_axis;
+				}
 
-				//std::cout << m_roll_axis << " " << m_pitch_axis << std::endl;
+				// apply maneuvering forces
+				{
+					auto const move_force_N = 1000.f;
 
-				auto transform = physics.get_transform();
-				auto const world_right = right(transform);
-				auto const world_up = up(transform);
-				auto const world_forward = forwards(transform);
-				
-				// apply boost
-				auto const boost_force_N = 2500.f;
-				physics.add_force(world_forward * boost_force_N * m_boost_axis);
+					auto const up = glm::vec3{ 0.f, 0.f, -1.f };
+					auto const down = -up;
+					auto const left = glm::vec3{ -1.f, 0.f, 0.f };
+					auto const right = -left;
+					
+					physics.add_force(up * move_force_N * m_vertical_axis);
+					physics.add_force(right * move_force_N * m_horizontal_axis);
+				}
 
-				// apply pitch
-				auto const pitch_torque = 1000.f;
-				physics.add_torque(world_right * pitch_torque * m_pitch_axis);
+				// apply boost force
+				{
+					auto const boost_dir = forwards(player_transform);
+					auto const boost_force_N = 2500.f;
 
-				// apply roll
-				auto const roll_torque = 1000.f;
-				physics.add_torque(world_forward * roll_torque * m_roll_axis);
-								
-				// apply yaw
-				auto const yaw_torque = 500.f;
-				physics.add_torque(-world_up * yaw_torque * m_yaw_axis);
-
-				auto const rho_kg_per_m3 = 1.255f; // density of air
+					physics.add_force(boost_dir * boost_force_N * m_boost_axis);
+				}
 
 				// simple linear drag
 				{
@@ -161,13 +160,14 @@ namespace bump
 						using input::control_id;
 
 						if (id == control_id::GAMEPADTRIGGER_LEFT) controls.m_boost_axis = in.m_value;
-						else if (id == control_id::GAMEPADSTICK_LEFTY) controls.m_pitch_axis = in.m_value;
-						else if (id == control_id::GAMEPADSTICK_LEFTX) controls.m_roll_axis = in.m_value;
+						else if (id == control_id::GAMEPADSTICK_LEFTY) controls.m_vertical_axis = -in.m_value;
+						else if (id == control_id::GAMEPADSTICK_LEFTX) controls.m_horizontal_axis = in.m_value;
+
+						else if (id == control_id::KEYBOARDKEY_W) controls.m_vertical_axis = in.m_value;
+						else if (id == control_id::KEYBOARDKEY_S) controls.m_vertical_axis = -in.m_value;
+						else if (id == control_id::KEYBOARDKEY_A) controls.m_horizontal_axis = -in.m_value;
+						else if (id == control_id::KEYBOARDKEY_D) controls.m_horizontal_axis = in.m_value;
 						else if (id == control_id::KEYBOARDKEY_SPACE) controls.m_boost_axis = in.m_value;
-						else if (id == control_id::KEYBOARDKEY_W) controls.m_pitch_axis = -in.m_value;
-						else if (id == control_id::KEYBOARDKEY_S) controls.m_pitch_axis = in.m_value;
-						else if (id == control_id::KEYBOARDKEY_A) controls.m_roll_axis = -in.m_value;
-						else if (id == control_id::KEYBOARDKEY_D) controls.m_roll_axis = in.m_value;
 
 						else if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
 					};
