@@ -3,6 +3,7 @@
 #include "bump_camera.hpp"
 #include "bump_game_app.hpp"
 #include "bump_game_asteroids.hpp"
+#include "bump_game_crosshair.hpp"
 #include "bump_game_ecs_render.hpp"
 #include "bump_game_particle_field.hpp"
 #include "bump_game_skybox.hpp"
@@ -22,70 +23,6 @@ namespace bump
 	namespace game
 	{
 
-		class crosshair
-		{
-		public:
-
-			explicit crosshair(gl::shader_program const& shader);
-
-			glm::vec2 m_position;
-			glm::vec2 m_size;
-			glm::vec4 m_color;
-
-			void render(gl::renderer& renderer, camera_matrices const& matrices);
-
-		private:
-
-			gl::shader_program const& m_shader;
-			GLint m_in_VertexPosition;
-			GLint m_u_MVP;
-			GLint m_u_Position;
-			GLint m_u_Size;
-			GLint m_u_Color;
-
-			gl::buffer m_vertex_buffer;
-			gl::vertex_array m_vertex_array;
-		};
-
-		crosshair::crosshair(gl::shader_program const& shader):
-			m_position(0.f),
-			m_size(30.f),
-			m_color{ 1.f, 0.f, 0.f, 1.f },
-			m_shader(shader),
-			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
-			m_u_MVP(shader.get_uniform_location("u_MVP")),
-			m_u_Position(shader.get_uniform_location("u_Position")),
-			m_u_Size(shader.get_uniform_location("u_Size")),
-			m_u_Color(shader.get_uniform_location("u_Color"))
-		{
-			auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
-			m_vertex_buffer.set_data(GL_ARRAY_BUFFER, vertices.begin(), 2, 6, GL_STATIC_DRAW);
-
-			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertex_buffer);
-		}
-
-		void crosshair::render(gl::renderer& renderer, camera_matrices const& matrices)
-		{
-			auto const mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
-
-			renderer.set_blending(gl::renderer::blending::BLEND);
-			renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
-
-			renderer.set_program(m_shader);
-			renderer.set_uniform_4x4f(m_u_MVP, mvp);
-			renderer.set_uniform_2f(m_u_Position, m_position);
-			renderer.set_uniform_2f(m_u_Size, m_size);
-			renderer.set_uniform_4f(m_u_Color, m_color);
-			renderer.set_vertex_array(m_vertex_array);
-
-			renderer.draw_arrays(GL_TRIANGLES, m_vertex_buffer.get_element_count());
-
-			renderer.clear_vertex_array();
-			renderer.clear_program();
-			renderer.set_depth_test(gl::renderer::depth_test::LESS);
-			renderer.set_blending(gl::renderer::blending::NONE);
-		}
-		
 		class player_controls
 		{
 		public:
@@ -97,8 +34,8 @@ namespace bump
 			bool m_mouse_update = false;
 			bool m_controller_update = false;
 
-			glm::vec2 m_mouse_motion;
-			glm::vec2 m_controller_position;
+			glm::vec2 m_mouse_motion = glm::vec2(0.f);
+			glm::vec2 m_controller_position = glm::vec2(0.f);
 			
 			void apply(physics::physics_component& physics, crosshair& crosshair, glm::vec2 window_size, camera_matrices const& matrices)
 			{
@@ -225,6 +162,258 @@ namespace bump
 
 		};
 
+		class player_lasers
+		{
+		public:
+
+			explicit player_lasers(gl::shader_program const& shader);
+			
+			void update(entt::registry& registry, bool fire, glm::mat4 const& player_transform, high_res_duration_t dt);
+			void render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices);
+
+		private:
+
+			gl::shader_program const& m_shader;
+			GLint m_in_VertexPosition;
+			GLint m_in_Color;
+			GLint m_in_Position;
+			GLint m_in_Direction;
+			GLint m_in_BeamLength;
+			GLint m_u_MVP;
+
+			gl::buffer m_vertices;
+			gl::buffer m_instance_color;
+			gl::buffer m_instance_position;
+			gl::buffer m_instance_direction;
+			gl::buffer m_instance_beam_length;
+			gl::vertex_array m_vertex_array;
+
+			struct beam_instance_data
+			{
+				glm::vec3 m_color;
+				glm::vec3 m_position;
+				glm::vec3 m_direction;
+				float m_beam_length;
+			};
+
+			std::vector<beam_instance_data> m_instance_data;
+
+			struct beam
+			{
+				entt::entity m_entity; // physics / collision components
+				float m_beam_length;
+				high_res_duration_t m_lifetime;
+			};
+
+			struct emitter
+			{
+				glm::vec3 m_color;
+				glm::vec3 m_origin; // in player model space
+				high_res_duration_t m_max_lifetime;
+				std::vector<beam> m_beams;
+			};
+
+			high_res_duration_t m_firing_period;
+			high_res_duration_t m_time_since_firing;
+
+			float m_beam_speed_m_per_s;
+			float m_beam_length_factor; // max_beam_length = beam_speed * firing_period * length_factor;
+
+			std::vector<emitter> m_emitters;
+		};
+
+		player_lasers::player_lasers(gl::shader_program const& shader):
+			m_shader(shader),
+			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
+			m_in_Color(shader.get_attribute_location("in_Color")),
+			m_in_Position(shader.get_attribute_location("in_Position")),
+			m_in_Direction(shader.get_attribute_location("in_Direction")),
+			m_in_BeamLength(shader.get_attribute_location("in_BeamLength")),
+			m_u_MVP(shader.get_uniform_location("u_MVP")),
+			m_firing_period(std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(0.125f))),
+			m_time_since_firing(m_firing_period),
+			m_beam_speed_m_per_s(100.f),
+			m_beam_length_factor(0.5f)
+		{
+			// set up vertex buffer: one instanced vertex, w/ geometry shader to make lines
+			auto vertices = { 0.f, 0.f, 0.f };
+			m_vertices.set_data(GL_ARRAY_BUFFER, vertices.begin(), 3, 1, GL_STATIC_DRAW);
+			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertices);
+
+			// set up instance buffers
+			m_instance_color.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
+			m_vertex_array.set_array_buffer(m_in_Color, m_instance_color, 1);
+			m_instance_position.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
+			m_vertex_array.set_array_buffer(m_in_Position, m_instance_position, 1);
+			m_instance_direction.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
+			m_vertex_array.set_array_buffer(m_in_Direction, m_instance_direction, 1);
+			m_instance_beam_length.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 1, 0, GL_STREAM_DRAW);
+			m_vertex_array.set_array_buffer(m_in_BeamLength, m_instance_beam_length, 1);
+			
+			// set up two emitters to start with (todo: proper configurations based on upgrade level...)
+			auto left_emitter = emitter
+			{
+				{ 0.f, 1.f, 0.f }, // green
+				{ -2.f, -0.1f, -1.f }, // origin
+				std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+				{},
+			};
+
+			m_emitters.push_back(std::move(left_emitter));
+			
+			auto right_emitter = emitter
+			{
+				{ 0.f, 1.f, 0.f }, // green
+				{ 2.f, -0.1f, -1.f }, // origin
+				std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+				{},
+			};
+
+			m_emitters.push_back(std::move(right_emitter));
+		}
+
+		void player_lasers::update(entt::registry& registry, bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
+		{
+			m_time_since_firing += dt;
+
+			if (fire && m_time_since_firing >= m_firing_period)
+			{
+				std::cout << "pew" << std::endl;
+
+				// add a new beam to each emitter
+				for (auto& emitter : m_emitters)
+				{
+					auto beam_entity = registry.create();
+
+					auto& beam_physics = registry.emplace<physics::physics_component>(beam_entity);
+					beam_physics.set_mass(0.1f);
+					beam_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(0.1f, 0.1f));
+					beam_physics.set_position(transform_point_to_world(player_transform, emitter.m_origin));
+					beam_physics.set_velocity(forwards(player_transform) * m_beam_speed_m_per_s);
+
+					auto& beam_collision = registry.emplace<physics::collision_component>(beam_entity);
+					beam_collision.set_shape({ physics::sphere_shape{ 0.1f } }); // todo: line!
+
+					emitter.m_beams.push_back({ beam_entity, 0.f, high_res_duration_t{ 0 } });
+				}
+
+				// reset firing timer
+				m_time_since_firing = high_res_duration_t{ 0 };
+			}
+
+			auto const dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
+			auto const firing_period_s = std::chrono::duration_cast<std::chrono::duration<float>>(m_firing_period).count();
+			auto const max_beam_length = m_beam_speed_m_per_s * firing_period_s * m_beam_length_factor;
+
+			for (auto& emitter : m_emitters)
+			{
+				// update the length of the most recently fired beam
+				if (!emitter.m_beams.empty())
+				{
+					auto& first = emitter.m_beams.front();
+
+					if (first.m_beam_length < max_beam_length)
+					{
+						first.m_beam_length += m_beam_speed_m_per_s * dt_s;
+						first.m_beam_length = std::min(first.m_beam_length, max_beam_length);
+					}
+				}
+
+				// update beam lifetimes
+				for (auto& beam : emitter.m_beams)
+					beam.m_lifetime += dt;
+				
+				// find and remove dead beams
+				auto first_dead_beam = std::remove_if(emitter.m_beams.begin(), emitter.m_beams.end(),
+						[&] (beam const& b) { return b.m_lifetime > emitter.m_max_lifetime; });
+				
+				for (auto b = first_dead_beam; b != emitter.m_beams.end(); ++b)
+				{
+					std::cout << "fwip" << std::endl;
+					registry.destroy(b->m_entity);
+				}
+
+				emitter.m_beams.erase(first_dead_beam, emitter.m_beams.end());
+			}
+		}
+
+		void player_lasers::render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices)
+		{
+			(void)renderer;
+			(void)registry;
+			(void)matrices;
+
+			// get beam instance data
+
+			// upload instance data to buffers
+
+			// set shader
+			// set uniforms
+			// set vertex array
+
+			// draw
+			
+			// clear stuff
+		}
+
+		class player_weapons
+		{
+		public:
+
+			explicit player_weapons(gl::shader_program const& laser_shader);
+
+			void update(entt::registry& registry, bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
+			{
+				m_lasers.update(registry, fire, player_transform, dt);
+			}
+
+			player_lasers m_lasers;
+		};
+
+		player_weapons::player_weapons(gl::shader_program const& laser_shader):
+			m_lasers(laser_shader)
+			{ }
+
+		class player
+		{
+		public:
+
+			explicit player(entt::registry& registry, assets& assets);
+
+			void update(entt::registry& registry, high_res_duration_t dt);
+
+			entt::entity m_entity;
+
+			player_controls m_controls;
+			player_weapons m_weapons;
+		};
+
+		player::player(entt::registry& registry, assets& assets):
+			m_entity(entt::null_t()),
+			m_controls(),
+			m_weapons(assets.m_shaders.at("player_laser"))
+		{
+			m_entity = registry.create();
+
+			registry.emplace<ecs::basic_renderable>(m_entity, assets.m_models.at("player_ship"), assets.m_shaders.at("player_ship"));
+			auto& player_physics = registry.emplace<physics::physics_component>(m_entity);
+			player_physics.set_mass(20.f);
+
+			player_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(20.f, 10.f));
+			player_physics.set_linear_damping(0.998f);
+			player_physics.set_angular_damping(0.998f);
+
+			auto& player_collision = registry.emplace<physics::collision_component>(m_entity);
+			player_collision.set_shape({ physics::sphere_shape{ 5.f } });
+		}
+
+		void player::update(entt::registry& registry, high_res_duration_t dt)
+		{
+			auto const& physics = registry.get<physics::physics_component>(m_entity);
+
+			m_weapons.update(registry, true, physics.get_transform(), dt);
+		}
+
 		gamestate do_game(app& app)
 		{
 			auto registry = entt::registry();
@@ -251,21 +440,7 @@ namespace bump
 			
 			auto skybox = game::skybox(app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
 
-			auto player = registry.create();
-			{
-				registry.emplace<ecs::basic_renderable>(player, app.m_assets.m_models.at("player_ship"), app.m_assets.m_shaders.at("player_ship"));
-				auto& player_physics = registry.emplace<physics::physics_component>(player);
-				player_physics.set_mass(20.f);
-
-				player_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(20.f, 10.f));
-				player_physics.set_linear_damping(0.998f);
-				player_physics.set_angular_damping(0.998f);
-
-				auto& player_collision = registry.emplace<physics::collision_component>(player);
-				player_collision.set_shape({ physics::sphere_shape{ 5.f } });
-			}
-
-			auto controls = player_controls();
+			auto player = game::player(registry, app.m_assets);
 
 			auto asteroids = asteroid_field(registry, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
 
@@ -298,19 +473,19 @@ namespace bump
 
 						using input::control_id;
 
-						if (id == control_id::GAMEPADTRIGGER_LEFT) controls.m_boost_axis = in.m_value;
-						else if (id == control_id::GAMEPADSTICK_LEFTX) controls.m_horizontal_axis = in.m_value;
-						else if (id == control_id::GAMEPADSTICK_LEFTY) controls.m_vertical_axis = -in.m_value;
-						else if (id == control_id::GAMEPADSTICK_RIGHTX) { controls.m_controller_position.x = in.m_value; controls.m_controller_update = true; }
-						else if (id == control_id::GAMEPADSTICK_RIGHTY) { controls.m_controller_position.y = -in.m_value; controls.m_controller_update = true; }
+						if (id == control_id::GAMEPADTRIGGER_LEFT) player.m_controls.m_boost_axis = in.m_value;
+						else if (id == control_id::GAMEPADSTICK_LEFTX) player.m_controls.m_horizontal_axis = in.m_value;
+						else if (id == control_id::GAMEPADSTICK_LEFTY) player.m_controls.m_vertical_axis = -in.m_value;
+						else if (id == control_id::GAMEPADSTICK_RIGHTX) { player.m_controls.m_controller_position.x = in.m_value; player.m_controls.m_controller_update = true; }
+						else if (id == control_id::GAMEPADSTICK_RIGHTY) { player.m_controls.m_controller_position.y = -in.m_value; player.m_controls.m_controller_update = true; }
 
-						else if (id == control_id::KEYBOARDKEY_W) controls.m_vertical_axis = in.m_value;
-						else if (id == control_id::KEYBOARDKEY_S) controls.m_vertical_axis = -in.m_value;
-						else if (id == control_id::KEYBOARDKEY_A) controls.m_horizontal_axis = -in.m_value;
-						else if (id == control_id::KEYBOARDKEY_D) controls.m_horizontal_axis = in.m_value;
-						else if (id == control_id::KEYBOARDKEY_SPACE) controls.m_boost_axis = in.m_value;
-						else if (id == control_id::MOUSEMOTION_X) { controls.m_mouse_motion.x = (in.m_value / app.m_window.get_size().x); controls.m_mouse_update = true; }
-						else if (id == control_id::MOUSEMOTION_Y) { controls.m_mouse_motion.y = (in.m_value / app.m_window.get_size().y); controls.m_mouse_update = true; }
+						else if (id == control_id::KEYBOARDKEY_W) player.m_controls.m_vertical_axis = in.m_value;
+						else if (id == control_id::KEYBOARDKEY_S) player.m_controls.m_vertical_axis = -in.m_value;
+						else if (id == control_id::KEYBOARDKEY_A) player.m_controls.m_horizontal_axis = -in.m_value;
+						else if (id == control_id::KEYBOARDKEY_D) player.m_controls.m_horizontal_axis = in.m_value;
+						else if (id == control_id::KEYBOARDKEY_SPACE) player.m_controls.m_boost_axis = in.m_value;
+						else if (id == control_id::MOUSEMOTION_X) { player.m_controls.m_mouse_motion.x = (in.m_value / app.m_window.get_size().x); player.m_controls.m_mouse_update = true; }
+						else if (id == control_id::MOUSEMOTION_Y) { player.m_controls.m_mouse_motion.y = (in.m_value / app.m_window.get_size().y); player.m_controls.m_mouse_update = true; }
 
 						else if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
 					};
@@ -328,11 +503,14 @@ namespace bump
 					if (!paused)
 					{
 						// apply player input:
-						auto& player_physics = registry.get<physics::physics_component>(player);
-						controls.apply(player_physics, crosshair, glm::vec2(app.m_window.get_size()), camera_matrices(scene_camera));
+						auto& player_physics = registry.get<physics::physics_component>(player.m_entity);
+						player.m_controls.apply(player_physics, crosshair, glm::vec2(app.m_window.get_size()), camera_matrices(scene_camera));
 
 						// physics:
 						physics_system.update(registry, dt);
+
+						// update player state:
+						player.update(registry, dt);
 
 						// update camera position
 						auto player_position = get_position(player_physics.get_transform());
