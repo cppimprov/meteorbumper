@@ -23,12 +23,15 @@ int main(int , char* [])
 // todo next:
 
 	// player lasers:
-		// add geometry shader to change points to lines.
+		// wide lines! -> render quad in geometry shader instead of lines.
+
+		// add light for each beam!
+		// add bloom effect?
 
 	// physics:
 		// clamp to y=0 plane! (how?)
-		// rename collision_component to collider
-		// rename physics_component to rigidbody
+
+	// framerate counter
 	
 
 	// load icosphere, normalize points to make sure they're on a sphere

@@ -30,7 +30,7 @@ namespace bump
 				{ "asteroid", { "asteroid.vert", "asteroid.frag" } },
 				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
 				{ "crosshair", { "crosshair.vert", "crosshair.frag" } },
-				{ "player_laser", { "player_laser.vert", "player_laser.frag" } },
+				{ "player_laser", { "player_laser.vert", "player_laser.geom", "player_laser.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>

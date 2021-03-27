@@ -368,6 +368,7 @@ namespace bump
 
 		void player_lasers::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			// get beam instance data for this frame
 			auto view = m_registry.view<beam_segment, physics::rigidbody>();
 
 			for (auto const& emitter : m_emitters)
@@ -387,6 +388,7 @@ namespace bump
 				}
 			}
 
+			// upload beam instance data to gpu buffers
 			auto const instance_count = m_frame_instance_colors.size();
 
 			if (instance_count == 0)
@@ -397,8 +399,9 @@ namespace bump
 			m_instance_direction.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_directions.front()), 3, instance_count, GL_STREAM_DRAW);
 			m_instance_beam_length.set_data(GL_ARRAY_BUFFER, m_frame_instance_beam_lengths.data(), 1, instance_count, GL_STREAM_DRAW);
 
+			// render beams
 			auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
-
+			
 			renderer.set_program(m_shader);
 			renderer.set_uniform_4x4f(m_u_MVP, mvp);
 			renderer.set_vertex_array(m_vertex_array);
@@ -408,6 +411,7 @@ namespace bump
 			renderer.clear_vertex_array();
 			renderer.clear_program();
 
+			// clear frame instance buffers
 			m_frame_instance_colors.clear();
 			m_frame_instance_positions.clear();
 			m_frame_instance_directions.clear();

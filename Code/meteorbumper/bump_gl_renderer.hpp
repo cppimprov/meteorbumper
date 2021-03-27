@@ -31,9 +31,8 @@ namespace bump
 
 			enum class point_size_mode { PROGRAM, PIPELINE };
 			void set_point_size_mode(point_size_mode mode);
-
 			void set_pipeline_point_size(float size);
-			
+
 			enum class blending { NONE, BLEND, ADD, MOD };
 			void set_blending(blending mode);
 

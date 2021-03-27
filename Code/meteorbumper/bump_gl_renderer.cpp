@@ -55,7 +55,7 @@ namespace bump
 		{
 			glPointSize(size);
 		}
-
+		
 		void renderer::set_blending(blending mode)
 		{
 			if (mode == blending::NONE)
