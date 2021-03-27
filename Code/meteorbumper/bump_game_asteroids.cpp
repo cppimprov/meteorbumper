@@ -65,12 +65,12 @@ namespace bump
 						// update asteroid transform from physics component!
 						// add random velocity to asteroids at start
 
-						auto& physics = registry.emplace<physics::physics_component>(id);
+						auto& physics = registry.emplace<physics::rigidbody>(id);
 						physics.set_position(position);
 						physics.set_mass(2000.f);
 						physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(200.f, 10.f));
 						
-						auto& collision = registry.emplace<physics::collision_component>(id);
+						auto& collision = registry.emplace<physics::collider>(id);
 						collision.set_shape({ physics::sphere_shape{ 10.f } });
 					}
 				}
@@ -79,10 +79,10 @@ namespace bump
 
 		void asteroid_field::update(entt::registry& registry)
 		{
-			auto view = registry.view<ecs::asteroid_data, physics::physics_component>();
+			auto view = registry.view<ecs::asteroid_data, physics::rigidbody>();
 
 			for (auto id : view)
-				view.get<ecs::asteroid_data>(id).m_transform = view.get<physics::physics_component>(id).get_transform();
+				view.get<ecs::asteroid_data>(id).m_transform = view.get<physics::rigidbody>(id).get_transform();
 		}
 
 		void asteroid_field::render(entt::registry& registry, gl::renderer& renderer, camera_matrices const& matrices)

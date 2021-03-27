@@ -39,7 +39,7 @@ namespace bump
 
 			bool m_firing = false;
 			
-			void apply(physics::physics_component& physics, crosshair& crosshair, glm::vec2 window_size, camera_matrices const& matrices)
+			void apply(physics::rigidbody& physics, crosshair& crosshair, glm::vec2 window_size, camera_matrices const& matrices)
 			{
 				auto const player_transform = physics.get_transform();
 
@@ -168,15 +168,23 @@ namespace bump
 		{
 		public:
 
-			explicit player_lasers(gl::shader_program const& shader);
+			explicit player_lasers(entt::registry& registry, gl::shader_program const& shader);
+
+			player_lasers(player_lasers const&) = delete;
+			player_lasers& operator=(player_lasers const&) = delete;
 			
-			void update(entt::registry& registry, bool fire, glm::mat4 const& player_transform, high_res_duration_t dt);
-			void render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices);
+			player_lasers(player_lasers&&) = delete;
+			player_lasers& operator=(player_lasers&&) = delete;
+
+			~player_lasers();
+			
+			void update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt);
+			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
 		private:
 
+			entt::registry& m_registry;
 			gl::shader_program const& m_shader;
-			GLint m_in_VertexPosition;
 			GLint m_in_Color;
 			GLint m_in_Position;
 			GLint m_in_Direction;
@@ -218,9 +226,9 @@ namespace bump
 			std::vector<emitter> m_emitters;
 		};
 
-		player_lasers::player_lasers(gl::shader_program const& shader):
+		player_lasers::player_lasers(entt::registry& registry, gl::shader_program const& shader):
+			m_registry(registry),
 			m_shader(shader),
-			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
 			m_in_Color(shader.get_attribute_location("in_Color")),
 			m_in_Position(shader.get_attribute_location("in_Position")),
 			m_in_Direction(shader.get_attribute_location("in_Direction")),
@@ -231,11 +239,6 @@ namespace bump
 			m_beam_speed_m_per_s(100.f),
 			m_beam_length_factor(0.5f)
 		{
-			// set up vertex buffer: one instanced vertex, w/ geometry shader to make lines
-			auto vertices = { 0.f, 0.f, 0.f };
-			m_vertices.set_data(GL_ARRAY_BUFFER, vertices.begin(), 3, 1, GL_STATIC_DRAW);
-			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertices);
-
 			// set up instance buffers
 			m_instance_color.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
 			m_vertex_array.set_array_buffer(m_in_Color, m_instance_color, 1);
@@ -268,7 +271,14 @@ namespace bump
 			m_emitters.push_back(std::move(right_emitter));
 		}
 
-		void player_lasers::update(entt::registry& registry, bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
+		player_lasers::~player_lasers()
+		{
+			for (auto const& emitter : m_emitters)
+				for (auto beam : emitter.m_beams)
+					m_registry.destroy(beam);
+		}
+
+		void player_lasers::update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
 		{
 			m_time_since_firing += dt;
 
@@ -277,20 +287,37 @@ namespace bump
 				// add a new beam to each emitter
 				for (auto& emitter : m_emitters)
 				{
-					auto beam_entity = registry.create();
+					auto beam_entity = m_registry.create();
 					
-					auto& beam_physics = registry.emplace<physics::physics_component>(beam_entity);
+					auto& beam_physics = m_registry.emplace<physics::rigidbody>(beam_entity);
 					beam_physics.set_mass(0.1f);
 					beam_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(0.1f, 0.1f));
 					beam_physics.set_position(transform_point_to_world(player_transform, emitter.m_origin));
 					beam_physics.set_velocity(forwards(player_transform) * m_beam_speed_m_per_s);
 
-					auto& beam_collision = registry.emplace<physics::collision_component>(beam_entity);
+					auto& beam_collision = m_registry.emplace<physics::collider>(beam_entity);
 					beam_collision.set_shape({ physics::sphere_shape{ 0.1f } }); // todo: line!
 					beam_collision.set_collision_layer(physics::collision_layers::PLAYER_WEAPONS);
 					beam_collision.set_collision_mask(~physics::collision_layers::PLAYER);
 
-					registry.emplace<beam_segment>(beam_entity, 0.f, high_res_duration_t{ 0 });
+					auto deleter = [=] ()
+					{
+						for (auto& emitter : m_emitters)
+						{
+							auto entry = std::find(emitter.m_beams.begin(), emitter.m_beams.end(), beam_entity);
+
+							if (entry != emitter.m_beams.end())
+							{
+								m_registry.destroy(beam_entity);
+								emitter.m_beams.erase(entry);
+								return;
+							}
+						}
+					};
+
+					beam_collision.set_callback(std::move(deleter));
+
+					m_registry.emplace<beam_segment>(beam_entity, 0.f, high_res_duration_t{ 0 });
 
 					emitter.m_beams.push_back(beam_entity);
 				}
@@ -303,7 +330,7 @@ namespace bump
 			auto const firing_period_s = std::chrono::duration_cast<std::chrono::duration<float>>(m_firing_period).count();
 			auto const max_beam_length = m_beam_speed_m_per_s * firing_period_s * m_beam_length_factor;
 
-			auto view = registry.view<beam_segment>();
+			auto view = m_registry.view<beam_segment>();
 
 			for (auto& emitter : m_emitters)
 			{
@@ -330,7 +357,7 @@ namespace bump
 						auto result = (view.get<beam_segment>(b).m_lifetime > emitter.m_max_lifetime);
 
 						if (result)
-							registry.destroy(b);
+							m_registry.destroy(b);
 
 						return result;
 					});
@@ -339,15 +366,15 @@ namespace bump
 			}
 		}
 
-		void player_lasers::render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices)
+		void player_lasers::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
-			auto view = registry.view<beam_segment, physics::physics_component>();
+			auto view = m_registry.view<beam_segment, physics::rigidbody>();
 
 			for (auto const& emitter : m_emitters)
 			{
 				for (auto const& beam : emitter.m_beams)
 				{
-					auto const& physics = view.get<physics::physics_component>(beam);
+					auto const& physics = view.get<physics::rigidbody>(beam);
 					auto beam_direction = physics.get_velocity();
 					beam_direction = glm::length(beam_direction) == 0.f ? glm::vec3(0.f) : glm::normalize(beam_direction);
 
@@ -391,24 +418,27 @@ namespace bump
 		{
 		public:
 
-			explicit player_weapons(gl::shader_program const& laser_shader);
+			explicit player_weapons(entt::registry& registry, gl::shader_program const& laser_shader);
 
-			void update(entt::registry& registry, bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
-			{
-				m_lasers.update(registry, fire, player_transform, dt);
-			}
-
-			void render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices)
-			{
-				m_lasers.render(renderer, registry, matrices);
-			}
+			void update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt);
+			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
 			player_lasers m_lasers;
 		};
 
-		player_weapons::player_weapons(gl::shader_program const& laser_shader):
-			m_lasers(laser_shader)
+		player_weapons::player_weapons(entt::registry& registry, gl::shader_program const& laser_shader):
+			m_lasers(registry, laser_shader)
 			{ }
+			
+		void player_weapons::update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
+		{
+			m_lasers.update(fire, player_transform, dt);
+		}
+
+		void player_weapons::render(gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			m_lasers.render(renderer, matrices);
+		}
 
 		class player
 		{
@@ -416,9 +446,10 @@ namespace bump
 
 			explicit player(entt::registry& registry, assets& assets);
 
-			void update(entt::registry& registry, high_res_duration_t dt);
-			void render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices);
+			void update(high_res_duration_t dt);
+			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
+			entt::registry& m_registry;
 			entt::entity m_entity;
 
 			player_controls m_controls;
@@ -426,36 +457,37 @@ namespace bump
 		};
 
 		player::player(entt::registry& registry, assets& assets):
+			m_registry(registry),
 			m_entity(entt::null_t()),
 			m_controls(),
-			m_weapons(assets.m_shaders.at("player_laser"))
+			m_weapons(registry, assets.m_shaders.at("player_laser"))
 		{
 			m_entity = registry.create();
 
 			registry.emplace<ecs::basic_renderable>(m_entity, assets.m_models.at("player_ship"), assets.m_shaders.at("player_ship"));
-			auto& player_physics = registry.emplace<physics::physics_component>(m_entity);
+			auto& player_physics = registry.emplace<physics::rigidbody>(m_entity);
 			player_physics.set_mass(20.f);
 
 			player_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(20.f, 10.f));
 			player_physics.set_linear_damping(0.998f);
 			player_physics.set_angular_damping(0.998f);
 
-			auto& player_collision = registry.emplace<physics::collision_component>(m_entity);
+			auto& player_collision = registry.emplace<physics::collider>(m_entity);
 			player_collision.set_shape({ physics::sphere_shape{ 5.f } });
 			player_collision.set_collision_layer(physics::collision_layers::PLAYER);
 			player_collision.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
 		}
 
-		void player::update(entt::registry& registry, high_res_duration_t dt)
+		void player::update(high_res_duration_t dt)
 		{
-			auto const& physics = registry.get<physics::physics_component>(m_entity);
+			auto const& physics = m_registry.get<physics::rigidbody>(m_entity);
 
-			m_weapons.update(registry, m_controls.m_firing, physics.get_transform(), dt);
+			m_weapons.update(m_controls.m_firing, physics.get_transform(), dt);
 		}
 
-		void player::render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices)
+		void player::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
-			m_weapons.render(renderer, registry, matrices);
+			m_weapons.render(renderer, matrices);
 		}
 
 		gamestate do_game(app& app)
@@ -549,14 +581,14 @@ namespace bump
 					if (!paused)
 					{
 						// apply player input:
-						auto& player_physics = registry.get<physics::physics_component>(player.m_entity);
+						auto& player_physics = registry.get<physics::rigidbody>(player.m_entity);
 						player.m_controls.apply(player_physics, crosshair, glm::vec2(app.m_window.get_size()), camera_matrices(scene_camera));
 
 						// physics:
 						physics_system.update(registry, dt);
 
 						// update player state:
-						player.update(registry, dt);
+						player.update(dt);
 
 						// update camera position
 						auto player_position = get_position(player_physics.get_transform());
@@ -567,9 +599,9 @@ namespace bump
 						
 						// update basic_renderable transforms for physics objects
 						{
-							auto view = registry.view<physics::physics_component, ecs::basic_renderable>();
+							auto view = registry.view<physics::rigidbody, ecs::basic_renderable>();
 							for (auto id : view)
-								view.get<ecs::basic_renderable>(id).set_transform(view.get<physics::physics_component>(id).get_transform());
+								view.get<ecs::basic_renderable>(id).set_transform(view.get<physics::rigidbody>(id).get_transform());
 						}
 
 						// update asteroid transforms
@@ -609,7 +641,7 @@ namespace bump
 						
 						asteroids.render(registry, app.m_renderer, scene_camera_matrices);
 
-						player.render(app.m_renderer, registry, scene_camera_matrices);
+						player.render(app.m_renderer, scene_camera_matrices);
 						
 						particles.render(app.m_renderer, scene_camera_matrices);
 					}

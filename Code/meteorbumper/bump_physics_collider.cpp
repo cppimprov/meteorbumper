@@ -1,6 +1,6 @@
-#include "bump_physics_collision.hpp"
+#include "bump_physics_collider.hpp"
 
-#include "bump_physics_component.hpp"
+#include "bump_physics_rigidbody.hpp"
 
 #include <limits>
 #include <optional>
@@ -28,11 +28,11 @@ namespace bump
 
 			struct find_collision
 			{
-				find_collision(physics_component const& p1, physics_component const& p2):
+				find_collision(rigidbody const& p1, rigidbody const& p2):
 					p1(p1), p2(p2) { }
 				
-				physics_component const& p1;
-				physics_component const& p2;
+				rigidbody const& p1;
+				rigidbody const& p2;
 
 				std::optional<collision_data> operator()(sphere_shape const& s1, sphere_shape const& s2) const
 				{
@@ -161,12 +161,12 @@ namespace bump
 
 		} // unnamed
 
-		std::optional<collision_data> dispatch_find_collision(physics_component const& p1, collision_component const& c1, physics_component const& p2, collision_component const& c2)
+		std::optional<collision_data> dispatch_find_collision(rigidbody const& p1, collider const& c1, rigidbody const& p2, collider const& c2)
 		{
 			return std::visit(find_collision(p1, p2), c1.get_shape(), c2.get_shape());
 		}
 
-		void resolve_impulse(physics_component& p1, physics_component& p2, collision_component const& c1, collision_component const& c2, collision_data const& data)
+		void resolve_impulse(rigidbody& p1, rigidbody& p2, collider const& c1, collider const& c2, collision_data const& data)
 		{
 			if (p1.has_infinite_mass() && p2.has_infinite_mass())
 				return; // both objects have infinite mass: nothing to do!
@@ -218,7 +218,7 @@ namespace bump
 			p2.set_angular_velocity(i.avb + dvb.m_angular_velocity);
 		}
 
-		void resolve_projection(physics_component& p1, physics_component& p2, collision_data const& data)
+		void resolve_projection(rigidbody& p1, rigidbody& p2, collision_data const& data)
 		{
 			auto const slop = 1.01f;
 			auto const distance = data.m_penetration * slop;
@@ -230,7 +230,7 @@ namespace bump
 			p2.set_position(p2.get_position() +  data.m_normal * distance * (1.f - factor));
 		}
 
-		collision_component::collision_component():
+		collider::collider():
 			m_shape(sphere_shape{ 1.f }),
 			m_restitution(0.5f),
 			m_layer(std::numeric_limits<std::uint32_t>::max()),

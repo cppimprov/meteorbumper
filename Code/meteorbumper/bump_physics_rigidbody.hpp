@@ -13,11 +13,11 @@ namespace bump
 	namespace physics
 	{
 		
-		class physics_component
+		class rigidbody
 		{
 		public:
 
-			physics_component();
+			rigidbody();
 
 			// mass
 			bool has_mass() const { return m_inverse_mass != 0.f; }

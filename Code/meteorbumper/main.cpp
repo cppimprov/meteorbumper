@@ -24,11 +24,11 @@ int main(int , char* [])
 
 	// player lasers:
 		// add geometry shader to change points to lines.
-		// try rendering without actual vertices!
-		// destroy lasers on collision with asteroids.
 
 	// physics:
 		// clamp to y=0 plane! (how?)
+		// rename collision_component to collider
+		// rename physics_component to rigidbody
 	
 
 	// load icosphere, normalize points to make sure they're on a sphere

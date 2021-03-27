@@ -1,4 +1,4 @@
-#include "bump_physics_component.hpp"
+#include "bump_physics_rigidbody.hpp"
 
 #include "bump_physics_inertia_tensor.hpp"
 
@@ -8,7 +8,7 @@ namespace bump
 	namespace physics
 	{
 		
-		physics_component::physics_component():
+		rigidbody::rigidbody():
 			// mass
 			m_inverse_mass(1.f),
 			m_local_inertia_tensor(make_sphere_inertia_tensor(1.f, 1.f)),
@@ -24,7 +24,7 @@ namespace bump
 			m_torque(0.f)
 			{ }
 		
-		void physics_component::update(high_res_duration_t dt)
+		void rigidbody::update(high_res_duration_t dt)
 		{
 			auto dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
 

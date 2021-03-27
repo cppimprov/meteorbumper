@@ -10,7 +10,7 @@ namespace bump
 	namespace physics
 	{
 		
-		class physics_component;
+		class rigidbody;
 	
 		class physics_system
 		{

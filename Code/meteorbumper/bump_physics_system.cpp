@@ -1,7 +1,7 @@
 #include "bump_physics_system.hpp"
 
-#include "bump_physics_collision.hpp"
-#include "bump_physics_component.hpp"
+#include "bump_physics_collider.hpp"
+#include "bump_physics_rigidbody.hpp"
 
 namespace bump
 {
@@ -17,13 +17,10 @@ namespace bump
 		{
 			m_accumulator += dt;
 
-			// note: if we start destroying physics objects inside the physics update loop (e.g. on collision)
-			// we will need to update this view inside the accumulator!
-			auto view = registry.view<physics_component>();
-
 			while (m_accumulator >= m_update_time)
 			{
-				auto colliders = registry.view<physics_component, collision_component>();
+				// check for collisions
+				auto colliders = registry.view<rigidbody, collider>();
 
 				if (!colliders.empty())
 				{
@@ -41,10 +38,10 @@ namespace bump
 
 					for (auto const& pair : candidate_pairs)
 					{
-						auto const& p1 = colliders.get<physics_component>(pair.first);
-						auto const& p2 = colliders.get<physics_component>(pair.second);
-						auto const& c1 = colliders.get<collision_component>(pair.first);
-						auto const& c2 = colliders.get<collision_component>(pair.second);
+						auto const& p1 = colliders.get<rigidbody>(pair.first);
+						auto const& p2 = colliders.get<rigidbody>(pair.second);
+						auto const& c1 = colliders.get<collider>(pair.first);
+						auto const& c2 = colliders.get<collider>(pair.second);
 
 						// check collision layers
 						if ((c1.get_collision_mask() & c2.get_collision_layer()) == 0) continue;
@@ -59,26 +56,40 @@ namespace bump
 					// resolve collision
 					for (auto const& c : collisions)
 					{
-						auto& p1 = colliders.get<physics_component>(c.first.first);
-						auto& c1 = colliders.get<collision_component>(c.first.first);
-						auto& p2 = colliders.get<physics_component>(c.first.second);
-						auto& c2 = colliders.get<collision_component>(c.first.second);
+						auto& p1 = colliders.get<rigidbody>(c.first.first);
+						auto& c1 = colliders.get<collider>(c.first.first);
+						auto& p2 = colliders.get<rigidbody>(c.first.second);
+						auto& c2 = colliders.get<collider>(c.first.second);
 						auto const& data = c.second;
 
 						resolve_impulse(p1, p2, c1, c2, data);
 						resolve_projection(p1, p2, data);
 					}
+
+					// notify colliders of collision
+					// todo: pass more information (what? where? when? how fast? etc.)
+					for (auto const& c : collisions)
+					{
+						colliders.get<collider>(c.first.first).call_callback();
+						colliders.get<collider>(c.first.second).call_callback();
+					}
 				}
 
+				// update physics components
+				auto view = registry.view<rigidbody>();
+				
 				for (auto id : view)
-					view.get<physics_component>(id).update(m_update_time);
+					view.get<rigidbody>(id).update(m_update_time);
 
 				m_accumulator -= m_update_time;
 			}
 
+			// clear forces
+			auto view = registry.view<rigidbody>();
+
 			for (auto id : view)
 			{
-				auto& c = view.get<physics_component>(id);
+				auto& c = view.get<rigidbody>(id);
 				c.clear_force();
 				c.clear_torque();
 			}

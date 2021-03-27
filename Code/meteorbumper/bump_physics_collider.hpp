@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <variant>
 
@@ -12,7 +13,7 @@ namespace bump
 	namespace physics
 	{
 
-		class physics_component;
+		class rigidbody;
 	
 		struct sphere_shape
 		{
@@ -37,13 +38,14 @@ namespace bump
 			ASTEROIDS =      1u << 2u,
 		};
 
-		class collision_component
+		class collider
 		{
 		public:
 
 			using shape_type = std::variant<sphere_shape, cuboid_shape, plane_shape>;
+			using callback_type = std::function<void()>; // todo: pass collision information (other collider, point, normal, velocities, etc.)
 
-			collision_component();
+			collider();
 
 			void set_shape(shape_type shape) { m_shape = shape; }
 			shape_type get_shape() const { return m_shape; }
@@ -57,12 +59,16 @@ namespace bump
 			void set_collision_mask(std::uint32_t layer_mask) { m_layer_mask = layer_mask; }
 			std::uint32_t get_collision_mask() const { return m_layer_mask; }
 
+			void set_callback(callback_type callback) { m_callback = std::move(callback); }
+			void call_callback() const { if (m_callback) m_callback(); }
+
 		private:
 
 			float m_restitution;
 			shape_type m_shape;
 			std::uint32_t m_layer;      // bitmask of layers this object is on
 			std::uint32_t m_layer_mask; // bitmask of layers this object collides with
+			callback_type m_callback;
 		};
 
 		struct collision_data
@@ -72,9 +78,9 @@ namespace bump
 			float m_penetration = 0.f;
 		};
 
-		std::optional<collision_data> dispatch_find_collision(physics_component const& p1, collision_component const& c1, physics_component const& p2, collision_component const& c2);
-		void resolve_impulse(physics_component& p1, physics_component& p2, collision_component const& c1, collision_component const& c2, collision_data const& data);
-		void resolve_projection(physics_component& p1, physics_component& p2, collision_data const& data);
+		std::optional<collision_data> dispatch_find_collision(rigidbody const& p1, collider const& c1, rigidbody const& p2, collider const& c2);
+		void resolve_impulse(rigidbody& p1, rigidbody& p2, collider const& c1, collider const& c2, collision_data const& data);
+		void resolve_projection(rigidbody& p1, rigidbody& p2, collision_data const& data);
 		
 	} // physics
 	
