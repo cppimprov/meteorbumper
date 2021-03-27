@@ -23,8 +23,6 @@ int main(int , char* [])
 // todo next:
 
 	// player lasers:
-		// wide lines! -> render quad in geometry shader instead of lines.
-
 		// add light for each beam!
 		// add bloom effect?
 
