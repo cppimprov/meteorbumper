@@ -188,19 +188,13 @@ namespace bump
 			gl::buffer m_instance_beam_length;
 			gl::vertex_array m_vertex_array;
 
-			struct beam_instance_data
-			{
-				glm::vec3 m_color;
-				glm::vec3 m_position;
-				glm::vec3 m_direction;
-				float m_beam_length;
-			};
+			std::vector<glm::vec3> m_frame_instance_colors;
+			std::vector<glm::vec3> m_frame_instance_positions;
+			std::vector<glm::vec3> m_frame_instance_directions;
+			std::vector<float> m_frame_instance_beam_lengths;
 
-			std::vector<beam_instance_data> m_instance_data;
-
-			struct beam
+			struct beam_segment
 			{
-				entt::entity m_entity; // physics / collision components
 				float m_beam_length;
 				high_res_duration_t m_lifetime;
 			};
@@ -210,7 +204,7 @@ namespace bump
 				glm::vec3 m_color;
 				glm::vec3 m_origin; // in player model space
 				high_res_duration_t m_max_lifetime;
-				std::vector<beam> m_beams;
+				std::vector<entt::entity> m_beams;
 			};
 
 			high_res_duration_t m_firing_period;
@@ -278,12 +272,12 @@ namespace bump
 
 			if (fire && m_time_since_firing >= m_firing_period)
 			{
-				std::cout << "pew" << std::endl;
-
 				// add a new beam to each emitter
 				for (auto& emitter : m_emitters)
 				{
 					auto beam_entity = registry.create();
+					
+					std::cout << "pew " << (std::uint32_t)beam_entity << std::endl;
 
 					auto& beam_physics = registry.emplace<physics::physics_component>(beam_entity);
 					beam_physics.set_mass(0.1f);
@@ -294,7 +288,9 @@ namespace bump
 					auto& beam_collision = registry.emplace<physics::collision_component>(beam_entity);
 					beam_collision.set_shape({ physics::sphere_shape{ 0.1f } }); // todo: line!
 
-					emitter.m_beams.push_back({ beam_entity, 0.f, high_res_duration_t{ 0 } });
+					registry.emplace<beam_segment>(beam_entity, 0.f, high_res_duration_t{ 0 });
+
+					emitter.m_beams.push_back(beam_entity);
 				}
 
 				// reset firing timer
@@ -305,12 +301,14 @@ namespace bump
 			auto const firing_period_s = std::chrono::duration_cast<std::chrono::duration<float>>(m_firing_period).count();
 			auto const max_beam_length = m_beam_speed_m_per_s * firing_period_s * m_beam_length_factor;
 
+			auto view = registry.view<beam_segment>();
+
 			for (auto& emitter : m_emitters)
 			{
 				// update the length of the most recently fired beam
 				if (!emitter.m_beams.empty())
 				{
-					auto& first = emitter.m_beams.front();
+					auto& first = view.get<beam_segment>(emitter.m_beams.back());
 
 					if (first.m_beam_length < max_beam_length)
 					{
@@ -320,40 +318,71 @@ namespace bump
 				}
 
 				// update beam lifetimes
-				for (auto& beam : emitter.m_beams)
-					beam.m_lifetime += dt;
+				for (auto beam : emitter.m_beams)
+					view.get<beam_segment>(beam).m_lifetime += dt;
 				
 				// find and remove dead beams
 				auto first_dead_beam = std::remove_if(emitter.m_beams.begin(), emitter.m_beams.end(),
-						[&] (beam const& b) { return b.m_lifetime > emitter.m_max_lifetime; });
-				
-				for (auto b = first_dead_beam; b != emitter.m_beams.end(); ++b)
-				{
-					std::cout << "fwip" << std::endl;
-					registry.destroy(b->m_entity);
-				}
+					[&] (entt::entity b) {
 
+						auto result = (view.get<beam_segment>(b).m_lifetime > emitter.m_max_lifetime);
+
+						if (result)
+						{
+							std::cout << "fwip " << (std::uint32_t)b << std::endl;
+							registry.destroy(b);
+						}
+
+						return result;
+					});
+				
 				emitter.m_beams.erase(first_dead_beam, emitter.m_beams.end());
 			}
 		}
 
 		void player_lasers::render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices)
 		{
-			(void)renderer;
-			(void)registry;
-			(void)matrices;
+			auto view = registry.view<beam_segment, physics::physics_component>();
 
-			// get beam instance data
+			for (auto const& emitter : m_emitters)
+			{
+				for (auto const& beam : emitter.m_beams)
+				{
+					auto const& physics = view.get<physics::physics_component>(beam);
+					auto beam_direction = physics.get_velocity();
+					beam_direction = glm::length(beam_direction) == 0.f ? glm::vec3(0.f) : glm::normalize(beam_direction);
 
-			// upload instance data to buffers
+					auto const& segment = view.get<beam_segment>(beam);
 
-			// set shader
-			// set uniforms
-			// set vertex array
+					m_frame_instance_colors.push_back(emitter.m_color);
+					m_frame_instance_positions.push_back(physics.get_position());
+					m_frame_instance_directions.push_back(beam_direction);
+					m_frame_instance_beam_lengths.push_back(segment.m_beam_length);
+				}
+			}
 
-			// draw
-			
-			// clear stuff
+			auto const instance_count = m_frame_instance_colors.size();
+
+			m_instance_color.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_colors.front()), 3, instance_count, GL_STREAM_DRAW);
+			m_instance_position.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_positions.front()), 3, instance_count, GL_STREAM_DRAW);
+			m_instance_direction.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_directions.front()), 3, instance_count, GL_STREAM_DRAW);
+			m_instance_beam_length.set_data(GL_ARRAY_BUFFER, m_frame_instance_beam_lengths.data(), 1, instance_count, GL_STREAM_DRAW);
+
+			auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
+
+			renderer.set_program(m_shader);
+			renderer.set_uniform_4x4f(m_u_MVP, mvp);
+			renderer.set_vertex_array(m_vertex_array);
+
+			renderer.draw_arrays(GL_POINTS, 1, instance_count);
+
+			renderer.clear_vertex_array();
+			renderer.clear_program();
+
+			m_frame_instance_colors.clear();
+			m_frame_instance_positions.clear();
+			m_frame_instance_directions.clear();
+			m_frame_instance_beam_lengths.clear();
 		}
 
 		class player_weapons
@@ -365,6 +394,11 @@ namespace bump
 			void update(entt::registry& registry, bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
 			{
 				m_lasers.update(registry, fire, player_transform, dt);
+			}
+
+			void render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices)
+			{
+				m_lasers.render(renderer, registry, matrices);
 			}
 
 			player_lasers m_lasers;
@@ -381,6 +415,7 @@ namespace bump
 			explicit player(entt::registry& registry, assets& assets);
 
 			void update(entt::registry& registry, high_res_duration_t dt);
+			void render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices);
 
 			entt::entity m_entity;
 
@@ -412,6 +447,11 @@ namespace bump
 			auto const& physics = registry.get<physics::physics_component>(m_entity);
 
 			m_weapons.update(registry, true, physics.get_transform(), dt);
+		}
+
+		void player::render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices)
+		{
+			m_weapons.render(renderer, registry, matrices);
 		}
 
 		gamestate do_game(app& app)
@@ -562,6 +602,8 @@ namespace bump
 						}
 						
 						asteroids.render(registry, app.m_renderer, scene_camera_matrices);
+
+						player.render(app.m_renderer, registry, scene_camera_matrices);
 						
 						particles.render(app.m_renderer, scene_camera_matrices);
 					}

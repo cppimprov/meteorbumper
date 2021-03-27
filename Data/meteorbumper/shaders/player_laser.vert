@@ -14,6 +14,8 @@ void main()
 {
 	vert_Color = in_Color;
 
+	gl_PointSize = 10.f; // TEMP
+
 	// TEMP!!!! just use everything for now!!!
 	gl_Position = u_MVP * vec4(in_Position + (in_VertexPosition + in_Color + in_Position + in_Direction + in_BeamLength) * 0.000001, 1.0);
 }

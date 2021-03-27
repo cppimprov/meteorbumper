@@ -50,6 +50,11 @@ namespace bump
 			else
 				glDisable(GL_PROGRAM_POINT_SIZE);
 		}
+		
+		void renderer::set_pipeline_point_size(float size)
+		{
+			glPointSize(size);
+		}
 
 		void renderer::set_blending(blending mode)
 		{
