@@ -33,17 +33,24 @@ namespace bump
 					for (auto first = colliders.begin(); first != std::prev(colliders.end()); ++first)
 						for (auto second = std::next(first); second != colliders.end(); ++second)
 							candidate_pairs.push_back({ *first, *second });
+					
+					// check that objects have at least one layer in common
 
 					// narrow phase - get collision data
 					auto collisions = std::vector<std::pair<std::pair<entt::entity, entt::entity>, collision_data>>();
 
 					for (auto const& pair : candidate_pairs)
 					{
-						auto hit = dispatch_find_collision(
-							colliders.get<physics_component>(pair.first),
-							colliders.get<collision_component>(pair.first),
-							colliders.get<physics_component>(pair.second),
-							colliders.get<collision_component>(pair.second));
+						auto const& p1 = colliders.get<physics_component>(pair.first);
+						auto const& p2 = colliders.get<physics_component>(pair.second);
+						auto const& c1 = colliders.get<collision_component>(pair.first);
+						auto const& c2 = colliders.get<collision_component>(pair.second);
+
+						// check collision layers
+						if ((c1.get_collision_mask() & c2.get_collision_layer()) == 0) continue;
+						if ((c2.get_collision_mask() & c1.get_collision_layer()) == 0) continue;
+						
+						auto hit = dispatch_find_collision(p1, c1, p2, c2);
 
 						if (hit)
 							collisions.push_back({ pair, hit.value() });

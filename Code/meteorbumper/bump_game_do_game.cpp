@@ -36,6 +36,8 @@ namespace bump
 
 			glm::vec2 m_mouse_motion = glm::vec2(0.f);
 			glm::vec2 m_controller_position = glm::vec2(0.f);
+
+			bool m_firing = false;
 			
 			void apply(physics::physics_component& physics, crosshair& crosshair, glm::vec2 window_size, camera_matrices const& matrices)
 			{
@@ -277,8 +279,6 @@ namespace bump
 				{
 					auto beam_entity = registry.create();
 					
-					std::cout << "pew " << (std::uint32_t)beam_entity << std::endl;
-
 					auto& beam_physics = registry.emplace<physics::physics_component>(beam_entity);
 					beam_physics.set_mass(0.1f);
 					beam_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(0.1f, 0.1f));
@@ -287,6 +287,8 @@ namespace bump
 
 					auto& beam_collision = registry.emplace<physics::collision_component>(beam_entity);
 					beam_collision.set_shape({ physics::sphere_shape{ 0.1f } }); // todo: line!
+					beam_collision.set_collision_layer(physics::collision_layers::PLAYER_WEAPONS);
+					beam_collision.set_collision_mask(~physics::collision_layers::PLAYER);
 
 					registry.emplace<beam_segment>(beam_entity, 0.f, high_res_duration_t{ 0 });
 
@@ -328,10 +330,7 @@ namespace bump
 						auto result = (view.get<beam_segment>(b).m_lifetime > emitter.m_max_lifetime);
 
 						if (result)
-						{
-							std::cout << "fwip " << (std::uint32_t)b << std::endl;
 							registry.destroy(b);
-						}
 
 						return result;
 					});
@@ -362,6 +361,9 @@ namespace bump
 			}
 
 			auto const instance_count = m_frame_instance_colors.size();
+
+			if (instance_count == 0)
+				return; // nothing to render
 
 			m_instance_color.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_colors.front()), 3, instance_count, GL_STREAM_DRAW);
 			m_instance_position.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_positions.front()), 3, instance_count, GL_STREAM_DRAW);
@@ -440,13 +442,15 @@ namespace bump
 
 			auto& player_collision = registry.emplace<physics::collision_component>(m_entity);
 			player_collision.set_shape({ physics::sphere_shape{ 5.f } });
+			player_collision.set_collision_layer(physics::collision_layers::PLAYER);
+			player_collision.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
 		}
 
 		void player::update(entt::registry& registry, high_res_duration_t dt)
 		{
 			auto const& physics = registry.get<physics::physics_component>(m_entity);
 
-			m_weapons.update(registry, true, physics.get_transform(), dt);
+			m_weapons.update(registry, m_controls.m_firing, physics.get_transform(), dt);
 		}
 
 		void player::render(gl::renderer& renderer, entt::registry& registry, camera_matrices const& matrices)
@@ -516,8 +520,9 @@ namespace bump
 						if (id == control_id::GAMEPADTRIGGER_LEFT) player.m_controls.m_boost_axis = in.m_value;
 						else if (id == control_id::GAMEPADSTICK_LEFTX) player.m_controls.m_horizontal_axis = in.m_value;
 						else if (id == control_id::GAMEPADSTICK_LEFTY) player.m_controls.m_vertical_axis = -in.m_value;
-						else if (id == control_id::GAMEPADSTICK_RIGHTX) { player.m_controls.m_controller_position.x = in.m_value; player.m_controls.m_controller_update = true; }
+						else if (id == control_id::GAMEPADSTICK_RIGHTX) { player.m_controls.m_controller_position.x = in.m_value;  player.m_controls.m_controller_update = true; }
 						else if (id == control_id::GAMEPADSTICK_RIGHTY) { player.m_controls.m_controller_position.y = -in.m_value; player.m_controls.m_controller_update = true; }
+						else if (id == control_id::GAMEPADTRIGGER_RIGHT) player.m_controls.m_firing = (in.m_value == 0.f ? 0.f : 1.f);
 
 						else if (id == control_id::KEYBOARDKEY_W) player.m_controls.m_vertical_axis = in.m_value;
 						else if (id == control_id::KEYBOARDKEY_S) player.m_controls.m_vertical_axis = -in.m_value;
@@ -526,6 +531,7 @@ namespace bump
 						else if (id == control_id::KEYBOARDKEY_SPACE) player.m_controls.m_boost_axis = in.m_value;
 						else if (id == control_id::MOUSEMOTION_X) { player.m_controls.m_mouse_motion.x = (in.m_value / app.m_window.get_size().x); player.m_controls.m_mouse_update = true; }
 						else if (id == control_id::MOUSEMOTION_Y) { player.m_controls.m_mouse_motion.y = (in.m_value / app.m_window.get_size().y); player.m_controls.m_mouse_update = true; }
+						else if (id == control_id::MOUSEBUTTON_LEFT) player.m_controls.m_firing = in.m_value;
 
 						else if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
 					};

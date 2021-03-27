@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 
+#include <cstdint>
 #include <optional>
 #include <variant>
 
@@ -28,6 +29,13 @@ namespace bump
 			glm::vec3 m_normal;
 			float m_distance;
 		};
+		
+		enum collision_layers : std::uint32_t
+		{
+			PLAYER =         1u << 0u,
+			PLAYER_WEAPONS = 1u << 1u,
+			ASTEROIDS =      1u << 2u,
+		};
 
 		class collision_component
 		{
@@ -42,11 +50,19 @@ namespace bump
 
 			void set_restitution(float value) { m_restitution = glm::clamp(value, 0.f, 1.f); }
 			float get_restitution() const { return m_restitution; }
-			
+
+			void set_collision_layer(std::uint32_t layer) { m_layer = layer; }
+			std::uint32_t get_collision_layer() const { return m_layer; }
+
+			void set_collision_mask(std::uint32_t layer_mask) { m_layer_mask = layer_mask; }
+			std::uint32_t get_collision_mask() const { return m_layer_mask; }
+
 		private:
 
 			float m_restitution;
 			shape_type m_shape;
+			std::uint32_t m_layer;      // bitmask of layers this object is on
+			std::uint32_t m_layer_mask; // bitmask of layers this object collides with
 		};
 
 		struct collision_data

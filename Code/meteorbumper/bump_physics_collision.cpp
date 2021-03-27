@@ -2,6 +2,7 @@
 
 #include "bump_physics_component.hpp"
 
+#include <limits>
 #include <optional>
 
 namespace bump
@@ -231,7 +232,9 @@ namespace bump
 
 		collision_component::collision_component():
 			m_shape(sphere_shape{ 1.f }),
-			m_restitution(0.5f)
+			m_restitution(0.5f),
+			m_layer(std::numeric_limits<std::uint32_t>::max()),
+			m_layer_mask(std::numeric_limits<std::uint32_t>::max())
 			{ }
 		
 	} // physics

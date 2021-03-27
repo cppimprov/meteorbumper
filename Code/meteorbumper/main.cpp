@@ -23,11 +23,12 @@ int main(int , char* [])
 // todo next:
 
 	// player lasers:
-		// only fire on mouse 1
-		// don't collide w/ player (collision layers / masks)
 		// add geometry shader to change points to lines.
 		// try rendering without actual vertices!
 		// destroy lasers on collision with asteroids.
+
+	// physics:
+		// clamp to y=0 plane! (how?)
 	
 
 	// load icosphere, normalize points to make sure they're on a sphere
