@@ -19,6 +19,8 @@ namespace bump
 			m_angular_velocity(0.f),
 			m_linear_damping(0.99999f),
 			m_angular_damping(0.99999f),
+			m_linear_factor(1.f),
+			m_angular_factor(1.f),
 			// forces
 			m_force(0.f),
 			m_torque(0.f)

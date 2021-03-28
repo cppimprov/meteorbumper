@@ -22,15 +22,15 @@ int main(int , char* [])
 
 // todo next:
 
+	// physics:
+		// (prevent player moving on y axis, prevent player rotating around x or z axes)
+
+	// framerate counter
+	
 	// player lasers:
 		// add light for each beam!
 		// add bloom effect?
 
-	// physics:
-		// clamp to y=0 plane! (how?)
-
-	// framerate counter
-	
 
 	// load icosphere, normalize points to make sure they're on a sphere
 	// use vec3 simplex noise to get offset value.

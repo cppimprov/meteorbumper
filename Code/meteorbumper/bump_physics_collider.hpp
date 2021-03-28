@@ -79,8 +79,8 @@ namespace bump
 		};
 
 		std::optional<collision_data> dispatch_find_collision(rigidbody const& p1, collider const& c1, rigidbody const& p2, collider const& c2);
-		void resolve_impulse(rigidbody& p1, rigidbody& p2, collider const& c1, collider const& c2, collision_data const& data);
-		void resolve_projection(rigidbody& p1, rigidbody& p2, collision_data const& data);
+		void resolve_impulse(rigidbody& a, rigidbody& b, collision_data const& c, float e); // e == restitution
+		void resolve_projection(rigidbody& a, rigidbody& b, collision_data const& c);
 		
 	} // physics
 	

@@ -115,50 +115,6 @@ namespace bump
 				}
 			};
 			
-			struct impulse_terms
-			{
-				// collision
-				glm::vec3 p, n;
-
-				// rigid bodies
-				glm::vec3 pa, pb, va, vb, ava, avb;
-				float ima, imb;
-				glm::mat3 iia, iib;
-				
-				// variables
-				glm::vec3 ra, rb, vpa, vpb;
-				glm::vec3 vab;
-				float e;
-			};
-
-			struct delta_velocity
-			{
-				glm::vec3 m_linear_velocity = glm::vec3(0.f);
-				glm::vec3 m_angular_velocity = glm::vec3(0.f);
-			};
-
-			void calculate_impulse(impulse_terms const& i, delta_velocity& dva, delta_velocity& dvb)
-			{
-				auto const bottom =  (i.ima + i.imb) + 
-					glm::dot(i.n,
-						glm::cross(i.iia * glm::cross(i.ra, i.n), i.ra) +
-							glm::cross(i.iib * glm::cross(i.rb, i.n), i.rb));
-				
-				auto const top = -(1.f + i.e) * glm::dot(i.vab, i.n);
-
-				auto const j = (top / bottom);
-				auto const nj = i.n * j;
-
-				dva.m_linear_velocity += i.ima * nj;
-				dvb.m_linear_velocity -= i.imb * nj;
-
-				if (!glm::epsilonEqual(i.ima, 0.f, glm::epsilon<float>()))
-					dva.m_angular_velocity += i.iia * glm::cross(i.ra, nj);
-				
-				if (!glm::epsilonEqual(i.imb, 0.f, glm::epsilon<float>()))
-					dvb.m_angular_velocity -= i.iib * glm::cross(i.rb, nj);
-			}
-
 		} // unnamed
 
 		std::optional<collision_data> dispatch_find_collision(rigidbody const& p1, collider const& c1, rigidbody const& p2, collider const& c2)
@@ -166,68 +122,45 @@ namespace bump
 			return std::visit(find_collision(p1, p2), c1.get_shape(), c2.get_shape());
 		}
 
-		void resolve_impulse(rigidbody& p1, rigidbody& p2, collider const& c1, collider const& c2, collision_data const& data)
+		void resolve_impulse(rigidbody& a, rigidbody& b, collision_data const& c, float e)
 		{
-			if (p1.has_infinite_mass() && p2.has_infinite_mass())
+			if (a.has_infinite_mass() && b.has_infinite_mass())
 				return; // both objects have infinite mass: nothing to do!
 			
-			auto i = impulse_terms();
-			i.p = data.m_point;
-			i.n = data.m_normal;
-			i.pa = p1.get_position();
-			i.pb = p2.get_position();
-			i.va = p1.get_velocity();
-			i.vb = p2.get_velocity();
-			i.ava = p1.get_angular_velocity();
-			i.avb = p2.get_angular_velocity();
-			i.ima = p1.get_inverse_mass();
-			i.imb = p2.get_inverse_mass();
-			i.iia = p1.get_inverse_inertia_tensor();
-			i.iib = p2.get_inverse_inertia_tensor();
-			i.ra = i.p - i.pa;
-			i.rb = i.p - i.pb;
-			i.vpa = i.va + glm::cross(i.ava, i.ra);
-			i.vpb = i.vb + glm::cross(i.avb, i.rb);
-			i.vab = i.vpa - i.vpb;
-			i.e = glm::min(c1.get_restitution(), c2.get_restitution());
+			auto const ra = c.m_point - a.get_position();
+			auto const rb = c.m_point - b.get_position();
 
-			if (glm::dot(i.vab, i.n) < 0.f)
+			auto const vab = 
+				(a.get_velocity() + glm::cross(a.get_angular_velocity(), ra)) -
+				(b.get_velocity() + glm::cross(b.get_angular_velocity(), rb));
+
+			if (glm::dot(vab, c.m_normal) < 0.f)
 				return; // objects are moving away from each other
-
-			auto dva = delta_velocity();
-			auto dvb = delta_velocity();
 			
-			calculate_impulse(i, dva, dvb); // calculate normal impulse
+			auto const bottom =  (a.get_inverse_mass() + b.get_inverse_mass()) + 
+				glm::dot(c.m_normal,
+					glm::cross(a.get_inverse_inertia_tensor() * glm::cross(ra, c.m_normal), ra) +
+					glm::cross(b.get_inverse_inertia_tensor() * glm::cross(rb, c.m_normal), rb));
+			
+			auto const top = -(1.f + e) * glm::dot(vab, c.m_normal);
 
-			// todo: can we turn tangent impulse off for specific objects?
-			// todo: friction parameters?
+			auto const j = (top / bottom);
+			auto const nj = c.m_normal * j;
 
-			// auto t = i.vab - glm::dot(i.vab, i.n) * i.n;
-			// if (!glm::epsilonEqual(glm::length(t), 0.f, glm::epsilon<float>()))
-			// {
-			// 	i.n = glm::normalize(t);
-			// 	i.e = 0.f;
-
-			// 	calculate_impulse(i, dva, dvb); // calculate tangent impulse 
-			// }
-
-			// update velocity
-			p1.set_velocity(i.va + dva.m_linear_velocity);
-			p2.set_velocity(i.vb + dvb.m_linear_velocity);
-			p1.set_angular_velocity(i.ava + dva.m_angular_velocity);
-			p2.set_angular_velocity(i.avb + dvb.m_angular_velocity);
+			a.add_impulse_at_point(nj, ra);
+			b.add_impulse_at_point(-nj, rb);
 		}
 
-		void resolve_projection(rigidbody& p1, rigidbody& p2, collision_data const& data)
+		void resolve_projection(rigidbody& a, rigidbody& b, collision_data const& c)
 		{
 			auto const slop = 1.01f;
-			auto const distance = data.m_penetration * slop;
+			auto const distance = c.m_penetration * slop;
 
-			auto total_inv_mass = p1.get_inverse_mass() + p2.get_inverse_mass();
-			auto factor = glm::clamp(p1.get_inverse_mass() / total_inv_mass, 0.f, 1.f);
+			auto total_inv_mass = a.get_inverse_mass() + b.get_inverse_mass();
+			auto factor = glm::clamp(a.get_inverse_mass() / total_inv_mass, 0.f, 1.f);
 
-			p1.set_position(p1.get_position() + -data.m_normal * distance * factor);
-			p2.set_position(p2.get_position() +  data.m_normal * distance * (1.f - factor));
+			a.set_position(a.get_position() + -c.m_normal * distance * factor);
+			b.set_position(b.get_position() +  c.m_normal * distance * (1.f - factor));
 		}
 
 		collider::collider():

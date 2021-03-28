@@ -55,20 +55,27 @@ namespace bump
 			void set_transform(glm::mat4 transform) { m_position = bump::get_position(transform); m_orientation = bump::get_rotation(transform); }
 			glm::mat4 get_transform() const { auto t = glm::translate(glm::mat4(1.f), m_position); t *= glm::mat4_cast(m_orientation); return t; }
 
+			void set_linear_factor(glm::vec3 factor) { m_linear_factor = factor; }
+			glm::vec3 get_linear_factor() const { return m_linear_factor; }
+			
+			void set_angular_factor(glm::vec3 factor) { m_angular_factor = factor; }
+			glm::vec3 get_angular_factor() const { return m_angular_factor; }
+
 			// forces
-			void add_force(glm::vec3 force) { m_force += force; }
-			void clear_force() { m_force = glm::vec3(0.f); }
+			void add_force(glm::vec3 force) { m_force += force * m_linear_factor; }
+			void add_torque(glm::vec3 torque) { m_torque += torque * m_angular_factor; }
+			void add_force_at_point(glm::vec3 force, glm::vec3 rel_point) { add_force(force); add_torque(glm::cross(rel_point, force * m_linear_factor)); }
 
-			void add_torque(glm::vec3 torque) { m_torque += torque; }
-			void clear_torque() { m_torque = glm::vec3(0.f); }
-
-			// todo: is this correct? should point be in object coordinates?
-			void add_force_at_point(glm::vec3 force, glm::vec3 point) { add_force(force); add_torque(glm::cross(point - m_position, force)); }
+			void add_impulse(glm::vec3 impulse) { m_velocity += m_inverse_mass * impulse * m_linear_factor; }
+			void add_angular_impulse(glm::vec3 impulse) { m_angular_velocity += get_inverse_inertia_tensor() * impulse * m_angular_factor; }
+			void add_impulse_at_point(glm::vec3 impulse, glm::vec3 rel_point) { add_impulse(impulse); add_angular_impulse(glm::cross(rel_point, impulse * m_linear_factor)); }
 
 			glm::vec3 get_force() const { return m_force; }
 			glm::vec3 get_torque() const { return m_torque; }
+						
+			void clear_force() { m_force = glm::vec3(0.f); }
+			void clear_torque() { m_torque = glm::vec3(0.f); }
 
-			// material
 		private:
 
 			void update(high_res_duration_t dt);
@@ -85,6 +92,8 @@ namespace bump
 			glm::vec3 m_angular_velocity;
 			float m_linear_damping;
 			float m_angular_damping;
+			glm::vec3 m_linear_factor;
+			glm::vec3 m_angular_factor;
 		
 			// forces
 			glm::vec3 m_force;

@@ -54,16 +54,18 @@ namespace bump
 					}
 
 					// resolve collision
-					for (auto const& c : collisions)
+					for (auto const& collision : collisions)
 					{
-						auto& p1 = colliders.get<rigidbody>(c.first.first);
-						auto& c1 = colliders.get<collider>(c.first.first);
-						auto& p2 = colliders.get<rigidbody>(c.first.second);
-						auto& c2 = colliders.get<collider>(c.first.second);
-						auto const& data = c.second;
+						auto& a = colliders.get<rigidbody>(collision.first.first);
+						auto& b = colliders.get<rigidbody>(collision.first.second);
+						auto const& c = collision.second;
+						
+						auto e = glm::min(
+							colliders.get<collider>(collision.first.first).get_restitution(), 
+							colliders.get<collider>(collision.first.second).get_restitution());
 
-						resolve_impulse(p1, p2, c1, c2, data);
-						resolve_projection(p1, p2, data);
+						resolve_impulse(a, b, c, e);
+						resolve_projection(a, b, c);
 					}
 
 					// notify colliders of collision
