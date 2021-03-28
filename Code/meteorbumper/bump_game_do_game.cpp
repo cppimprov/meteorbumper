@@ -5,6 +5,7 @@
 #include "bump_game_asteroids.hpp"
 #include "bump_game_crosshair.hpp"
 #include "bump_game_ecs_render.hpp"
+#include "bump_game_fps_counter.hpp"
 #include "bump_game_particle_field.hpp"
 #include "bump_game_skybox.hpp"
 #include "bump_physics.hpp"
@@ -537,6 +538,8 @@ namespace bump
 				(float)app.m_window.get_size().y * (5.f / 8.f),
 			};
 
+			auto fps = fps_counter(app.m_ft_context, app.m_assets.m_fonts.at("fps_counter"), app.m_assets.m_shaders.at("fps_counter"));
+
 			auto paused = false;
 			auto timer = frame_timer();
 
@@ -612,6 +615,8 @@ namespace bump
 
 						// update asteroid transforms
 						asteroids.update(registry);
+
+						fps.update(dt);
 					}
 				}
 
@@ -655,6 +660,8 @@ namespace bump
 					// render ui
 					auto ui_camera_matrices = camera_matrices(ui_camera);
 					crosshair.render(app.m_renderer, ui_camera_matrices);
+
+					fps.render(app.m_renderer, ui_camera_matrices);
 
 					app.m_window.swap_buffers();
 				}

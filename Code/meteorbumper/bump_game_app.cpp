@@ -12,6 +12,7 @@ namespace bump
 			auto const fonts = std::vector<font_metadata>
 			{
 				{ "press_start", "Bungee-Regular.ttf", 64 },
+				{ "fps_counter", "Roboto-Regular.ttf", 16 },
 			};
 
 			auto const sounds = std::vector<sound_metadata>{ };
@@ -31,6 +32,7 @@ namespace bump
 				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
 				{ "crosshair", { "crosshair.vert", "crosshair.frag" } },
 				{ "player_laser", { "player_laser.vert", "player_laser.geom", "player_laser.frag" } },
+				{ "fps_counter", { "fps_counter.vert", "fps_counter.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>

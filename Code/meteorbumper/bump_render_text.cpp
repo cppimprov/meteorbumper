@@ -46,5 +46,30 @@ namespace bump
 		
 		return { image.m_pos, text_image_to_gl_texture(image.m_image) };
 	}
+
+	charmap_texture render_charmap(font::ft_context const& ft_context, font::font_asset const& font, std::string const& chars)
+	{
+		auto hb_shaper = font::hb_shaper(HB_DIRECTION_LTR, HB_SCRIPT_LATIN, hb_language_from_string("en", -1));
+		hb_shaper.shape(font.m_hb_font.get_handle(), chars);
+
+		auto glyphs = render_glyphs(ft_context, font.m_ft_font, font.m_hb_font, hb_shaper);
+		auto image = blit_glyphs(glyphs, font::blit_mode::MAX);
+		auto texture = text_image_to_gl_texture(image.m_image);
+
+		die_if(glyphs.size() != chars.size());
+
+		auto map = std::map<char, charmap_texture::glyph_info>();
+
+		for (auto i = std::size_t{ 0 }; i != glyphs.size(); ++i)
+		{
+			// make glyph origins relative to texture origin
+			auto const origin = glyphs[i].m_pos - image.m_pos;
+			auto const size = glm::ivec2(glyphs[i].m_image.size());
+			auto const inserted = map.insert({ chars[i], charmap_texture::glyph_info{ origin, size } }).second;
+			die_if(!inserted); // chars in char_text must be unique!
+		}
+		
+		return { image.m_pos, std::move(map), std::move(texture) };
+	}
 	
 } // bump

@@ -187,9 +187,9 @@ namespace bump
 			glBindVertexArray(0);
 		}
 
-		void renderer::draw_arrays(GLenum primitive_type, std::size_t primitive_count, std::size_t instance_count)
+		void renderer::draw_arrays(GLenum primitive_type, std::size_t vertex_count, std::size_t instance_count)
 		{
-			glDrawArraysInstanced(primitive_type, 0, narrow_cast<GLsizei>(primitive_count), narrow_cast<GLsizei>(instance_count));
+			glDrawArraysInstanced(primitive_type, 0, narrow_cast<GLsizei>(vertex_count), narrow_cast<GLsizei>(instance_count));
 		}
 
 		void renderer::draw_indexed(GLenum primitive_type, std::size_t index_count, GLenum index_type, std::size_t instance_count)

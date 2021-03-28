@@ -22,15 +22,18 @@ int main(int , char* [])
 
 // todo next:
 
-	// physics:
-		// do we need to change "resolve_projection" to use new angular / linear factors?
-		// (prevent player moving on y axis, prevent player rotating around x or z axes)
+	// lighting!
+		// g-buffers
+		// directional lights, point lights,
 
-	// framerate counter
-	
 	// player lasers:
 		// add light for each beam!
 		// add bloom effect?
+
+	// player controls:
+		// fix input:
+			// when both direction keys are pressed, release one -> 
+			// ship should move in the direction of the one still pressed
 
 
 	// load icosphere, normalize points to make sure they're on a sphere

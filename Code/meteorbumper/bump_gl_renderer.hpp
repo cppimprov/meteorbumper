@@ -135,7 +135,7 @@ namespace bump
 			void set_uniform_data_4x3d(GLint location, GLdouble* data, std::size_t count) { glUniformMatrix4x3dv(location, narrow_cast<GLsizei>(count), GL_FALSE, data); }
 			void set_uniform_data_4x4d(GLint location, GLdouble* data, std::size_t count) { glUniformMatrix4dv  (location, narrow_cast<GLsizei>(count), GL_FALSE, data); }
 
-			void draw_arrays(GLenum primitive_type, std::size_t primitive_count, std::size_t instance_count = 1);
+			void draw_arrays(GLenum primitive_type, std::size_t vertex_count, std::size_t instance_count = 1);
 			void draw_indexed(GLenum primitive_type, std::size_t index_count, GLenum index_type, std::size_t instance_count = 1);
 		};
 
