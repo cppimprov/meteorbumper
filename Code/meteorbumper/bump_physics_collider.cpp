@@ -159,8 +159,8 @@ namespace bump
 			auto total_inv_mass = a.get_inverse_mass() + b.get_inverse_mass();
 			auto factor = glm::clamp(a.get_inverse_mass() / total_inv_mass, 0.f, 1.f);
 
-			a.set_position(a.get_position() + -c.m_normal * distance * factor);
-			b.set_position(b.get_position() +  c.m_normal * distance * (1.f - factor));
+			a.set_position(a.get_position() + -c.m_normal * distance * factor * a.get_linear_factor());
+			b.set_position(b.get_position() +  c.m_normal * distance * (1.f - factor) * a.get_linear_factor());
 		}
 
 		collider::collider():

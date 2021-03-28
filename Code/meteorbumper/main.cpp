@@ -23,6 +23,7 @@ int main(int , char* [])
 // todo next:
 
 	// physics:
+		// do we need to change "resolve_projection" to use new angular / linear factors?
 		// (prevent player moving on y axis, prevent player rotating around x or z axes)
 
 	// framerate counter

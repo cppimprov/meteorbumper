@@ -475,6 +475,8 @@ namespace bump
 			player_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(20.f, 10.f));
 			player_physics.set_linear_damping(0.998f);
 			player_physics.set_angular_damping(0.998f);
+			player_physics.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
+			player_physics.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
 
 			auto& player_collision = registry.emplace<physics::collider>(m_entity);
 			player_collision.set_shape({ physics::sphere_shape{ 5.f } });
