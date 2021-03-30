@@ -1,5 +1,6 @@
 #pragma once
 
+#include <entt.hpp>
 #include <glm/glm.hpp>
 
 #include <cstdint>
@@ -37,13 +38,20 @@ namespace bump
 			PLAYER_WEAPONS = 1u << 1u,
 			ASTEROIDS =      1u << 2u,
 		};
+		
+		struct collision_data
+		{
+			glm::vec3 m_point;
+			glm::vec3 m_normal;
+			float m_penetration = 0.f;
+		};
 
 		class collider
 		{
 		public:
 
 			using shape_type = std::variant<sphere_shape, cuboid_shape, plane_shape>;
-			using callback_type = std::function<void()>; // todo: pass collision information (other collider, point, normal, velocities, etc.)
+			using callback_type = std::function<void(entt::entity, collision_data const&)>;
 
 			collider();
 
@@ -60,7 +68,7 @@ namespace bump
 			std::uint32_t get_collision_mask() const { return m_layer_mask; }
 
 			void set_callback(callback_type callback) { m_callback = std::move(callback); }
-			void call_callback() const { if (m_callback) m_callback(); }
+			void call_callback(entt::entity other, collision_data const& data) const { if (m_callback) m_callback(other, data); }
 
 		private:
 
@@ -69,13 +77,6 @@ namespace bump
 			std::uint32_t m_layer;      // bitmask of layers this object is on
 			std::uint32_t m_layer_mask; // bitmask of layers this object collides with
 			callback_type m_callback;
-		};
-
-		struct collision_data
-		{
-			glm::vec3 m_point;
-			glm::vec3 m_normal;
-			float m_penetration = 0.f;
 		};
 
 		std::optional<collision_data> dispatch_find_collision(rigidbody const& p1, collider const& c1, rigidbody const& p2, collider const& c2);

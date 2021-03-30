@@ -69,11 +69,10 @@ namespace bump
 					}
 
 					// notify colliders of collision
-					// todo: pass more information (what? where? when? how fast? etc.)
 					for (auto const& c : collisions)
 					{
-						colliders.get<collider>(c.first.first).call_callback();
-						colliders.get<collider>(c.first.second).call_callback();
+						colliders.get<collider>(c.first.first).call_callback(c.first.second, c.second);
+						colliders.get<collider>(c.first.second).call_callback(c.first.first, c.second);
 					}
 				}
 

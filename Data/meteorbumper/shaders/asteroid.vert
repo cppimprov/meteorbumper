@@ -3,11 +3,12 @@
 in vec3 in_VertexPosition;
 in mat4 in_MVP;
 in vec3 in_Color;
+in float in_Scale;
 
 out vec3 vert_Color;
 
 void main()
 {
 	vert_Color = in_Color;
-	gl_Position = in_MVP * vec4(in_VertexPosition, 1.0);
+	gl_Position = in_MVP * vec4(in_VertexPosition * in_Scale, 1.0);
 }

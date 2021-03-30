@@ -22,9 +22,15 @@ int main(int , char* [])
 
 // todo next:
 
+	// asteroid splitting -> spawn smaller asteroids
+	// spawn asteroids in waves
+	// chance to drop power-ups when splitting (don't collide with asteroids)
+	// player picks up power-ups - upgrades! (healing armor / shield, weapons)
+
 	// lighting!
 		// g-buffers
 		// directional lights, point lights,
+		// proper materials
 
 	// player lasers:
 		// add light for each beam!

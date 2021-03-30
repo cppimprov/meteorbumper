@@ -4673,8 +4673,7 @@ public:
 
     /*! @copydoc begin */
     [[nodiscard]] iterator begin() ENTT_NOEXCEPT {
-        const typename traits_type::difference_type pos = underlying_type::size();
-        return iterator{instances, pos};
+        return iterator{instances, static_cast<typename traits_type::difference_type>(underlying_type::size()) };
     }
 
     /**
