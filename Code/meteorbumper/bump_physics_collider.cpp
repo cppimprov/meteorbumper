@@ -2,6 +2,9 @@
 
 #include "bump_physics_rigidbody.hpp"
 
+#include <glm/gtx/string_cast.hpp>
+
+#include <iostream>
 #include <limits>
 #include <optional>
 
@@ -29,24 +32,24 @@ namespace bump
 			struct find_collision
 			{
 				find_collision(rigidbody const& p1, rigidbody const& p2):
-					p1(p1), p2(p2) { }
+					p1(&p1), p2(&p2) { }
 				
-				rigidbody const& p1;
-				rigidbody const& p2;
+				rigidbody const* p1;
+				rigidbody const* p2;
 
 				std::optional<collision_data> operator()(sphere_shape const& s1, sphere_shape const& s2) const
 				{
-					auto offset = p2.get_position() - p1.get_position();
+					auto offset = p2->get_position() - p1->get_position();
 					auto distance = glm::length(offset);
 
 					if (distance == 0.f)
-						return {};
+						return { };
 
 					if (distance < s1.m_radius + s2.m_radius)
 					{
 						auto penetration = (s1.m_radius + s2.m_radius) - distance;
 						auto normal = glm::normalize(offset);
-						auto point = p1.get_position() + normal * (s1.m_radius - penetration);
+						auto point = p1->get_position() + normal * (s1.m_radius - penetration);
 
 						return collision_data{ point, normal, penetration };
 					}
@@ -54,65 +57,49 @@ namespace bump
 					return { };
 				}
 
-				std::optional<collision_data> operator()(cuboid_shape const& s1, cuboid_shape const& s2) const
+				std::optional<collision_data> operator()(inverse_sphere_shape const& s1, sphere_shape const& s2) const
 				{
-					(void)s1;
-					(void)s2;
-					return {}; // todo: implement me!
-				}
+					auto offset = p2->get_position() - p1->get_position();
+					auto distance = glm::length(offset);
 
-				std::optional<collision_data> operator()(cuboid_shape const& s1, sphere_shape const& s2) const
-				{
-					(void)s1;
-					(void)s2;
-					return {}; // todo: implement me!
-				}
-				
-				std::optional<collision_data> operator()(sphere_shape const& s1, cuboid_shape const& s2) const
-				{
-					(void)s1;
-					(void)s2;
-					return {}; // todo: implement me!
-				}
-
-				std::optional<collision_data> operator()(plane_shape const&, plane_shape const&) const
-				{
-					return { }; // no collision between planes!
-				}
-
-				std::optional<collision_data> operator()(plane_shape const& s1, sphere_shape const& s2) const
-				{
-					return flip_collision(operator()(s2, s1));
-				}
-				
-				std::optional<collision_data> operator()(sphere_shape const& s1, plane_shape const& s2) const
-				{
-					auto distance = glm::dot(p1.get_position(), s2.m_normal) + s2.m_distance;
-
-					if (distance < s1.m_radius)
+					if (distance > s1.m_radius - s2.m_radius)
 					{
-						auto penetration = s1.m_radius - distance;
-						auto normal = -s2.m_normal; // from s1 to s2
-						auto point = p1.get_position() - s2.m_normal * distance;
+						auto penetration = (distance + s2.m_radius) - s1.m_radius;
+						auto normal = -glm::normalize(offset);
+						auto point = p1->get_position() + -normal * (s1.m_radius + penetration);
+
 						return collision_data{ point, normal, penetration };
 					}
 
 					return { };
 				}
 
-				std::optional<collision_data> operator()(plane_shape const& s1, cuboid_shape const& s2) const
+				std::optional<collision_data> operator()(sphere_shape const& s1, inverse_sphere_shape const& s2) const
+				{
+					return flip_collision(find_collision(*p2, *p1)(s2, s1));
+				}
+
+				std::optional<collision_data> operator()(inverse_sphere_shape const& s1, inverse_sphere_shape const& s2) const
 				{
 					(void)s1;
 					(void)s2;
 					return { }; // todo: implement me!
 				}
-				
-				std::optional<collision_data> operator()(cuboid_shape const& s1, plane_shape const& s2) const
-				{
-					(void)s1;
-					(void)s2;
-					return { }; // todo: implement me!
-				}
+
+				// std::optional<collision_data> operator()(sphere_shape const& s1, plane_shape const& s2) const
+				// {
+				// 	auto distance = glm::dot(p1.get_position(), s2.m_normal) + s2.m_distance;
+
+				// 	if (distance < s1.m_radius)
+				// 	{
+				// 		auto penetration = s1.m_radius - distance;
+				// 		auto normal = -s2.m_normal; // from s1 to s2
+				// 		auto point = p1.get_position() - s2.m_normal * distance;
+				// 		return collision_data{ point, normal, penetration };
+				// 	}
+
+				// 	return { };
+				// }
 			};
 			
 		} // unnamed
@@ -160,7 +147,7 @@ namespace bump
 			auto factor = glm::clamp(a.get_inverse_mass() / total_inv_mass, 0.f, 1.f);
 
 			a.set_position(a.get_position() + -c.m_normal * distance * factor * a.get_linear_factor());
-			b.set_position(b.get_position() +  c.m_normal * distance * (1.f - factor) * a.get_linear_factor());
+			b.set_position(b.get_position() +  c.m_normal * distance * (1.f - factor) * b.get_linear_factor());
 		}
 
 		collider::collider():

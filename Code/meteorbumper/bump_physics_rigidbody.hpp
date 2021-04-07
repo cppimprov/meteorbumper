@@ -68,7 +68,7 @@ namespace bump
 
 			void add_impulse(glm::vec3 impulse) { m_velocity += m_inverse_mass * impulse * m_linear_factor; }
 			void add_angular_impulse(glm::vec3 impulse) { m_angular_velocity += get_inverse_inertia_tensor() * impulse * m_angular_factor; }
-			void add_impulse_at_point(glm::vec3 impulse, glm::vec3 rel_point) { add_impulse(impulse); add_angular_impulse(glm::cross(rel_point, impulse * m_linear_factor)); }
+			void add_impulse_at_point(glm::vec3 impulse, glm::vec3 rel_point) { if (has_infinite_mass()) return; add_impulse(impulse); add_angular_impulse(glm::cross(rel_point, impulse * m_linear_factor)); }
 
 			glm::vec3 get_force() const { return m_force; }
 			glm::vec3 get_torque() const { return m_torque; }

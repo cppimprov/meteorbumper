@@ -21,22 +21,17 @@ namespace bump
 			float m_radius = 1.f;
 		};
 
-		struct cuboid_shape
+		struct inverse_sphere_shape
 		{
-			glm::vec3 m_half_size;
+			float m_radius = 1.f;
 		};
 
-		struct plane_shape
-		{
-			glm::vec3 m_normal;
-			float m_distance;
-		};
-		
 		enum collision_layers : std::uint32_t
 		{
 			PLAYER =         1u << 0u,
 			PLAYER_WEAPONS = 1u << 1u,
 			ASTEROIDS =      1u << 2u,
+			BOUNDS =         1u << 3u,
 		};
 		
 		struct collision_data
@@ -50,7 +45,7 @@ namespace bump
 		{
 		public:
 
-			using shape_type = std::variant<sphere_shape, cuboid_shape, plane_shape>;
+			using shape_type = std::variant<sphere_shape, inverse_sphere_shape>;
 			using callback_type = std::function<void(entt::entity, collision_data const&)>;
 
 			collider();

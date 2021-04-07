@@ -6,6 +6,8 @@
 #include <entt.hpp>
 #include <glm/glm.hpp>
 
+#include <random>
+
 namespace bump
 {
 	
@@ -24,7 +26,12 @@ namespace bump
 			void update(high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
+			enum class asteroid_type { LARGE, MEDIUM, SMALL };
+
 		private:
+
+			bool is_wave_complete() const;
+			void spawn_wave();
 
 			entt::registry& m_registry;
 			gl::shader_program const& m_shader;
@@ -45,8 +52,6 @@ namespace bump
 			std::vector<glm::vec3> m_instance_colors;
 			std::vector<float> m_instance_scales;
 
-			enum class asteroid_type { LARGE, MEDIUM, SMALL };
-
 			struct asteroid_data
 			{
 				asteroid_type m_type = asteroid_type::SMALL;
@@ -54,6 +59,12 @@ namespace bump
 				glm::vec3 m_color = glm::vec3(1.f);
 				float m_model_scale = 1.f;
 			};
+
+			std::mt19937_64 m_rng;
+			
+			std::size_t m_wave_number;
+			std::map<float, asteroid_type> m_asteroid_type_probability;
+			std::map<asteroid_type, float> m_asteroid_type_base_scales;
 		};
 
 	} // game
