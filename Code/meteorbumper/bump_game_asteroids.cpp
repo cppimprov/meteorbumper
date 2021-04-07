@@ -18,6 +18,47 @@ namespace bump
 	namespace game
 	{
 		
+		namespace
+		{
+
+			template<class RNG>
+			glm::vec2 random_point_in_circle(RNG& rng, float min_radius, float max_radius)
+			{
+				auto d = std::uniform_real_distribution<float>(0.f, 1.f);
+				auto angle = d(rng) * 2.f * glm::pi<float>();
+				auto min_r2 = min_radius * min_radius;
+				auto max_r2 = max_radius * max_radius;
+				auto radius = std::sqrt(d(rng) * (max_r2 - min_r2) + min_r2);
+
+				return { radius * std::cos(angle), radius * std::sin(angle) };
+			}
+
+			template<class RNG>
+			glm::vec3 random_color(RNG& rng, glm::vec3 base_color, glm::vec3 max_offset)
+			{
+				auto const dist = std::uniform_real_distribution<float>(-1.f, 1.f);
+				auto const color = glm::vec3(dist(rng), dist(rng), dist(rng));
+
+				return glm::clamp(base_color + color * max_offset, 0.f, 1.f); // todo: is there a better way? (hsv?)
+			}
+
+			template<class RNG>
+			float random_scale(RNG& rng, float base_scale, float max_variation)
+			{
+				auto const dist = std::uniform_real_distribution<float>(-1.f, 1.f);
+				auto const scale = base_scale + dist(rng) * max_variation;
+				return scale;
+			}
+
+			template<class RNG>
+			asteroid_field::asteroid_type random_asteroid_type(RNG& rng, std::map<float, asteroid_field::asteroid_type> const& bounds)
+			{
+				auto const dist = std::uniform_real_distribution<float>(0.f, 1.f);
+				return bounds.lower_bound(dist(rng))->second;
+			}
+
+		} // unnamed
+
 		asteroid_field::asteroid_field(entt::registry& registry, mbp_model const& model, gl::shader_program const& shader):
 			m_registry(registry),
 			m_shader(shader),
@@ -27,8 +68,14 @@ namespace bump
 			m_in_Scale(shader.get_attribute_location("in_Scale")),
 			m_rng(std::random_device()()),
 			m_wave_number(1),
-			m_asteroid_type_probability{ { 0.40f, asteroid_type::SMALL }, { 0.70f, asteroid_type::MEDIUM }, { 1.00f, asteroid_type::LARGE } },
-			m_asteroid_type_base_scales{ { asteroid_type::SMALL, 0.5f }, { asteroid_type::MEDIUM, 1.f }, { asteroid_type::LARGE, 2.f } }
+			m_asteroid_type_probability{
+				{ 0.40f, asteroid_type::SMALL },
+				{ 0.70f, asteroid_type::MEDIUM },
+				{ 1.00f, asteroid_type::LARGE } },
+			m_asteroid_type_data{
+				{ asteroid_type::SMALL, { 0.5f, 30.f, 200.f } },
+				{ asteroid_type::MEDIUM, { 1.f, 80.f, 750.f } },
+				{ asteroid_type::LARGE, { 2.f, 150.f, 2000.f } } }
 		{
 			// setup mesh buffers
 			die_if(model.m_submeshes.size() != 1);
@@ -55,15 +102,84 @@ namespace bump
 		void asteroid_field::update(high_res_duration_t)
 		{
 			auto to_destroy = std::vector<entt::entity>();
+			
+			struct destroyed_asteroid_data
+			{
+				asteroid_type m_type;
+				glm::vec3 m_position;
+				glm::vec3 m_velocity;
+			};
 
-			m_registry.view<asteroid_data>().each(
-				[&] (entt::entity e, asteroid_data& data)
+			auto destroyed_data = std::vector<destroyed_asteroid_data>();
+
+			m_registry.view<asteroid_data, physics::rigidbody>().each(
+				[&] (entt::entity e, asteroid_data& data, physics::rigidbody& rigidbody)
 				{
 					if (data.m_hp < 0)
+					{
 						to_destroy.push_back(e);
+
+						if (data.m_type != asteroid_type::SMALL) // ignore small asteroids
+							destroyed_data.push_back({ data.m_type, rigidbody.get_position(), rigidbody.get_velocity() });
+					}
 				});
 			
 			m_registry.destroy(to_destroy.begin(), to_destroy.end());
+
+			using dist_sz = std::uniform_int_distribution<std::size_t>;
+
+			for (auto const& destroyed : destroyed_data)
+			{
+				auto const mediums = (destroyed.m_type == asteroid_type::LARGE ? dist_sz(1, 2)(m_rng) : std::size_t{ 0 });
+				auto const smalls =  (destroyed.m_type == asteroid_type::LARGE ? dist_sz(3, 4)(m_rng) : dist_sz(2, 3)(m_rng));
+
+				auto const base_color = glm::vec3(0.8f);
+				auto const max_color_offset = glm::vec3(0.2f);
+
+				for (auto i = std::size_t{ 0 }; i != mediums; ++i)
+				{
+					auto const type = asteroid_type::MEDIUM;
+					auto const hp = m_asteroid_type_data.at(type).m_hp;
+					auto const circle_point = random_point_in_circle(m_rng, 0.3f, 0.5f) * m_asteroid_type_data.at(destroyed.m_type).m_scale;
+					auto const color = random_color(m_rng, base_color, max_color_offset);
+					auto const scale = random_scale(m_rng, m_asteroid_type_data.at(type).m_scale, m_asteroid_type_data.at(type).m_scale * 0.1f);
+					auto const mass = m_asteroid_type_data.at(type).m_mass;
+					auto const position = glm::vec3{ circle_point.x, 0.f, circle_point.y } + destroyed.m_position;
+					auto const velocity_dir = position - destroyed.m_position;
+					auto const velocity_scale = random_scale(m_rng, 12.5f, 5.f);
+					auto const velocity = destroyed.m_velocity + velocity_dir * velocity_scale;
+
+					auto spawn_data = asteroid_spawn_data
+					{
+						type, hp, color, scale,
+						mass, position, velocity,
+					};
+
+					spawn_asteroid(spawn_data);
+				}
+
+				for (auto i = std::size_t{ 0 }; i != smalls; ++i)
+				{
+					auto const type = asteroid_type::SMALL;
+					auto const hp = m_asteroid_type_data.at(type).m_hp;
+					auto const circle_point = random_point_in_circle(m_rng, 0.5f, 0.75f) * m_asteroid_type_data.at(destroyed.m_type).m_scale;
+					auto const color = random_color(m_rng, base_color, max_color_offset);
+					auto const scale = random_scale(m_rng, m_asteroid_type_data.at(type).m_scale, m_asteroid_type_data.at(type).m_scale * 0.1f);
+					auto const mass = m_asteroid_type_data.at(type).m_mass;
+					auto const position = glm::vec3{ circle_point.x, 0.f, circle_point.y } + destroyed.m_position;
+					auto const velocity_dir = position - destroyed.m_position;
+					auto const velocity_scale = random_scale(m_rng, 12.5f, 5.f);
+					auto const velocity = destroyed.m_velocity + velocity_dir * velocity_scale;
+
+					auto spawn_data = asteroid_spawn_data
+					{
+						type, hp, color, scale,
+						mass, position, velocity,
+					};
+
+					spawn_asteroid(spawn_data);
+				}
+			}
 
 			if (is_wave_complete())
 				spawn_wave();
@@ -114,47 +230,6 @@ namespace bump
 			return m_registry.view<asteroid_data>().empty();
 		}
 
-		namespace
-		{
-
-			template<class RNG>
-			glm::vec2 random_point_in_circle(RNG& rng, float min_radius, float max_radius)
-			{
-				auto d = std::uniform_real_distribution<float>(0.f, 1.f);
-				auto angle = d(rng) * 2.f * glm::pi<float>();
-				auto min_r2 = min_radius * min_radius;
-				auto max_r2 = max_radius * max_radius;
-				auto radius = std::sqrt(d(rng) * (max_r2 - min_r2) + min_r2);
-
-				return { radius * std::cos(angle), radius * std::sin(angle) };
-			}
-
-			template<class RNG>
-			glm::vec3 random_color(RNG& rng, glm::vec3 base_color, glm::vec3 max_offset)
-			{
-				auto const dist = std::uniform_real_distribution<float>(-1.f, 1.f);
-				auto const color = glm::vec3(dist(rng), dist(rng), dist(rng));
-
-				return glm::clamp(base_color + color * max_offset, 0.f, 1.f); // todo: is there a better way? (hsv?)
-			}
-
-			template<class RNG>
-			float random_scale(RNG& rng, float base_scale, float max_variation)
-			{
-				auto const dist = std::uniform_real_distribution<float>(-1.f, 1.f);
-				auto const scale = base_scale + dist(rng) * max_variation;
-				return scale;
-			}
-
-			template<class RNG>
-			asteroid_field::asteroid_type random_asteroid_type(RNG& rng, std::map<float, asteroid_field::asteroid_type> const& bounds)
-			{
-				auto const dist = std::uniform_real_distribution<float>(0.f, 1.f);
-				return bounds.lower_bound(dist(rng))->second;
-			}
-
-		} // unnamed
-
 		void asteroid_field::spawn_wave()
 		{
 			auto const max_wave_number = 20.f;
@@ -176,49 +251,65 @@ namespace bump
 			for (auto i = 0; i != num_asteroids; ++i)
 			{
 				auto const type = random_asteroid_type(m_rng, m_asteroid_type_probability);
+				auto const hp = m_asteroid_type_data.at(type).m_hp;
 				auto const circle_point = random_point_in_circle(m_rng, min_radius, max_radius);
+				auto const mass = m_asteroid_type_data.at(type).m_mass;
 				auto const position = glm::vec3{ circle_point.x, 0.f, circle_point.y };
 				auto const color = random_color(m_rng, base_color, max_color_offset);
-				auto const scale = random_scale(m_rng, m_asteroid_type_base_scales.at(type), m_asteroid_type_base_scales.at(type) * 0.1f);
-
-				auto id = m_registry.create();
-
-				auto& data = m_registry.emplace<asteroid_data>(id);
-				data.m_type = asteroid_type::SMALL;
-				data.m_hp = 100.f;
-				data.m_color = color;
-				data.m_model_scale = scale;
-
-				auto& rigidbody = m_registry.emplace<physics::rigidbody>(id);
-				rigidbody.set_position(position);
-				rigidbody.set_mass(200.f);
-				rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(200.f, 10.f * scale));
-				rigidbody.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
-				rigidbody.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
+				auto const scale = random_scale(m_rng, m_asteroid_type_data.at(type).m_scale, m_asteroid_type_data.at(type).m_scale * 0.1f);
 
 				auto const target_circle_point = random_point_in_circle(m_rng, 0.f, max_target_radius);
 				auto const target_position = glm::vec3{ target_circle_point.x, 0.f, target_circle_point.y };
 				auto const velocity_dir = glm::normalize(target_position - position);
 				auto const velocity_scale = random_scale(m_rng, base_velocity, max_velocity_offset);
-				rigidbody.set_velocity(velocity_dir * velocity_scale);
-				
-				auto& collider = m_registry.emplace<physics::collider>(id);
-				collider.set_shape({ physics::sphere_shape{ 10.f * scale } });
+				auto const velocity = velocity_dir * velocity_scale;
 
-				auto callback = [=] (entt::entity other, physics::collision_data const&)
+				auto spawn_data = asteroid_spawn_data
 				{
-					if (m_registry.has<player_weapon_damage>(other))
-					{
-						auto& damage = m_registry.get<player_weapon_damage>(other);
-						auto& data = m_registry.get<asteroid_data>(id);
-						data.m_hp -= damage.m_damage;
-					}
+					type, hp, color, scale,
+					mass, position, velocity,
 				};
 
-				collider.set_callback(callback);
+				spawn_asteroid(spawn_data);
 			}
 
 			++m_wave_number;
+		}
+
+		void asteroid_field::spawn_asteroid(asteroid_spawn_data const& spawn_data)
+		{
+			auto id = m_registry.create();
+
+			auto& data = m_registry.emplace<asteroid_data>(id);
+			data.m_type = spawn_data.m_type;
+			data.m_hp = spawn_data.m_hp;
+			data.m_color = spawn_data.m_color;
+			data.m_model_scale = spawn_data.m_model_scale;
+
+			auto model_radius = 10.f * spawn_data.m_model_scale; // TODO: use a normalized sphere!!!
+
+			auto& rigidbody = m_registry.emplace<physics::rigidbody>(id);
+			rigidbody.set_mass(spawn_data.m_mass);
+			rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(spawn_data.m_mass, model_radius));
+			rigidbody.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
+			rigidbody.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
+			rigidbody.set_position(spawn_data.m_position);
+			rigidbody.set_velocity(spawn_data.m_velocity);
+			
+			auto& collider = m_registry.emplace<physics::collider>(id);
+			collider.set_shape({ physics::sphere_shape{ model_radius } });
+
+			auto callback = [=] (entt::entity other, physics::collision_data const&)
+			{
+				if (m_registry.has<player_weapon_damage>(other))
+				{
+					auto& damage = m_registry.get<player_weapon_damage>(other);
+					auto& data = m_registry.get<asteroid_data>(id);
+					data.m_hp -= damage.m_damage;
+				}
+			};
+
+			collider.set_callback(callback);
 		}
 
 	} // game

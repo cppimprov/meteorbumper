@@ -32,6 +32,20 @@ namespace bump
 
 			bool is_wave_complete() const;
 			void spawn_wave();
+			
+			struct asteroid_spawn_data
+			{
+				asteroid_type m_type;
+				float m_hp;
+				glm::vec3 m_color;
+				float m_model_scale;
+
+				float m_mass;
+				glm::vec3 m_position;
+				glm::vec3 m_velocity;
+			};
+
+			void spawn_asteroid(asteroid_spawn_data const& data);
 
 			entt::registry& m_registry;
 			gl::shader_program const& m_shader;
@@ -60,11 +74,18 @@ namespace bump
 				float m_model_scale = 1.f;
 			};
 
+			struct asteroid_type_data
+			{
+				float m_scale;
+				float m_hp;
+				float m_mass;
+			};
+
 			std::mt19937_64 m_rng;
 			
 			std::size_t m_wave_number;
 			std::map<float, asteroid_type> m_asteroid_type_probability;
-			std::map<asteroid_type, float> m_asteroid_type_base_scales;
+			std::map<asteroid_type, asteroid_type_data> m_asteroid_type_data;
 		};
 
 	} // game

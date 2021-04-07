@@ -22,17 +22,15 @@ int main(int , char* [])
 
 // todo next:
 
-	// asteroid splitting:
-		// spawn smaller asteroids when large asteroids are destroyed
-
-	// game logic:
-		// space station?
+	// space station:
+		// space station w/ health.
+		// asteroids / player hit station
 
 	// chance to drop power-ups when splitting (don't collide with asteroids)
 	// player picks up power-ups - upgrades! (healing armor / shield, weapons)
 	// player shield / armor hp and damage
 
-	// indicators to show asteroid locations around the edge of the screen
+	// indicators to show asteroid locations (or power-ups) around the edge of the screen
 
 	// lighting!
 		// g-buffers
@@ -41,7 +39,7 @@ int main(int , char* [])
 
 	// player lasers:
 		// add light for each beam!
-		// add bloom effect?
+		// bloom effect?
 
 	// player controls:
 		// fix input:
