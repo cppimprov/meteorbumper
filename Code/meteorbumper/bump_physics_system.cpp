@@ -31,10 +31,16 @@ namespace bump
 						for (auto second = std::next(first); second != colliders.end(); ++second)
 							candidate_pairs.push_back({ *first, *second });
 					
-					// check that objects have at least one layer in common
 
 					// narrow phase - get collision data
-					auto collisions = std::vector<std::pair<std::pair<entt::entity, entt::entity>, collision_data>>();
+					struct hit_data
+					{
+						entt::entity a, b;
+						collision_data c;
+						float rv; // relative velocity
+					};
+
+					auto collisions = std::vector<hit_data>();
 
 					for (auto const& pair : candidate_pairs)
 					{
@@ -50,29 +56,29 @@ namespace bump
 						auto hit = dispatch_find_collision(p1, c1, p2, c2);
 
 						if (hit)
-							collisions.push_back({ pair, hit.value() });
+							collisions.push_back({ pair.first, pair.second, hit.value(), glm::length(p1.get_velocity() - p2.get_velocity()) });
 					}
 
 					// resolve collision
-					for (auto const& collision : collisions)
+					for (auto const& hit : collisions)
 					{
-						auto& a = colliders.get<rigidbody>(collision.first.first);
-						auto& b = colliders.get<rigidbody>(collision.first.second);
-						auto const& c = collision.second;
+						auto& a = colliders.get<rigidbody>(hit.a);
+						auto& b = colliders.get<rigidbody>(hit.b);
+						auto const& c = hit.c;
 						
 						auto e = glm::min(
-							colliders.get<collider>(collision.first.first).get_restitution(), 
-							colliders.get<collider>(collision.first.second).get_restitution());
+							colliders.get<collider>(hit.a).get_restitution(), 
+							colliders.get<collider>(hit.b).get_restitution());
 
 						resolve_impulse(a, b, c, e);
 						resolve_projection(a, b, c);
 					}
 
 					// notify colliders of collision
-					for (auto const& c : collisions)
+					for (auto const& hit : collisions)
 					{
-						colliders.get<collider>(c.first.first).call_callback(c.first.second, c.second);
-						colliders.get<collider>(c.first.second).call_callback(c.first.first, c.second);
+						colliders.get<collider>(hit.a).call_callback(hit.b, hit.c, hit.rv);
+						colliders.get<collider>(hit.b).call_callback(hit.a, hit.c, hit.rv);
 					}
 				}
 

@@ -299,7 +299,7 @@ namespace bump
 			auto& collider = m_registry.emplace<physics::collider>(id);
 			collider.set_shape({ physics::sphere_shape{ model_radius } });
 
-			auto callback = [=] (entt::entity other, physics::collision_data const&)
+			auto callback = [=] (entt::entity other, physics::collision_data const&, float)
 			{
 				if (m_registry.has<player_weapon_damage>(other))
 				{

@@ -1,6 +1,7 @@
 #include "bump_game_player.hpp"
 
 #include "bump_game_assets.hpp"
+#include "bump_game_asteroids.hpp"
 #include "bump_game_crosshair.hpp"
 #include "bump_game_ecs_render.hpp"
 #include "bump_physics.hpp"
@@ -209,7 +210,7 @@ namespace bump
 					beam_collision.set_collision_layer(physics::collision_layers::PLAYER_WEAPONS);
 					beam_collision.set_collision_mask(~physics::collision_layers::PLAYER);
 
-					auto deleter = [=] (entt::entity, physics::collision_data const&)
+					auto deleter = [=] (entt::entity, physics::collision_data const&, float)
 					{
 						m_registry.get<beam_segment>(beam_entity).m_collided = true;
 					};
@@ -338,6 +339,37 @@ namespace bump
 			m_lasers.render(renderer, matrices);
 		}
 
+		
+		player_health::player_health():
+			m_shield_max_hp(100.f),
+			m_armor_max_hp(250.f),
+			m_shield_hp(m_shield_max_hp),
+			m_armor_hp(m_armor_max_hp),
+			m_shield_recharge_rate_hp_per_s(20.f),
+			m_shield_recharge_delay(std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(5.f))),
+			m_time_since_last_hit(0) { }
+
+		void player_health::update(high_res_duration_t dt)
+		{
+			m_time_since_last_hit += dt;
+
+			if (m_time_since_last_hit > m_shield_recharge_delay)
+			{
+				auto const dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
+				m_shield_hp = std::clamp(m_shield_hp + m_shield_recharge_rate_hp_per_s * dt_s, 0.f, m_shield_max_hp);
+			}
+		}
+
+		void player_health::take_damage(float damage)
+		{
+			if (has_shield())
+				m_shield_hp = std::clamp(m_shield_hp - damage, 0.f, m_shield_max_hp);
+			else
+				m_armor_hp = std::clamp(m_armor_hp - damage, 0.f, m_armor_max_hp);
+
+			m_time_since_last_hit = high_res_duration_t{ 0 };
+		}
+
 
 		player::player(entt::registry& registry, assets& assets):
 			m_registry(registry),
@@ -361,13 +393,33 @@ namespace bump
 			player_collision.set_shape({ physics::sphere_shape{ 5.f } });
 			player_collision.set_collision_layer(physics::collision_layers::PLAYER);
 			player_collision.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
+			player_collision.set_restitution(m_player_shield_restitution);
+
+			auto hit_callback = [=] (entt::entity other, physics::collision_data const&, float rv)
+			{
+				if (m_registry.has<asteroid_field::asteroid_data>(other))
+				{
+					auto const max_damage = 100.f;
+					auto const vf = glm::pow(glm::clamp(rv / 100.f, 0.f, 1.f), 2.f); // damage factor from velocity
+					auto const damage = glm::mix(0.f, max_damage, vf);
+
+					m_health.take_damage(damage);
+				}
+			};
+
+			player_collision.set_callback(std::move(hit_callback));
 		}
 
 		void player::update(high_res_duration_t dt)
 		{
-			auto const& physics = m_registry.get<physics::rigidbody>(m_entity);
+			auto const& rigidbody = m_registry.get<physics::rigidbody>(m_entity);
+			m_weapons.update(m_controls.m_firing, rigidbody.get_transform(), dt);
 
-			m_weapons.update(m_controls.m_firing, physics.get_transform(), dt);
+			m_health.update(dt);
+
+			// if we have shields, make collisions "bouncier" by increasing restitution
+			auto& collider = m_registry.get<physics::collider>(m_entity);
+			collider.set_restitution(m_health.has_shield() ? m_player_shield_restitution : m_player_armor_restitution);
 		}
 
 		void player::render(gl::renderer& renderer, camera_matrices const& matrices)

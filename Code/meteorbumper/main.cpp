@@ -22,15 +22,14 @@ int main(int , char* [])
 
 // todo next:
 
+	// chance to drop power-ups when asteroids are destroyed (don't collide with asteroids)
+	// player picks up power-ups - upgrades! (healing armor / shield, weapons)
+
+	// indicators to show asteroid locations (and power-ups) around the edge of the screen
+
 	// space station:
 		// space station w/ health.
 		// asteroids / player hit station
-
-	// chance to drop power-ups when splitting (don't collide with asteroids)
-	// player picks up power-ups - upgrades! (healing armor / shield, weapons)
-	// player shield / armor hp and damage
-
-	// indicators to show asteroid locations (or power-ups) around the edge of the screen
 
 	// lighting!
 		// g-buffers

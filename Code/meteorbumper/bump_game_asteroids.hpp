@@ -28,6 +28,14 @@ namespace bump
 
 			enum class asteroid_type { LARGE, MEDIUM, SMALL };
 
+			struct asteroid_data
+			{
+				asteroid_type m_type = asteroid_type::SMALL;
+				float m_hp = 0;
+				glm::vec3 m_color = glm::vec3(1.f);
+				float m_model_scale = 1.f;
+			};
+
 		private:
 
 			bool is_wave_complete() const;
@@ -65,14 +73,6 @@ namespace bump
 			std::vector<glm::mat4> m_instance_transforms;
 			std::vector<glm::vec3> m_instance_colors;
 			std::vector<float> m_instance_scales;
-
-			struct asteroid_data
-			{
-				asteroid_type m_type = asteroid_type::SMALL;
-				float m_hp = 0;
-				glm::vec3 m_color = glm::vec3(1.f);
-				float m_model_scale = 1.f;
-			};
 
 			struct asteroid_type_data
 			{

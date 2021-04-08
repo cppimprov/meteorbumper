@@ -10,6 +10,7 @@
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
+#include <iostream>
 #include <vector>
 
 namespace bump
@@ -119,6 +120,35 @@ namespace bump
 			player_lasers m_lasers;
 		};
 
+		class player_health
+		{
+		public:
+
+			explicit player_health();
+
+			void update(high_res_duration_t dt);
+
+			void take_damage(float damage);
+
+			float get_shield_hp() const { return m_shield_hp; }
+			float get_armor_hp() const { return m_armor_hp; }
+
+			bool has_shield() const { return m_shield_hp > 0.f; }
+			bool is_alive() const { return m_armor_hp > 0.f; }
+
+		private:
+
+			float m_shield_max_hp;
+			float m_armor_max_hp;
+
+			float m_shield_hp;
+			float m_armor_hp;
+
+			float m_shield_recharge_rate_hp_per_s;
+			high_res_duration_t m_shield_recharge_delay;
+			high_res_duration_t m_time_since_last_hit;
+		};
+
 		class player
 		{
 		public:
@@ -133,6 +163,10 @@ namespace bump
 
 			player_controls m_controls;
 			player_weapons m_weapons;
+			player_health m_health;
+
+			float m_player_shield_restitution = 0.8f;
+			float m_player_armor_restitution = 0.25f;
 		};
 
 	} // game

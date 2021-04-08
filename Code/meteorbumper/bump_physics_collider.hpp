@@ -46,7 +46,7 @@ namespace bump
 		public:
 
 			using shape_type = std::variant<sphere_shape, inverse_sphere_shape>;
-			using callback_type = std::function<void(entt::entity, collision_data const&)>;
+			using callback_type = std::function<void(entt::entity, collision_data const&, float)>;
 
 			collider();
 
@@ -63,7 +63,7 @@ namespace bump
 			std::uint32_t get_collision_mask() const { return m_layer_mask; }
 
 			void set_callback(callback_type callback) { m_callback = std::move(callback); }
-			void call_callback(entt::entity other, collision_data const& data) const { if (m_callback) m_callback(other, data); }
+			void call_callback(entt::entity other, collision_data const& data, float relative_velocity_magnitude) const { if (m_callback) m_callback(other, data, relative_velocity_magnitude); }
 
 		private:
 

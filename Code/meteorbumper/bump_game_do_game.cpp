@@ -169,6 +169,9 @@ namespace bump
 						// update player state:
 						player.update(dt);
 
+						if (!player.m_health.is_alive()) 
+							return { do_start }; // player died! todo: explosion effect, game over text!
+
 						// update camera position
 						auto player_position = get_position(player_physics.get_transform());
 						set_position(scene_camera.m_transform, player_position + glm::vec3{ 0.f, camera_height, 0.f });
