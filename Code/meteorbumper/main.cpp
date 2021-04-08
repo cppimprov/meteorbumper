@@ -22,8 +22,11 @@ int main(int , char* [])
 
 // todo next:
 
-	// chance to drop power-ups when asteroids are destroyed (don't collide with asteroids)
-	// player picks up power-ups - upgrades! (healing armor / shield, weapons)
+	// power-ups:
+		// pick type randomly
+		// render! blue for shields, yellow for armor, green for lasers
+		// player picks up power-ups
+		// laser upgrades
 
 	// indicators to show asteroid locations (and power-ups) around the edge of the screen
 

@@ -258,8 +258,8 @@ namespace bump
 				
 				// find and remove dead beams
 				auto first_dead_beam = std::remove_if(emitter.m_beams.begin(), emitter.m_beams.end(),
-					[&] (entt::entity b) {
-
+					[&] (entt::entity b)
+					{
 						auto const& segment = view.get<beam_segment>(b);
 						auto result = (segment.m_lifetime > emitter.m_max_lifetime) || segment.m_collided;
 

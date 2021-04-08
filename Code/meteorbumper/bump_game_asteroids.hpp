@@ -16,12 +16,14 @@ namespace bump
 
 	namespace game
 	{
+
+		class power_ups;
 		
 		class asteroid_field
 		{
 		public:
 
-			explicit asteroid_field(entt::registry& registry, mbp_model const& model, gl::shader_program const& shader);
+			explicit asteroid_field(entt::registry& registry, power_ups& powerups, mbp_model const& model, gl::shader_program const& shader);
 
 			void update(high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
@@ -56,6 +58,8 @@ namespace bump
 			void spawn_asteroid(asteroid_spawn_data const& data);
 
 			entt::registry& m_registry;
+			power_ups& m_powerups;
+
 			gl::shader_program const& m_shader;
 
 			GLint m_in_VertexPosition;

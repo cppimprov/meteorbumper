@@ -32,6 +32,7 @@ namespace bump
 			PLAYER_WEAPONS = 1u << 1u,
 			ASTEROIDS =      1u << 2u,
 			BOUNDS =         1u << 3u,
+			POWERUPS =       1u << 4u,
 		};
 		
 		struct collision_data

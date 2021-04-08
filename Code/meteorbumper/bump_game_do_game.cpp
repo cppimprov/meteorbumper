@@ -8,6 +8,7 @@
 #include "bump_game_fps_counter.hpp"
 #include "bump_game_particle_field.hpp"
 #include "bump_game_player.hpp"
+#include "bump_game_power_ups.hpp"
 #include "bump_game_skybox.hpp"
 #include "bump_physics.hpp"
 #include "bump_timer.hpp"
@@ -93,7 +94,8 @@ namespace bump
 
 			auto player = game::player(registry, app.m_assets);
 
-			auto asteroids = asteroid_field(registry, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
+			auto powerups = game::power_ups(registry);
+			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
 
 			auto bounds = game::bounds(registry);
 
@@ -188,6 +190,9 @@ namespace bump
 
 						// update asteroids
 						asteroids.update(dt);
+						
+						// update powerups
+						powerups.update(dt);
 
 						fps.update(dt);
 					}

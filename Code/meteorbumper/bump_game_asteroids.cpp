@@ -3,6 +3,7 @@
 #include "bump_camera.hpp"
 #include "bump_die.hpp"
 #include "bump_game_player.hpp"
+#include "bump_game_power_ups.hpp"
 #include "bump_mbp_model.hpp"
 #include "bump_physics.hpp"
 #include "bump_transform.hpp"
@@ -59,8 +60,9 @@ namespace bump
 
 		} // unnamed
 
-		asteroid_field::asteroid_field(entt::registry& registry, mbp_model const& model, gl::shader_program const& shader):
+		asteroid_field::asteroid_field(entt::registry& registry, power_ups& powerups, mbp_model const& model, gl::shader_program const& shader):
 			m_registry(registry),
+			m_powerups(powerups),
 			m_shader(shader),
 			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
 			m_in_MVP(shader.get_attribute_location("in_MVP")),
@@ -118,9 +120,7 @@ namespace bump
 					if (data.m_hp < 0)
 					{
 						to_destroy.push_back(e);
-
-						if (data.m_type != asteroid_type::SMALL) // ignore small asteroids
-							destroyed_data.push_back({ data.m_type, rigidbody.get_position(), rigidbody.get_velocity() });
+						destroyed_data.push_back({ data.m_type, rigidbody.get_position(), rigidbody.get_velocity() });
 					}
 				});
 			
@@ -131,7 +131,8 @@ namespace bump
 			for (auto const& destroyed : destroyed_data)
 			{
 				auto const mediums = (destroyed.m_type == asteroid_type::LARGE ? dist_sz(1, 2)(m_rng) : std::size_t{ 0 });
-				auto const smalls =  (destroyed.m_type == asteroid_type::LARGE ? dist_sz(3, 4)(m_rng) : dist_sz(2, 3)(m_rng));
+				auto const smalls =  (destroyed.m_type == asteroid_type::LARGE ? dist_sz(3, 4)(m_rng) : destroyed.m_type == asteroid_type::MEDIUM ? dist_sz(2, 3)(m_rng) : std::size_t{ 0 });
+				auto const powerups = (dist_sz(0, 10)(m_rng) < 2);
 
 				auto const base_color = glm::vec3(0.8f);
 				auto const max_color_offset = glm::vec3(0.2f);
@@ -178,6 +179,13 @@ namespace bump
 					};
 
 					spawn_asteroid(spawn_data);
+				}
+
+				if (powerups)
+				{
+					// todo: randomly select type!
+					auto const type = power_ups::power_up_type::UPGRADE_LASERS;
+					m_powerups.spawn(destroyed.m_position, type);
 				}
 			}
 
