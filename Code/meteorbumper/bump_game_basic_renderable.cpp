@@ -1,4 +1,4 @@
-#include "bump_game_ecs_render.hpp"
+#include "bump_game_basic_renderable.hpp"
 
 #include "bump_camera.hpp"
 #include "bump_mbp_model.hpp"
@@ -6,10 +6,10 @@
 namespace bump
 {
 	
-	namespace game::ecs
+	namespace game
 	{
 		
-		basic_renderable::basic_renderable(mbp_model const& model, gl::shader_program const& shader):
+		basic_renderable::basic_renderable(gl::shader_program const& shader, mbp_model const& model):
 			m_shader(&shader),
 			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
 			m_u_MVP(shader.get_uniform_location("u_MVP")),
@@ -53,6 +53,6 @@ namespace bump
 			renderer.clear_program();
 		}
 		
-	} // game::ecs
+	} // game
 	
 } // bump

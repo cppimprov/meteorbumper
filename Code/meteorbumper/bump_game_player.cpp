@@ -3,8 +3,10 @@
 #include "bump_game_assets.hpp"
 #include "bump_game_asteroids.hpp"
 #include "bump_game_crosshair.hpp"
-#include "bump_game_ecs_render.hpp"
+#include "bump_game_powerups.hpp"
 #include "bump_physics.hpp"
+
+#include <iostream>
 
 namespace bump
 {
@@ -374,23 +376,26 @@ namespace bump
 		player::player(entt::registry& registry, assets& assets):
 			m_registry(registry),
 			m_entity(entt::null_t()),
+			m_renderable(assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship")),
 			m_controls(),
 			m_weapons(registry, assets.m_shaders.at("player_laser"))
 		{
 			m_entity = registry.create();
 
-			registry.emplace<ecs::basic_renderable>(m_entity, assets.m_models.at("player_ship"), assets.m_shaders.at("player_ship"));
-			auto& player_physics = registry.emplace<physics::rigidbody>(m_entity);
-			player_physics.set_mass(20.f);
+			auto const mass_kg = 20.f;
+			auto const radius_m = 3.f;
 
-			player_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(20.f, 10.f));
+			auto& player_physics = registry.emplace<physics::rigidbody>(m_entity);
+			player_physics.set_mass(mass_kg);
+
+			player_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(mass_kg, radius_m));
 			player_physics.set_linear_damping(0.998f);
 			player_physics.set_angular_damping(0.998f);
 			player_physics.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
 			player_physics.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
 
 			auto& player_collision = registry.emplace<physics::collider>(m_entity);
-			player_collision.set_shape({ physics::sphere_shape{ 5.f } });
+			player_collision.set_shape({ physics::sphere_shape{ radius_m } });
 			player_collision.set_collision_layer(physics::collision_layers::PLAYER);
 			player_collision.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
 			player_collision.set_restitution(m_player_shield_restitution);
@@ -405,6 +410,23 @@ namespace bump
 
 					m_health.take_damage(damage);
 				}
+				else if (m_registry.has<powerups::powerup_data>(other))
+				{
+					auto const& powerup = m_registry.get<powerups::powerup_data>(other);
+
+					if (powerup.m_type == powerups::powerup_type::RESET_SHIELDS)
+					{
+						m_health.reset_shield_hp();
+					}
+					else if (powerup.m_type == powerups::powerup_type::RESET_ARMOR)
+					{
+						m_health.reset_armor_hp();
+					}
+					else if (powerup.m_type == powerups::powerup_type::UPGRADE_LASERS)
+					{
+						// todo: upgrade lasers!
+					}
+				}
 			};
 
 			player_collision.set_callback(std::move(hit_callback));
@@ -413,6 +435,9 @@ namespace bump
 		void player::update(high_res_duration_t dt)
 		{
 			auto const& rigidbody = m_registry.get<physics::rigidbody>(m_entity);
+
+			m_renderable.set_transform(rigidbody.get_transform());
+
 			m_weapons.update(m_controls.m_firing, rigidbody.get_transform(), dt);
 
 			m_health.update(dt);
@@ -424,6 +449,7 @@ namespace bump
 
 		void player::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			m_renderable.render(renderer, matrices);
 			m_weapons.render(renderer, matrices);
 		}
 		

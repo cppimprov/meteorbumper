@@ -11,14 +11,14 @@ namespace bump
 	class perspective_camera;
 	class camera_matrices;
 
-	namespace game::ecs
+	namespace game
 	{
 		
 		class basic_renderable
 		{
 		public:
 
-			explicit basic_renderable(mbp_model const& model, gl::shader_program const& shader);
+			explicit basic_renderable(gl::shader_program const& shader, mbp_model const& model);
 
 			basic_renderable(basic_renderable const&) = delete;
 			basic_renderable& operator=(basic_renderable const&) = delete;
@@ -52,6 +52,6 @@ namespace bump
 			glm::mat4 m_transform;
 		};
 
-	} // game::ecs
+	} // game
 	
 } // bump

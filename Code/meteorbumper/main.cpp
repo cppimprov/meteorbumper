@@ -23,11 +23,11 @@ int main(int , char* [])
 // todo next:
 
 	// power-ups:
-		// pick type randomly
-		// render! blue for shields, yellow for armor, green for lasers
-		// player picks up power-ups
 		// laser upgrades
-
+	
+	// player ui:
+		// show hp and armor!
+		
 	// indicators to show asteroid locations (and power-ups) around the edge of the screen
 
 	// space station:
@@ -40,6 +40,8 @@ int main(int , char* [])
 		// proper materials
 
 	// player lasers:
+		// add player velocity to lasers
+		// make lasers slightly faster
 		// add light for each beam!
 		// bloom effect?
 

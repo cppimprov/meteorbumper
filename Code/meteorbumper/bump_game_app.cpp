@@ -33,6 +33,7 @@ namespace bump
 				{ "crosshair", { "crosshair.vert", "crosshair.frag" } },
 				{ "player_laser", { "player_laser.vert", "player_laser.geom", "player_laser.frag" } },
 				{ "fps_counter", { "fps_counter.vert", "fps_counter.frag" } },
+				{ "powerup", { "default_material.vert", "default_material.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>
@@ -40,6 +41,9 @@ namespace bump
 				{ "skybox", "skybox.mbp_model" },
 				{ "player_ship", "player_ship.mbp_model" },
 				{ "asteroid", "asteroid.mbp_model" },
+				{ "powerup_shield", "powerup_shield.mbp_model" },
+				{ "powerup_armor", "powerup_armor.mbp_model" },
+				{ "powerup_lasers", "powerup_lasers.mbp_model" },
 			};
 
 			auto const cubemaps = std::vector<cubemap_metadata>

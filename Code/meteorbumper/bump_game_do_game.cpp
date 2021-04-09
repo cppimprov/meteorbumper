@@ -4,11 +4,10 @@
 #include "bump_game_app.hpp"
 #include "bump_game_asteroids.hpp"
 #include "bump_game_crosshair.hpp"
-#include "bump_game_ecs_render.hpp"
 #include "bump_game_fps_counter.hpp"
 #include "bump_game_particle_field.hpp"
 #include "bump_game_player.hpp"
-#include "bump_game_power_ups.hpp"
+#include "bump_game_powerups.hpp"
 #include "bump_game_skybox.hpp"
 #include "bump_physics.hpp"
 #include "bump_timer.hpp"
@@ -94,7 +93,7 @@ namespace bump
 
 			auto player = game::player(registry, app.m_assets);
 
-			auto powerups = game::power_ups(registry);
+			auto powerups = game::powerups(registry, app.m_assets.m_shaders.at("powerup"), app.m_assets.m_models.at("powerup_shield"), app.m_assets.m_models.at("powerup_armor"), app.m_assets.m_models.at("powerup_lasers"));
 			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
 
 			auto bounds = game::bounds(registry);
@@ -181,13 +180,6 @@ namespace bump
 						// update particle field position
 						particles.set_position(get_position(scene_camera.m_transform));
 						
-						// update basic_renderable transforms for physics objects
-						{
-							auto view = registry.view<physics::rigidbody, ecs::basic_renderable>();
-							for (auto id : view)
-								view.get<ecs::basic_renderable>(id).set_transform(view.get<physics::rigidbody>(id).get_transform());
-						}
-
 						// update asteroids
 						asteroids.update(dt);
 						
@@ -215,31 +207,24 @@ namespace bump
 					
 					// render scene
 					{
-						auto scene_camera_matrices = camera_matrices(scene_camera);
+						auto& renderer = app.m_renderer;
+						auto matrices = camera_matrices(scene_camera);
 
-						// render skybox
-						skybox.render(app.m_renderer, scene_camera, scene_camera_matrices);
-
-						// render basic renderables...
-						{
-							auto view = registry.view<ecs::basic_renderable>();
-
-							for (auto id : view)
-								view.get<ecs::basic_renderable>(id).render(app.m_renderer, scene_camera_matrices);
-						}
-						
-						asteroids.render(app.m_renderer, scene_camera_matrices);
-
-						player.render(app.m_renderer, scene_camera_matrices);
-						
-						particles.render(app.m_renderer, scene_camera_matrices);
+						skybox.render(renderer, scene_camera, matrices);
+						asteroids.render(renderer, matrices);
+						player.render(renderer, matrices);
+						powerups.render(renderer, matrices);
+						particles.render(renderer, matrices);
 					}
 
 					// render ui
-					auto ui_camera_matrices = camera_matrices(ui_camera);
-					crosshair.render(app.m_renderer, ui_camera_matrices);
+					{
+						auto& renderer = app.m_renderer;
+						auto matrices = camera_matrices(ui_camera);
 
-					fps.render(app.m_renderer, ui_camera_matrices);
+						crosshair.render(renderer, matrices);
+						fps.render(renderer, matrices);
+					}
 
 					app.m_window.swap_buffers();
 				}

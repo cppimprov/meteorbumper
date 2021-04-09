@@ -3,7 +3,7 @@
 #include "bump_camera.hpp"
 #include "bump_die.hpp"
 #include "bump_game_player.hpp"
-#include "bump_game_power_ups.hpp"
+#include "bump_game_powerups.hpp"
 #include "bump_mbp_model.hpp"
 #include "bump_physics.hpp"
 #include "bump_transform.hpp"
@@ -51,8 +51,8 @@ namespace bump
 				return scale;
 			}
 
-			template<class RNG>
-			asteroid_field::asteroid_type random_asteroid_type(RNG& rng, std::map<float, asteroid_field::asteroid_type> const& bounds)
+			template<class RNG, class Type>
+			Type random_type(RNG& rng, std::map<float, Type> const& bounds)
 			{
 				auto const dist = std::uniform_real_distribution<float>(0.f, 1.f);
 				return bounds.lower_bound(dist(rng))->second;
@@ -60,7 +60,7 @@ namespace bump
 
 		} // unnamed
 
-		asteroid_field::asteroid_field(entt::registry& registry, power_ups& powerups, mbp_model const& model, gl::shader_program const& shader):
+		asteroid_field::asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, gl::shader_program const& shader):
 			m_registry(registry),
 			m_powerups(powerups),
 			m_shader(shader),
@@ -183,8 +183,14 @@ namespace bump
 
 				if (powerups)
 				{
-					// todo: randomly select type!
-					auto const type = power_ups::power_up_type::UPGRADE_LASERS;
+					auto powerup_type_probability = std::map<float, powerups::powerup_type>
+					{
+						{ 0.4f, powerups::powerup_type::RESET_SHIELDS },
+						{ 0.8f, powerups::powerup_type::RESET_ARMOR },
+						{ 1.0f, powerups::powerup_type::UPGRADE_LASERS },
+					};
+					
+					auto const type = random_type(m_rng, powerup_type_probability);
 					m_powerups.spawn(destroyed.m_position, type);
 				}
 			}
@@ -258,7 +264,7 @@ namespace bump
 
 			for (auto i = 0; i != num_asteroids; ++i)
 			{
-				auto const type = random_asteroid_type(m_rng, m_asteroid_type_probability);
+				auto const type = random_type(m_rng, m_asteroid_type_probability);
 				auto const hp = m_asteroid_type_data.at(type).m_hp;
 				auto const circle_point = random_point_in_circle(m_rng, min_radius, max_radius);
 				auto const mass = m_asteroid_type_data.at(type).m_mass;

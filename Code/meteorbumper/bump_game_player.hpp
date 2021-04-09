@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bump_camera.hpp"
+#include "bump_game_basic_renderable.hpp"
 #include "bump_gl.hpp"
 #include "bump_physics.hpp"
 
@@ -130,6 +131,9 @@ namespace bump
 
 			void take_damage(float damage);
 
+			void reset_shield_hp() { m_shield_hp = m_shield_max_hp; }
+			void reset_armor_hp() { m_armor_hp = m_armor_max_hp; }
+
 			float get_shield_hp() const { return m_shield_hp; }
 			float get_armor_hp() const { return m_armor_hp; }
 
@@ -159,8 +163,9 @@ namespace bump
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
 			entt::registry& m_registry;
-			entt::entity m_entity;
 
+			entt::entity m_entity;
+			basic_renderable m_renderable;
 			player_controls m_controls;
 			player_weapons m_weapons;
 			player_health m_health;
