@@ -59,6 +59,8 @@ namespace bump
 			player_lasers& operator=(player_lasers&&) = delete;
 
 			~player_lasers();
+
+			void upgrade();
 			
 			void update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
@@ -87,6 +89,7 @@ namespace bump
 
 			struct beam_segment
 			{
+				glm::vec3 m_color;
 				float m_beam_length;
 				high_res_duration_t m_lifetime;
 				bool m_collided;
@@ -94,6 +97,7 @@ namespace bump
 
 			struct emitter
 			{
+				float m_damage;
 				glm::vec3 m_color;
 				glm::vec3 m_origin; // in player model space
 				high_res_duration_t m_max_lifetime;
@@ -107,6 +111,8 @@ namespace bump
 			float m_beam_length_factor; // max_beam_length = beam_speed * firing_period * length_factor;
 
 			std::vector<emitter> m_emitters;
+
+			std::size_t m_upgrade_level;
 		};
 
 		class player_weapons

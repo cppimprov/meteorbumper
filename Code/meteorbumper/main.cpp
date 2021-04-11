@@ -22,15 +22,19 @@ int main(int , char* [])
 
 // todo next:
 
-	// power-ups:
-		// laser upgrades
-	
-	// player ui:
-		// show hp and armor!
-		
 	// indicators to show asteroid locations (and power-ups) around the edge of the screen
 
-	// space station:
+	// player shield visual:
+		// "hex grid" effect shield
+		// nearly transparent blue, render after player...
+		// when hit... light up the part of the shield hit? blue particle effect?
+		// when destroyed, shattering animation and don't render any more...
+		// ...
+
+	// player armor visual:
+		// when hit, yellow particle effect?
+	
+	// space station?
 		// space station w/ health.
 		// asteroids / player hit station
 
@@ -38,9 +42,17 @@ int main(int , char* [])
 		// g-buffers
 		// directional lights, point lights,
 		// proper materials
+	
+	// effects:
+		// engine boost particles
+		// engine maneuvering thruster "smoke" type jets
+		// weapon hits (rock chunks / dust, laser "dissolve" type effect)
+		// asteroid explode / split effects
+		// player searchlight (spot light)
+		// 
 
 	// player lasers:
-		// add player velocity to lasers
+		// add player velocity to lasers?
 		// make lasers slightly faster
 		// add light for each beam!
 		// bloom effect?

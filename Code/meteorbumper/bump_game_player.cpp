@@ -137,6 +137,18 @@ namespace bump
 			}
 		}
 
+		namespace
+		{
+
+			auto const g_low_damage_color = glm::vec3{ 0.f, 1.f, 0.f };
+			auto const g_medium_damage_color = glm::vec3{ 1.f, 0.984f, 0.196f };
+			auto const g_high_damage_color = glm::vec3{ 1.f, 0.169f, 0.929f };
+
+			auto const g_low_damage = 10.f;
+			auto const g_medium_damage = 20.f;
+			auto const g_high_damage = 30.f;
+
+		} // unnamed
 
 		player_lasers::player_lasers(entt::registry& registry, gl::shader_program const& shader):
 			m_registry(registry),
@@ -149,7 +161,8 @@ namespace bump
 			m_firing_period(std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(0.125f))),
 			m_time_since_firing(m_firing_period),
 			m_beam_speed_m_per_s(100.f),
-			m_beam_length_factor(0.5f)
+			m_beam_length_factor(0.5f),
+			m_upgrade_level(0)
 		{
 			// set up instance buffers
 			m_instance_color.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
@@ -164,7 +177,8 @@ namespace bump
 			// set up two emitters to start with (todo: proper configurations based on upgrade level...)
 			auto left_emitter = emitter
 			{
-				{ 0.f, 1.f, 0.f }, // green
+				g_low_damage,
+				g_low_damage_color,
 				{ -2.f, -0.1f, -1.f }, // origin
 				std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
 				{},
@@ -174,7 +188,8 @@ namespace bump
 			
 			auto right_emitter = emitter
 			{
-				{ 0.f, 1.f, 0.f }, // green
+				g_low_damage,
+				g_low_damage_color,
 				{ 2.f, -0.1f, -1.f }, // origin
 				std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
 				{},
@@ -188,6 +203,121 @@ namespace bump
 			for (auto const& emitter : m_emitters)
 				for (auto beam : emitter.m_beams)
 					m_registry.destroy(beam);
+		}
+
+		void player_lasers::upgrade()
+		{
+			if (m_upgrade_level == 4)
+				return;
+
+			++m_upgrade_level;
+
+			if (m_upgrade_level == 1)
+			{
+				// increase damage
+				{
+					m_emitters[0].m_damage = g_medium_damage;
+					m_emitters[0].m_color = g_medium_damage_color;
+					
+					m_emitters[1].m_damage = g_medium_damage;
+					m_emitters[1].m_color = g_medium_damage_color;
+				}
+
+				// add two more emitters
+				{
+					auto left_emitter = emitter
+					{
+						g_low_damage,
+						g_low_damage_color,
+						{ -3.f, -0.1f, -0.4f }, // origin
+						std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+						{},
+					};
+
+					m_emitters.push_back(std::move(left_emitter));
+
+					auto right_emitter = emitter
+					{
+						g_low_damage,
+						g_low_damage_color,
+						{ 3.f, -0.1f, -0.4f }, // origin
+						std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+						{},
+					};
+					
+					m_emitters.push_back(std::move(right_emitter));
+				}
+			}
+			else if (m_upgrade_level == 2)
+			{
+				// increase damage
+				{
+					m_emitters[0].m_damage = g_high_damage;
+					m_emitters[0].m_color = g_high_damage_color;
+					
+					m_emitters[1].m_damage = g_high_damage;
+					m_emitters[1].m_color = g_high_damage_color;
+					
+					m_emitters[2].m_damage = g_medium_damage;
+					m_emitters[2].m_color = g_medium_damage_color;
+					
+					m_emitters[3].m_damage = g_medium_damage;
+					m_emitters[3].m_color = g_medium_damage_color;
+				}
+
+				// add two more emitters
+				{
+					auto left_emitter = emitter
+					{
+						g_low_damage,
+						g_low_damage_color,
+						{ -4.f, -0.1f, 0.3f }, // origin
+						std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+						{},
+					};
+
+					m_emitters.push_back(std::move(left_emitter));
+
+					auto right_emitter = emitter
+					{
+						g_low_damage,
+						g_low_damage_color,
+						{ 4.f, -0.1f, 0.3f }, // origin
+						std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+						{},
+					};
+
+					m_emitters.push_back(std::move(right_emitter));
+				}
+			}
+			else if (m_upgrade_level == 3)
+			{
+				// increase damage
+				{
+					m_emitters[2].m_damage = g_high_damage;
+					m_emitters[2].m_color = g_high_damage_color;
+					
+					m_emitters[3].m_damage = g_high_damage;
+					m_emitters[3].m_color = g_high_damage_color;
+					
+					m_emitters[4].m_damage = g_medium_damage;
+					m_emitters[4].m_color = g_medium_damage_color;
+					
+					m_emitters[5].m_damage = g_medium_damage;
+					m_emitters[5].m_color = g_medium_damage_color;
+				}
+			}
+			else if (m_upgrade_level == 4)
+			{
+				// increase damage
+				{
+					m_emitters[4].m_damage = g_high_damage;
+					m_emitters[4].m_color = g_high_damage_color;
+					
+					m_emitters[5].m_damage = g_high_damage;
+					m_emitters[5].m_color = g_high_damage_color;
+				}
+			}
 		}
 
 		void player_lasers::update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
@@ -220,12 +350,13 @@ namespace bump
 					beam_collision.set_callback(std::move(deleter));
 
 					auto& segment = m_registry.emplace<beam_segment>(beam_entity);
+					segment.m_color = emitter.m_color;
 					segment.m_beam_length = 0.f;
 					segment.m_lifetime = high_res_duration_t{ 0 };
 					segment.m_collided = false;
 
 					auto& damage = m_registry.emplace<player_weapon_damage>(beam_entity);
-					damage.m_damage = 10.f;
+					damage.m_damage = emitter.m_damage;
 
 					emitter.m_beams.push_back(beam_entity);
 				}
@@ -280,21 +411,19 @@ namespace bump
 			// get beam instance data for this frame
 			auto view = m_registry.view<beam_segment, physics::rigidbody>();
 
-			for (auto const& emitter : m_emitters)
+			for (auto id : view)
 			{
-				for (auto const& beam : emitter.m_beams)
-				{
-					auto const& physics = view.get<physics::rigidbody>(beam);
-					auto beam_direction = physics.get_velocity();
-					beam_direction = glm::length(beam_direction) == 0.f ? glm::vec3(0.f) : glm::normalize(beam_direction);
+				auto const& physics = view.get<physics::rigidbody>(id);
 
-					auto const& segment = view.get<beam_segment>(beam);
+				auto beam_direction = physics.get_velocity();
+				beam_direction = glm::length(beam_direction) == 0.f ? glm::vec3(0.f) : glm::normalize(beam_direction);
 
-					m_frame_instance_colors.push_back(emitter.m_color);
-					m_frame_instance_positions.push_back(physics.get_position());
-					m_frame_instance_directions.push_back(beam_direction);
-					m_frame_instance_beam_lengths.push_back(segment.m_beam_length);
-				}
+				auto const& segment = view.get<beam_segment>(id);
+
+				m_frame_instance_colors.push_back(segment.m_color);
+				m_frame_instance_positions.push_back(physics.get_position());
+				m_frame_instance_directions.push_back(beam_direction);
+				m_frame_instance_beam_lengths.push_back(segment.m_beam_length);
 			}
 
 			// upload beam instance data to gpu buffers
@@ -424,7 +553,7 @@ namespace bump
 					}
 					else if (powerup.m_type == powerups::powerup_type::UPGRADE_LASERS)
 					{
-						// todo: upgrade lasers!
+						m_weapons.m_lasers.upgrade();
 					}
 				}
 			};
