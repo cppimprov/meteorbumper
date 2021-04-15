@@ -22,8 +22,6 @@ int main(int , char* [])
 
 // todo next:
 
-	// indicators to show asteroid locations (and power-ups) around the edge of the screen
-
 	// player shield visual:
 		// "hex grid" effect shield
 		// nearly transparent blue, render after player...
@@ -34,10 +32,6 @@ int main(int , char* [])
 	// player armor visual:
 		// when hit, yellow particle effect?
 	
-	// space station?
-		// space station w/ health.
-		// asteroids / player hit station
-
 	// lighting!
 		// g-buffers
 		// directional lights, point lights,
@@ -48,14 +42,13 @@ int main(int , char* [])
 		// engine maneuvering thruster "smoke" type jets
 		// weapon hits (rock chunks / dust, laser "dissolve" type effect)
 		// asteroid explode / split effects
-		// player searchlight (spot light)
-		// 
+		// lights for:
+			// (sun) lasers, engine boost, powerups, player searchlight
+		// *subtle* bloom effect?
 
 	// player lasers:
 		// add player velocity to lasers?
 		// make lasers slightly faster
-		// add light for each beam!
-		// bloom effect?
 
 	// player controls:
 		// fix input:
@@ -63,51 +56,25 @@ int main(int , char* [])
 			// ship should move in the direction of the one still pressed
 
 
-	// load icosphere, normalize points to make sure they're on a sphere
-	// use vec3 simplex noise to get offset value.
-	// offset points along normal.
+	// asteroid shapes:
 
-	// save mesh on cpu.
-	// create render data and render.
-	// i guess we can use 4d noise if we use an id as the other coordinate???
-	// then we only need to keep a single mesh on the cpu, and use the noise function for calculations!!!
+		// load icosphere, normalize points to make sure they're on a sphere
+		// use vec3 simplex noise to get offset value.
+		// offset points along normal.
 
+		// save mesh on cpu.
+		// create render data and render.
+		// i guess we can use 4d noise if we use an id as the other coordinate???
+		// then we only need to keep a single mesh on the cpu, and use the noise function for calculations!!!
 
+		// so what to do?
+			// easiest thing to do is to make models and export them. we can make sure they're convex.
+				// we need the full 3d collision, right?
+				// (or add convex hull when loading)
+			// how do we then restrict to 2d collision?
 
-	// so what to do?
-		// easiest thing to do is to make models and export them. we can make sure they're convex.
-			// we need the full 3d collision, right?
-			// (or add convex hull when loading)
-		// how do we then restrict to 2d collision?
-
-		// start with an isosphere mesh, move some vertices in / out based on noise texture?
-
-	// main game state:
-
-		// asteroids
-			// model(s)
-			// collision
-
-		// weapons
-			// lazors
-
-		// space-station
-			// model
-			// collision
+			// start with an isosphere mesh, move some vertices in / out based on noise texture?
 		
-
-	// start screen - asteroid field
-		// asteroids, slowly rotating and moving.
-		// ... how to make them look good, and look unique?
-		// randomly deform a sphere, add craters?
-
-		// i guess it's just a sphere, and we can deform the points however?
-		// then we get the values back?
-
-	// blender or procedural generation?
-	// issues: physics (collision w/ concave shapes, lock movement to y=0 plane),
-
-
 	// start screen:
 		// create asteroid swarm
 			// one asteroid in center of screen

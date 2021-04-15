@@ -5,6 +5,7 @@
 #include "bump_game_asteroids.hpp"
 #include "bump_game_crosshair.hpp"
 #include "bump_game_fps_counter.hpp"
+#include "bump_game_indicators.hpp"
 #include "bump_game_particle_field.hpp"
 #include "bump_game_player.hpp"
 #include "bump_game_powerups.hpp"
@@ -102,6 +103,8 @@ namespace bump
 			particles.set_base_color_rgb({ 0.75, 0.60, 0.45 });
 			particles.set_color_variation_hsv({ 0.05, 0.25, 0.05 });
 
+			auto indicators = game::indicators(registry, app.m_assets.m_shaders.at("indicator"));
+
 			auto crosshair = game::crosshair(app.m_assets.m_shaders.at("crosshair"));
 			crosshair.m_position = glm::vec2
 			{
@@ -186,6 +189,9 @@ namespace bump
 						// update powerups
 						powerups.update(dt);
 
+						// update indicators
+						indicators.set_player_position(player_position);
+
 						fps.update(dt);
 					}
 				}
@@ -205,25 +211,24 @@ namespace bump
 
 					app.m_renderer.set_viewport({ 0, 0 }, glm::uvec2(app.m_window.get_size()));
 					
+					auto& renderer = app.m_renderer;
+					auto scene_matrices = camera_matrices(scene_camera);
+					auto ui_matrices = camera_matrices(ui_camera);
+
 					// render scene
 					{
-						auto& renderer = app.m_renderer;
-						auto matrices = camera_matrices(scene_camera);
-
-						skybox.render(renderer, scene_camera, matrices);
-						asteroids.render(renderer, matrices);
-						player.render(renderer, matrices);
-						powerups.render(renderer, matrices);
-						particles.render(renderer, matrices);
+						skybox.render(renderer, scene_camera, scene_matrices);
+						asteroids.render(renderer, scene_matrices);
+						player.render(renderer, scene_matrices);
+						powerups.render(renderer, scene_matrices);
+						particles.render(renderer, scene_matrices);
 					}
 
 					// render ui
 					{
-						auto& renderer = app.m_renderer;
-						auto matrices = camera_matrices(ui_camera);
-
-						crosshair.render(renderer, matrices);
-						fps.render(renderer, matrices);
+						indicators.render(renderer, glm::vec2(app.m_window.get_size()), scene_matrices, ui_matrices);
+						crosshair.render(renderer, ui_matrices);
+						fps.render(renderer, ui_matrices);
 					}
 
 					app.m_window.swap_buffers();

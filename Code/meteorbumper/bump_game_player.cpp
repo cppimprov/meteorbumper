@@ -65,7 +65,6 @@ namespace bump
 				auto const speed_factor = glm::clamp((speed - min_damping_speed) / (max_damping_speed - min_damping_speed), 0.f, 1.f);
 				auto const damping = glm::mix(min_damping, max_damping, speed_factor);
 
-				//std::cout << glm::length(physics.get_velocity()) << " " << damping << std::endl;
 				physics.set_linear_damping(damping);
 			}
 
