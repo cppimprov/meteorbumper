@@ -33,6 +33,7 @@ namespace bump
 			ASTEROIDS =      1u << 2u,
 			BOUNDS =         1u << 3u,
 			POWERUPS =       1u << 4u,
+			PARTICLES =      1u << 5u,
 		};
 		
 		struct collision_data

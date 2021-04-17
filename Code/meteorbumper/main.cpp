@@ -22,6 +22,22 @@ int main(int , char* [])
 
 // todo next:
 
+	// do things using the registry need / have a destructor???
+
+	// particle effects!
+	
+		// features:
+			// spawning:
+				// spawn in area
+				// spawn rate
+				// turn spawning on / off
+			// movement / collision (not limited to 2d plane)
+			// randomize movement somehow?
+			// lifetimes
+			// color change over lifetimes
+
+			// ???
+
 	// player shield visual:
 		// "hex grid" effect shield
 		// nearly transparent blue, render after player...
@@ -48,7 +64,7 @@ int main(int , char* [])
 
 	// player lasers:
 		// add player velocity to lasers?
-		// make lasers slightly faster
+		// make lasers slightly faster?
 
 	// player controls:
 		// fix input:

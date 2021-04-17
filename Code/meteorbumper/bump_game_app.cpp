@@ -30,6 +30,7 @@ namespace bump
 				{ "player_ship", { "default_material.vert", "default_material.frag" } },
 				{ "asteroid", { "asteroid.vert", "asteroid.frag" } },
 				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
+				{ "particle_effect", { "particle_effect.vert", "particle_effect.frag" } },
 				{ "indicator", { "indicator.vert", "indicator.frag" } },
 				{ "crosshair", { "crosshair.vert", "crosshair.frag" } },
 				{ "player_laser", { "player_laser.vert", "player_laser.geom", "player_laser.frag" } },

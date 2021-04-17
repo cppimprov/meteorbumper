@@ -6,6 +6,7 @@
 #include "bump_game_powerups.hpp"
 #include "bump_mbp_model.hpp"
 #include "bump_physics.hpp"
+#include "bump_random.hpp"
 #include "bump_transform.hpp"
 
 #include <glm/ext.hpp>
@@ -19,47 +20,6 @@ namespace bump
 	namespace game
 	{
 		
-		namespace
-		{
-
-			template<class RNG>
-			glm::vec2 random_point_in_circle(RNG& rng, float min_radius, float max_radius)
-			{
-				auto d = std::uniform_real_distribution<float>(0.f, 1.f);
-				auto angle = d(rng) * 2.f * glm::pi<float>();
-				auto min_r2 = min_radius * min_radius;
-				auto max_r2 = max_radius * max_radius;
-				auto radius = std::sqrt(d(rng) * (max_r2 - min_r2) + min_r2);
-
-				return { radius * std::cos(angle), radius * std::sin(angle) };
-			}
-
-			template<class RNG>
-			glm::vec3 random_color(RNG& rng, glm::vec3 base_color, glm::vec3 max_offset)
-			{
-				auto const dist = std::uniform_real_distribution<float>(-1.f, 1.f);
-				auto const color = glm::vec3(dist(rng), dist(rng), dist(rng));
-
-				return glm::clamp(base_color + color * max_offset, 0.f, 1.f); // todo: is there a better way? (hsv?)
-			}
-
-			template<class RNG>
-			float random_scale(RNG& rng, float base_scale, float max_variation)
-			{
-				auto const dist = std::uniform_real_distribution<float>(-1.f, 1.f);
-				auto const scale = base_scale + dist(rng) * max_variation;
-				return scale;
-			}
-
-			template<class RNG, class Type>
-			Type random_type(RNG& rng, std::map<float, Type> const& bounds)
-			{
-				auto const dist = std::uniform_real_distribution<float>(0.f, 1.f);
-				return bounds.lower_bound(dist(rng))->second;
-			}
-
-		} // unnamed
-
 		asteroid_field::asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, gl::shader_program const& shader):
 			m_registry(registry),
 			m_powerups(powerups),
@@ -141,13 +101,13 @@ namespace bump
 				{
 					auto const type = asteroid_type::MEDIUM;
 					auto const hp = m_asteroid_type_data.at(type).m_hp;
-					auto const circle_point = random_point_in_circle(m_rng, 0.3f, 0.5f) * m_asteroid_type_data.at(destroyed.m_type).m_scale;
-					auto const color = random_color(m_rng, base_color, max_color_offset);
-					auto const scale = random_scale(m_rng, m_asteroid_type_data.at(type).m_scale, m_asteroid_type_data.at(type).m_scale * 0.1f);
+					auto const circle_point = random::point_in_ring_2d(m_rng, 0.3f, 0.5f) * m_asteroid_type_data.at(destroyed.m_type).m_scale;
+					auto const color = random::color_offset_rgb(m_rng, base_color, max_color_offset);
+					auto const scale = random::scale(m_rng, m_asteroid_type_data.at(type).m_scale, m_asteroid_type_data.at(type).m_scale * 0.1f);
 					auto const mass = m_asteroid_type_data.at(type).m_mass;
 					auto const position = glm::vec3{ circle_point.x, 0.f, circle_point.y } + destroyed.m_position;
 					auto const velocity_dir = position - destroyed.m_position;
-					auto const velocity_scale = random_scale(m_rng, 12.5f, 5.f);
+					auto const velocity_scale = random::scale(m_rng, 12.5f, 5.f);
 					auto const velocity = destroyed.m_velocity + velocity_dir * velocity_scale;
 
 					auto spawn_data = asteroid_spawn_data
@@ -163,13 +123,13 @@ namespace bump
 				{
 					auto const type = asteroid_type::SMALL;
 					auto const hp = m_asteroid_type_data.at(type).m_hp;
-					auto const circle_point = random_point_in_circle(m_rng, 0.5f, 0.75f) * m_asteroid_type_data.at(destroyed.m_type).m_scale;
-					auto const color = random_color(m_rng, base_color, max_color_offset);
-					auto const scale = random_scale(m_rng, m_asteroid_type_data.at(type).m_scale, m_asteroid_type_data.at(type).m_scale * 0.1f);
+					auto const circle_point = random::point_in_ring_2d(m_rng, 0.5f, 0.75f) * m_asteroid_type_data.at(destroyed.m_type).m_scale;
+					auto const color = random::color_offset_rgb(m_rng, base_color, max_color_offset);
+					auto const scale = random::scale(m_rng, m_asteroid_type_data.at(type).m_scale, m_asteroid_type_data.at(type).m_scale * 0.1f);
 					auto const mass = m_asteroid_type_data.at(type).m_mass;
 					auto const position = glm::vec3{ circle_point.x, 0.f, circle_point.y } + destroyed.m_position;
 					auto const velocity_dir = position - destroyed.m_position;
-					auto const velocity_scale = random_scale(m_rng, 12.5f, 5.f);
+					auto const velocity_scale = random::scale(m_rng, 12.5f, 5.f);
 					auto const velocity = destroyed.m_velocity + velocity_dir * velocity_scale;
 
 					auto spawn_data = asteroid_spawn_data
@@ -190,7 +150,7 @@ namespace bump
 						{ 1.0f, powerups::powerup_type::UPGRADE_LASERS },
 					};
 					
-					auto const type = random_type(m_rng, powerup_type_probability);
+					auto const type = random::type_from_probability_map(m_rng, powerup_type_probability);
 					m_powerups.spawn(destroyed.m_position, type);
 				}
 			}
@@ -264,18 +224,18 @@ namespace bump
 
 			for (auto i = 0; i != num_asteroids; ++i)
 			{
-				auto const type = random_type(m_rng, m_asteroid_type_probability);
+				auto const type = random::type_from_probability_map(m_rng, m_asteroid_type_probability);
 				auto const hp = m_asteroid_type_data.at(type).m_hp;
-				auto const circle_point = random_point_in_circle(m_rng, min_radius, max_radius);
+				auto const circle_point = random::point_in_ring_2d(m_rng, min_radius, max_radius);
 				auto const mass = m_asteroid_type_data.at(type).m_mass;
 				auto const position = glm::vec3{ circle_point.x, 0.f, circle_point.y };
-				auto const color = random_color(m_rng, base_color, max_color_offset);
-				auto const scale = random_scale(m_rng, m_asteroid_type_data.at(type).m_scale, m_asteroid_type_data.at(type).m_scale * 0.1f);
+				auto const color = random::color_offset_rgb(m_rng, base_color, max_color_offset);
+				auto const scale = random::scale(m_rng, m_asteroid_type_data.at(type).m_scale, m_asteroid_type_data.at(type).m_scale * 0.1f);
 
-				auto const target_circle_point = random_point_in_circle(m_rng, 0.f, max_target_radius);
+				auto const target_circle_point = random::point_in_ring_2d(m_rng, 0.f, max_target_radius);
 				auto const target_position = glm::vec3{ target_circle_point.x, 0.f, target_circle_point.y };
 				auto const velocity_dir = glm::normalize(target_position - position);
-				auto const velocity_scale = random_scale(m_rng, base_velocity, max_velocity_offset);
+				auto const velocity_scale = random::scale(m_rng, base_velocity, max_velocity_offset);
 				auto const velocity = velocity_dir * velocity_scale;
 
 				auto spawn_data = asteroid_spawn_data
