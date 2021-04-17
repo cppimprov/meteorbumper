@@ -164,6 +164,7 @@ namespace bump
 		public:
 
 			explicit player(entt::registry& registry, assets& assets);
+			~player();
 
 			void update(high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);

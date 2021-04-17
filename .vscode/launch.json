@@ -10,7 +10,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Deploy/${input:projectName}/MSVC/${input:buildType}/",
             "environment": [],
-            "externalConsole": true,
+            "console": "externalTerminal",
         }
     ],
     "inputs": [

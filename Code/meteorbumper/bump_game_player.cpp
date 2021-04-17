@@ -513,20 +513,20 @@ namespace bump
 			auto const mass_kg = 20.f;
 			auto const radius_m = 3.f;
 
-			auto& player_physics = registry.emplace<physics::rigidbody>(m_entity);
-			player_physics.set_mass(mass_kg);
+			auto& rigidbody = registry.emplace<physics::rigidbody>(m_entity);
+			rigidbody.set_mass(mass_kg);
 
-			player_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(mass_kg, radius_m));
-			player_physics.set_linear_damping(0.998f);
-			player_physics.set_angular_damping(0.998f);
-			player_physics.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
-			player_physics.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
+			rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(mass_kg, radius_m));
+			rigidbody.set_linear_damping(0.998f);
+			rigidbody.set_angular_damping(0.998f);
+			rigidbody.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
+			rigidbody.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
 
-			auto& player_collision = registry.emplace<physics::collider>(m_entity);
-			player_collision.set_shape({ physics::sphere_shape{ radius_m } });
-			player_collision.set_collision_layer(physics::collision_layers::PLAYER);
-			player_collision.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
-			player_collision.set_restitution(m_player_shield_restitution);
+			auto& collider = registry.emplace<physics::collider>(m_entity);
+			collider.set_shape({ physics::sphere_shape{ radius_m } });
+			collider.set_collision_layer(physics::collision_layers::PLAYER);
+			collider.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
+			collider.set_restitution(m_player_shield_restitution);
 
 			auto hit_callback = [=] (entt::entity other, physics::collision_data const&, float rv)
 			{
@@ -557,7 +557,12 @@ namespace bump
 				}
 			};
 
-			player_collision.set_callback(std::move(hit_callback));
+			collider.set_callback(std::move(hit_callback));
+		}
+
+		player::~player()
+		{
+			m_registry.destroy(m_entity);
 		}
 
 		void player::update(high_res_duration_t dt)

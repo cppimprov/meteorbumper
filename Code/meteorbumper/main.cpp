@@ -22,21 +22,12 @@ int main(int , char* [])
 
 // todo next:
 
-	// do things using the registry need / have a destructor???
-
-	// particle effects!
-	
-		// features:
-			// spawning:
-				// spawn in area
-				// spawn rate
-				// turn spawning on / off
-			// movement / collision (not limited to 2d plane)
-			// randomize movement somehow?
-			// lifetimes
-			// color change over lifetimes
-
-			// ???
+	// particle effects:
+		// spawn position / direction
+		// spawn lots of particles in one go?
+		// movement / collision (not limited to 2d plane)
+		// randomize movement somehow?
+		// color change over lifetimes
 
 	// player shield visual:
 		// "hex grid" effect shield

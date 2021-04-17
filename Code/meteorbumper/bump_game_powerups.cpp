@@ -24,6 +24,12 @@ namespace bump
 		{
 			
 		}
+
+		powerups::~powerups()
+		{
+			for (auto id : m_entities)
+				m_registry.destroy(id);
+		}
 		
 		void powerups::spawn(glm::vec3 position, powerup_type type)
 		{

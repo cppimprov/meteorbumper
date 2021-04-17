@@ -3,6 +3,7 @@
 #include "bump_camera.hpp"
 #include "bump_game_app.hpp"
 #include "bump_game_asteroids.hpp"
+#include "bump_game_bounds.hpp"
 #include "bump_game_crosshair.hpp"
 #include "bump_game_fps_counter.hpp"
 #include "bump_game_indicators.hpp"
@@ -26,46 +27,6 @@ namespace bump
 	
 	namespace game
 	{
-
-		class bounds
-		{
-		public:
-
-			explicit bounds(entt::registry& registry);
-
-			bounds(bounds const&) = delete;
-			bounds& operator=(bounds const&) = delete;
-			bounds(bounds&&) = delete;
-			bounds& operator=(bounds&&) = delete;
-
-			~bounds();
-
-		private:
-
-			entt::registry& m_registry;
-			entt::entity m_id;
-		};
-
-		bounds::bounds(entt::registry& registry):
-			m_registry(registry),
-			m_id(entt::null)
-		{
-			m_id = registry.create();
-
-			auto& rigidbody = registry.emplace<physics::rigidbody>(m_id);
-			rigidbody.set_infinite_mass();
-
-			auto& collider = registry.emplace<physics::collider>(m_id);
-			collider.set_shape(physics::inverse_sphere_shape{ 300.f });
-			collider.set_collision_layer(physics::BOUNDS);
-			collider.set_collision_mask(~physics::PLAYER_WEAPONS);
-		}
-
-		bounds::~bounds()
-		{
-			m_registry.destroy(m_id);
-			m_id = entt::null;
-		}
 
 		gamestate do_game(app& app)
 		{
@@ -98,7 +59,7 @@ namespace bump
 			auto powerups = game::powerups(registry, app.m_assets.m_shaders.at("powerup"), app.m_assets.m_models.at("powerup_shield"), app.m_assets.m_models.at("powerup_armor"), app.m_assets.m_models.at("powerup_lasers"));
 			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
 
-			auto bounds = game::bounds(registry);
+			auto bounds = game::bounds(registry, 300.f);
 
 			auto particles = particle_field(app.m_assets.m_shaders.at("particle_field"), 25.f, 20);
 			particles.set_base_color_rgb({ 0.75, 0.60, 0.45 });

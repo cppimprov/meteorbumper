@@ -29,6 +29,8 @@ namespace bump
 				mbp_model const& armor_model,
 				mbp_model const& lasers_model);
 
+			~powerups();
+
 			void spawn(glm::vec3 position, powerup_type type);
 
 			void update(high_res_duration_t dt);

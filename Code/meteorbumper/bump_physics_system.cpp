@@ -26,12 +26,17 @@ namespace bump
 				{
 					// broad phase - find collision candidate pairs
 					auto candidate_pairs = std::vector<std::pair<entt::entity, entt::entity>>();
+					candidate_pairs.reserve(colliders.size() * colliders.size());
 
-					for (auto first = colliders.begin(); first != std::prev(colliders.end()); ++first)
-						for (auto second = std::next(first); second != colliders.end(); ++second)
-							candidate_pairs.push_back({ *first, *second });
+					{
+						auto const end_1 = std::prev(colliders.end());
+						auto const end_2 = colliders.end();
+
+						for (auto first = colliders.begin(); first != end_1; ++first)
+							for (auto second = std::next(first); second != end_2; ++second)
+								candidate_pairs.push_back({ *first, *second });
+					}
 					
-
 					// narrow phase - get collision data
 					struct hit_data
 					{

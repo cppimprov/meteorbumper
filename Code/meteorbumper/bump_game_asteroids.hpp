@@ -24,6 +24,7 @@ namespace bump
 		public:
 
 			explicit asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, gl::shader_program const& shader);
+			~asteroid_field();
 
 			void update(high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);

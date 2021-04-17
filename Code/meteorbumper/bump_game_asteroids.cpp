@@ -61,6 +61,14 @@ namespace bump
 			spawn_wave();
 		}
 
+		asteroid_field::~asteroid_field()
+		{
+			auto view = m_registry.view<asteroid_data>();
+
+			for (auto id : view)
+				m_registry.destroy(id);
+		}
+
 		void asteroid_field::update(high_res_duration_t)
 		{
 			auto to_destroy = std::vector<entt::entity>();
