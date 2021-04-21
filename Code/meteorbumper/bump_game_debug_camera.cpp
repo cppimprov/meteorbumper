@@ -18,7 +18,7 @@ namespace bump
 			
 		void debug_camera_controls::update(high_res_duration_t dt)
 		{
-			auto const dt_seconds = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
+			auto const dt_seconds = high_res_duration_to_seconds(dt);
 			auto const movement_speed = 5.f; // metres per second
 			auto const rotation_speed = 100.f; // degrees per mouse input unit per second (?)
 			auto const speed_modifier = m_move_fast ? 5.f : 1.f;

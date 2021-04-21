@@ -28,7 +28,7 @@ namespace bump
 		
 		void rigidbody::update(high_res_duration_t dt)
 		{
-			auto dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
+			auto dt_s = high_res_duration_to_seconds(dt);
 
 			// integrate for position
 			{

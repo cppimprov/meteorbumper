@@ -23,11 +23,8 @@ int main(int , char* [])
 // todo next:
 
 	// particle effects:
-		// spawn position / direction
 		// spawn lots of particles in one go?
-		// movement / collision (not limited to 2d plane)
-		// randomize movement somehow?
-		// color change over lifetimes
+		// "fire and forget" events for explosions etc.?
 
 	// player shield visual:
 		// "hex grid" effect shield

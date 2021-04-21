@@ -108,7 +108,7 @@ class PlatformMSVC:
 		return '/nologo /Gy /EHsc /WX /std:c++17 /Zc:__cplusplus /utf-8'
 
 	def get_cc_build_flags(self, build_type):
-		return { BuildType.debug: '/MTd /Ox /Zi', BuildType.release: '/MT /Ox /Zi', BuildType.master: '/MT /Ox' }[build_type]
+		return { BuildType.debug: '/MTd /Od /Zi', BuildType.release: '/MT /Ox /Zi', BuildType.master: '/MT /Ox' }[build_type]
 
 	def get_cc_defines(self, defines):
 		return ' '.join('/D' + d for d in defines)

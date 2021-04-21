@@ -16,8 +16,7 @@ namespace bump
 		{
 		public:
 
-			physics_system(high_res_duration_t update_time = 
-				std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f / 120.f)));
+			explicit physics_system(high_res_duration_t update_time = high_res_duration_from_seconds(1.f / 120.f));
 
 			void update(entt::registry& registry, high_res_duration_t dt);
 

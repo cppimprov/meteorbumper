@@ -2,6 +2,7 @@
 
 #include "bump_camera.hpp"
 #include "bump_game_basic_renderable.hpp"
+#include "bump_game_particle_effect.hpp"
 #include "bump_gl.hpp"
 #include "bump_physics.hpp"
 
@@ -176,6 +177,9 @@ namespace bump
 			player_controls m_controls;
 			player_weapons m_weapons;
 			player_health m_health;
+
+			particle_effect m_left_engine_boost_effect;
+			particle_effect m_right_engine_boost_effect;
 
 			float m_player_shield_restitution = 0.8f;
 			float m_player_armor_restitution = 0.25f;

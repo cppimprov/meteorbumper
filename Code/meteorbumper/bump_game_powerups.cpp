@@ -20,7 +20,7 @@ namespace bump
 			m_shield_renderable(shader, shield_model),
 			m_armor_renderable(shader, armor_model),
 			m_lasers_renderable(shader, lasers_model),
-			m_max_lifetime(std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(5.f)))
+			m_max_lifetime(high_res_duration_from_seconds(5.f))
 		{
 			
 		}

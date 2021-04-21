@@ -40,7 +40,7 @@ namespace bump
 
 		void fps_counter::update(high_res_duration_t dt)
 		{
-			auto const frame_time = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
+			auto const frame_time = high_res_duration_to_seconds(dt);
 			auto const fps = (frame_time == 0.f ? 0.f : 1.f / frame_time);
 
 			m_fps_string = std::to_string(static_cast<int>(fps));

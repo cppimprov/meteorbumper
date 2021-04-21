@@ -77,7 +77,7 @@ namespace bump
 		
 			renderer.set_uniform_2f(m_u_Position, position);
 			renderer.set_uniform_2f(m_u_Size, glm::vec2(m_text.m_texture.get_size()));
-			renderer.set_uniform_1f(m_u_Time, std::chrono::duration_cast<std::chrono::duration<float>>(m_time).count());
+			renderer.set_uniform_1f(m_u_Time, high_res_duration_to_seconds(m_time));
 			renderer.set_uniform_3f(m_u_Color, glm::vec3{ 0.2f, 0.2f, 0.2f });
 			renderer.set_texture_2d(0, m_text.m_texture);
 

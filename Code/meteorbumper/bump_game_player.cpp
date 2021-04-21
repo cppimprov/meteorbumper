@@ -157,7 +157,7 @@ namespace bump
 			m_in_Direction(shader.get_attribute_location("in_Direction")),
 			m_in_BeamLength(shader.get_attribute_location("in_BeamLength")),
 			m_u_MVP(shader.get_uniform_location("u_MVP")),
-			m_firing_period(std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(0.125f))),
+			m_firing_period(high_res_duration_from_seconds(0.125f)),
 			m_time_since_firing(m_firing_period),
 			m_beam_speed_m_per_s(100.f),
 			m_beam_length_factor(0.5f),
@@ -179,7 +179,7 @@ namespace bump
 				g_low_damage,
 				g_low_damage_color,
 				{ -2.f, -0.1f, -1.f }, // origin
-				std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+				high_res_duration_from_seconds(1.f),
 				{},
 			};
 
@@ -190,7 +190,7 @@ namespace bump
 				g_low_damage,
 				g_low_damage_color,
 				{ 2.f, -0.1f, -1.f }, // origin
-				std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+				high_res_duration_from_seconds(1.f),
 				{},
 			};
 
@@ -229,7 +229,7 @@ namespace bump
 						g_low_damage,
 						g_low_damage_color,
 						{ -3.f, -0.1f, -0.4f }, // origin
-						std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+						high_res_duration_from_seconds(1.f),
 						{},
 					};
 
@@ -240,7 +240,7 @@ namespace bump
 						g_low_damage,
 						g_low_damage_color,
 						{ 3.f, -0.1f, -0.4f }, // origin
-						std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+						high_res_duration_from_seconds(1.f),
 						{},
 					};
 					
@@ -271,7 +271,7 @@ namespace bump
 						g_low_damage,
 						g_low_damage_color,
 						{ -4.f, -0.1f, 0.3f }, // origin
-						std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+						high_res_duration_from_seconds(1.f),
 						{},
 					};
 
@@ -282,7 +282,7 @@ namespace bump
 						g_low_damage,
 						g_low_damage_color,
 						{ 4.f, -0.1f, 0.3f }, // origin
-						std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(1.f)),
+						high_res_duration_from_seconds(1.f),
 						{},
 					};
 
@@ -364,8 +364,8 @@ namespace bump
 				m_time_since_firing = high_res_duration_t{ 0 };
 			}
 
-			auto const dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
-			auto const firing_period_s = std::chrono::duration_cast<std::chrono::duration<float>>(m_firing_period).count();
+			auto const dt_s = high_res_duration_to_seconds(dt);
+			auto const firing_period_s = high_res_duration_to_seconds(m_firing_period);
 			auto const max_beam_length = m_beam_speed_m_per_s * firing_period_s * m_beam_length_factor;
 
 			auto view = m_registry.view<beam_segment>();
@@ -476,7 +476,7 @@ namespace bump
 			m_shield_hp(m_shield_max_hp),
 			m_armor_hp(m_armor_max_hp),
 			m_shield_recharge_rate_hp_per_s(20.f),
-			m_shield_recharge_delay(std::chrono::duration_cast<high_res_duration_t>(std::chrono::duration<float>(5.f))),
+			m_shield_recharge_delay(high_res_duration_from_seconds(5.f)),
 			m_time_since_last_hit(0) { }
 
 		void player_health::update(high_res_duration_t dt)
@@ -485,7 +485,7 @@ namespace bump
 
 			if (m_time_since_last_hit > m_shield_recharge_delay)
 			{
-				auto const dt_s = std::chrono::duration_cast<std::chrono::duration<float>>(dt).count();
+				auto const dt_s = high_res_duration_to_seconds(dt);
 				m_shield_hp = std::clamp(m_shield_hp + m_shield_recharge_rate_hp_per_s * dt_s, 0.f, m_shield_max_hp);
 			}
 		}
@@ -506,58 +506,96 @@ namespace bump
 			m_entity(entt::null_t()),
 			m_renderable(assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship")),
 			m_controls(),
-			m_weapons(registry, assets.m_shaders.at("player_laser"))
+			m_weapons(registry, assets.m_shaders.at("player_laser")),
+			m_left_engine_boost_effect(registry, assets.m_shaders.at("particle_effect")),
+			m_right_engine_boost_effect(registry, assets.m_shaders.at("particle_effect"))
 		{
-			m_entity = registry.create();
-
-			auto const mass_kg = 20.f;
-			auto const radius_m = 3.f;
-
-			auto& rigidbody = registry.emplace<physics::rigidbody>(m_entity);
-			rigidbody.set_mass(mass_kg);
-
-			rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(mass_kg, radius_m));
-			rigidbody.set_linear_damping(0.998f);
-			rigidbody.set_angular_damping(0.998f);
-			rigidbody.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
-			rigidbody.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
-
-			auto& collider = registry.emplace<physics::collider>(m_entity);
-			collider.set_shape({ physics::sphere_shape{ radius_m } });
-			collider.set_collision_layer(physics::collision_layers::PLAYER);
-			collider.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
-			collider.set_restitution(m_player_shield_restitution);
-
-			auto hit_callback = [=] (entt::entity other, physics::collision_data const&, float rv)
+			// setup player physics
 			{
-				if (m_registry.has<asteroid_field::asteroid_data>(other))
+				m_entity = registry.create();
+
+				auto const mass_kg = 20.f;
+				auto const radius_m = 3.f;
+
+				auto& rigidbody = registry.emplace<physics::rigidbody>(m_entity);
+				rigidbody.set_mass(mass_kg);
+
+				rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(mass_kg, radius_m));
+				rigidbody.set_linear_damping(0.998f);
+				rigidbody.set_angular_damping(0.998f);
+				rigidbody.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
+				rigidbody.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
+
+				auto& collider = registry.emplace<physics::collider>(m_entity);
+				collider.set_shape({ physics::sphere_shape{ radius_m } });
+				collider.set_collision_layer(physics::collision_layers::PLAYER);
+				collider.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
+				collider.set_restitution(m_player_shield_restitution);
+
+				auto hit_callback = [=] (entt::entity other, physics::collision_data const&, float rv)
 				{
-					auto const max_damage = 100.f;
-					auto const vf = glm::pow(glm::clamp(rv / 100.f, 0.f, 1.f), 2.f); // damage factor from velocity
-					auto const damage = glm::mix(0.f, max_damage, vf);
+					if (m_registry.has<asteroid_field::asteroid_data>(other))
+					{
+						auto const max_damage = 100.f;
+						auto const vf = glm::pow(glm::clamp(rv / 100.f, 0.f, 1.f), 2.f); // damage factor from velocity
+						auto const damage = glm::mix(0.f, max_damage, vf);
 
-					m_health.take_damage(damage);
-				}
-				else if (m_registry.has<powerups::powerup_data>(other))
+						m_health.take_damage(damage);
+					}
+					else if (m_registry.has<powerups::powerup_data>(other))
+					{
+						auto const& powerup = m_registry.get<powerups::powerup_data>(other);
+
+						if (powerup.m_type == powerups::powerup_type::RESET_SHIELDS)
+						{
+							m_health.reset_shield_hp();
+						}
+						else if (powerup.m_type == powerups::powerup_type::RESET_ARMOR)
+						{
+							m_health.reset_armor_hp();
+						}
+						else if (powerup.m_type == powerups::powerup_type::UPGRADE_LASERS)
+						{
+							m_weapons.m_lasers.upgrade();
+						}
+					}
+				};
+
+				collider.set_callback(std::move(hit_callback));
+			}
+
+			// setup player effects
+			{
+				auto const color_map = std::map<float, glm::vec4>
 				{
-					auto const& powerup = m_registry.get<powerups::powerup_data>(other);
+					{ 0.f, { 1.f, 0.f, 0.f, 1.f } },
+					{ 1.f, { 0.f, 1.f, 0.f, 1.f } },
+				};
 
-					if (powerup.m_type == powerups::powerup_type::RESET_SHIELDS)
-					{
-						m_health.reset_shield_hp();
-					}
-					else if (powerup.m_type == powerups::powerup_type::RESET_ARMOR)
-					{
-						m_health.reset_armor_hp();
-					}
-					else if (powerup.m_type == powerups::powerup_type::UPGRADE_LASERS)
-					{
-						m_weapons.m_lasers.upgrade();
-					}
-				}
-			};
+				auto const l_pos = glm::vec3{ -0.8f, 0.1f, 2.2f };
+				auto l_mat = glm::mat4(1.f);
+				set_position(l_mat, l_pos);
 
-			collider.set_callback(std::move(hit_callback));
+				m_left_engine_boost_effect.set_origin(l_mat);
+				m_left_engine_boost_effect.set_base_velocity({ 0.f, 0.f, 5.f });
+				m_left_engine_boost_effect.set_random_velocity({ 5.f, 5.f, 0.5f });
+				m_left_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
+				m_left_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
+				m_left_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 400.f));
+				m_left_engine_boost_effect.set_color_map(color_map);
+
+				auto const r_pos = glm::vec3{ 0.8f, 0.1f, 2.2f };
+				auto r_mat = glm::mat4(1.f);
+				set_position(r_mat, r_pos);
+
+				m_right_engine_boost_effect.set_origin(r_mat);
+				m_right_engine_boost_effect.set_base_velocity({ 0.f, 0.f, 5.f });
+				m_right_engine_boost_effect.set_random_velocity({ 5.f, 5.f, 0.5f });
+				m_right_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
+				m_right_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
+				m_right_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 400.f));
+				m_right_engine_boost_effect.set_color_map(color_map);
+			}
 		}
 
 		player::~player()
@@ -575,6 +613,27 @@ namespace bump
 
 			m_health.update(dt);
 
+			// update particle effect positions
+			{
+				auto const enabled = (m_controls.m_boost_axis == 1.f);
+
+				auto const l_pos = glm::vec3{ -0.8f, 0.1f, 2.2f };
+				auto l_mat = rigidbody.get_transform();
+				translate_in_local(l_mat, l_pos);
+
+				m_left_engine_boost_effect.set_spawn_enabled(enabled);
+				m_left_engine_boost_effect.set_origin(l_mat);
+				m_left_engine_boost_effect.update(dt);
+
+				auto const r_pos = glm::vec3{ 0.8f, 0.1f, 2.2f };
+				auto r_mat = rigidbody.get_transform();
+				translate_in_local(r_mat, r_pos);
+				
+				m_right_engine_boost_effect.set_spawn_enabled(enabled);
+				m_right_engine_boost_effect.set_origin(r_mat);
+				m_right_engine_boost_effect.update(dt);
+			}
+
 			// if we have shields, make collisions "bouncier" by increasing restitution
 			auto& collider = m_registry.get<physics::collider>(m_entity);
 			collider.set_restitution(m_health.has_shield() ? m_player_shield_restitution : m_player_armor_restitution);
@@ -584,6 +643,9 @@ namespace bump
 		{
 			m_renderable.render(renderer, matrices);
 			m_weapons.render(renderer, matrices);
+
+			m_left_engine_boost_effect.render(renderer, matrices);
+			m_right_engine_boost_effect.render(renderer, matrices);
 		}
 		
 	} // game

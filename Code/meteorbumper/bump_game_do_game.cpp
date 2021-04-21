@@ -65,9 +65,6 @@ namespace bump
 			particles.set_base_color_rgb({ 0.75, 0.60, 0.45 });
 			particles.set_color_variation_hsv({ 0.05, 0.25, 0.05 });
 
-			auto test_effect = particle_effect(registry, app.m_assets.m_shaders.at("particle_effect"));
-			test_effect.enable_spawning();
-
 			auto indicators = game::indicators(registry, app.m_assets.m_shaders.at("indicator"));
 
 			auto crosshair = game::crosshair(app.m_assets.m_shaders.at("crosshair"));
@@ -148,8 +145,6 @@ namespace bump
 						// update particle field position
 						particles.set_position(get_position(scene_camera.m_transform));
 						
-						test_effect.update(dt); // TEMP!
-
 						// update asteroids
 						asteroids.update(dt);
 						
@@ -189,7 +184,6 @@ namespace bump
 						player.render(renderer, scene_matrices);
 						powerups.render(renderer, scene_matrices);
 						particles.render(renderer, scene_matrices);
-						test_effect.render(renderer, scene_matrices);
 					}
 
 					// render ui
