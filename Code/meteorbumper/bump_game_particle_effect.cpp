@@ -1,6 +1,7 @@
 #include "bump_game_particle_effect.hpp"
 
 #include "bump_camera.hpp"
+#include "bump_random.hpp"
 #include "bump_transform.hpp"
 #include "bump_physics.hpp"
 
@@ -89,20 +90,33 @@ namespace bump
 				m_registry.destroy(id);
 		}
 
+		void particle_effect::spawn_once(std::size_t particle_count)
+		{
+			for (auto i = std::size_t{ 0 }; i != particle_count; ++i)
+				spawn_particle();
+		}
+
 		void particle_effect::update(high_res_duration_t dt)
 		{
 			// update lifetimes, destroy expired particles
 			{
 				auto view = m_registry.view<particle_data>();
 
-				for (auto id : view)
-				{
-					auto& p = view.get<particle_data>(id);
-					p.m_lifetime += dt;
+				auto first_dead_particle = std::remove_if(m_particles.begin(), m_particles.end(),
+					[&] (entt::entity id)
+					{
+						auto& p = view.get<particle_data>(id);
+						p.m_lifetime += dt;
 
-					if (p.m_lifetime > m_max_lifetime)
-						m_registry.destroy(id);
-				}
+						auto result = (p.m_lifetime > m_max_lifetime);
+
+						if (result)
+							m_registry.destroy(id);
+						
+						return result;
+					});
+				
+				m_particles.erase(first_dead_particle, m_particles.end());
 			}
 
 			// spawn
@@ -112,32 +126,7 @@ namespace bump
 
 				while (m_spawn_accumulator >= m_spawn_period)
 				{
-					auto id = m_registry.create();
-
-					auto const dl = std::uniform_real_distribution<float>(0.f, 1.f);
-					auto const l = high_res_duration_from_seconds(high_res_duration_to_seconds(m_max_lifetime_random) * dl(m_rng));
-
-					auto& particle = m_registry.emplace<particle_data>(id);
-					particle.m_lifetime = l;
-					particle.m_max_lifetime = m_max_lifetime;
-
-					auto const particle_mass_kg = 0.01f; // todo: make this configurable?
-					auto const particle_radius_m = 0.01f; // todo: make this configurable?
-
-					auto const d = std::uniform_real_distribution<float>(-1.f, 1.f);
-					auto const v = m_base_velocity + m_random_velocity * glm::vec3(d(m_rng), d(m_rng), d(m_rng));
-
-					auto& rigidbody = m_registry.emplace<physics::rigidbody>(id);
-					rigidbody.set_mass(particle_mass_kg);
-					rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(particle_mass_kg, particle_radius_m));
-					rigidbody.set_position(get_position(m_origin));
-					rigidbody.set_velocity(transform_vector_to_world(m_origin, v));
-
-					auto& collider = m_registry.emplace<physics::collider>(id);
-					collider.set_shape({ physics::sphere_shape{ particle_radius_m } });
-					collider.set_collision_layer(physics::collision_layers::PARTICLES);
-					collider.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS | physics::collision_layers::PLAYER);
-
+					spawn_particle();
 					m_spawn_accumulator -= m_spawn_period;
 				}
 			}
@@ -145,17 +134,17 @@ namespace bump
 
 		void particle_effect::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
-			auto view = m_registry.view<particle_data, physics::rigidbody>();
-
-			if (view.empty())
+			if (m_particles.empty())
 				return;
 
-			auto instance_count = view.size();
+			auto instance_count = m_particles.size();
 
 			m_frame_positions.reserve(instance_count);
 			m_frame_colors.reserve(instance_count);
 
-			for (auto id : view)
+			auto view = m_registry.view<particle_data, physics::rigidbody>();
+
+			for (auto id : m_particles)
 			{
 				auto [p, rb] = view.get<particle_data, physics::rigidbody>(id);
 				auto const lf = std::clamp(high_res_duration_to_seconds(p.m_lifetime) / high_res_duration_to_seconds(p.m_max_lifetime), 0.f, 1.f);
@@ -167,6 +156,8 @@ namespace bump
 			m_instance_positions.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_positions.front()), 3, instance_count, GL_STREAM_DRAW);
 			m_instance_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_colors.front()), 4, instance_count, GL_STREAM_DRAW);
 
+			renderer.set_blending(gl::renderer::blending::ADD);
+
 			renderer.set_program(m_shader);
 			renderer.set_uniform_4x4f(m_u_MVP, matrices.model_view_projection_matrix(glm::mat4(1.f)));
 			renderer.set_uniform_1f(m_u_Size, 1.f); // todo: make this configurable?
@@ -177,8 +168,42 @@ namespace bump
 			renderer.clear_vertex_array();
 			renderer.clear_program();
 
+			renderer.set_blending(gl::renderer::blending::NONE);
+
 			m_frame_positions.clear();
 			m_frame_colors.clear();
+		}
+
+		void particle_effect::spawn_particle()
+		{
+			auto id = m_registry.create();
+
+			auto const dl = std::uniform_real_distribution<float>(0.f, 1.f);
+			auto const l = high_res_duration_from_seconds(high_res_duration_to_seconds(m_max_lifetime_random) * dl(m_rng));
+
+			auto& particle = m_registry.emplace<particle_data>(id);
+			particle.m_lifetime = l;
+			particle.m_max_lifetime = m_max_lifetime;
+
+			auto const particle_mass_kg = 0.005f; // todo: make this configurable?
+			auto const particle_radius_m = 0.01f; // todo: make this configurable?
+
+			auto const p = random::point_in_ring_3d(m_rng, 0.f, m_spawn_radius_m);
+			auto const d = std::uniform_real_distribution<float>(-1.f, 1.f);
+			auto const v = m_base_velocity + m_random_velocity * glm::vec3(d(m_rng), d(m_rng), d(m_rng));
+
+			auto& rigidbody = m_registry.emplace<physics::rigidbody>(id);
+			rigidbody.set_mass(particle_mass_kg);
+			rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(particle_mass_kg, particle_radius_m));
+			rigidbody.set_position(transform_point_to_world(m_origin, p));
+			rigidbody.set_velocity(transform_vector_to_world(m_origin, v));
+
+			auto& collider = m_registry.emplace<physics::collider>(id);
+			collider.set_shape({ physics::sphere_shape{ particle_radius_m } });
+			collider.set_collision_layer(physics::collision_layers::PARTICLES);
+			collider.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS | physics::collision_layers::PLAYER);
+
+			m_particles.push_back(id);
 		}
 		
 	} // game

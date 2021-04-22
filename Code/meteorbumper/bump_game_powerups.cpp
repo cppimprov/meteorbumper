@@ -1,6 +1,7 @@
 #include "bump_game_powerups.hpp"
 
 #include "bump_camera.hpp"
+#include "bump_game_player.hpp"
 #include "bump_log.hpp"
 #include "bump_physics.hpp"
 #include "bump_mbp_model.hpp"
@@ -53,10 +54,10 @@ namespace bump
 			collider.set_collision_layer(physics::collision_layers::POWERUPS);
 			collider.set_collision_mask(physics::collision_layers::PLAYER);
 
-			auto callback = [=] (entt::entity, physics::collision_data const&, float)
+			auto callback = [=] (entt::entity other, physics::collision_data const&, float)
 			{
-				// note: should only collide w/ player, so don't check the entity type
-				m_registry.get<powerup_data>(id).m_collected = true;
+				if (m_registry.has<player_tag>(other))
+					m_registry.get<powerup_data>(id).m_collected = true;
 			};
 
 			collider.set_callback(std::move(callback));

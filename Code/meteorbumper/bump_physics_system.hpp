@@ -16,11 +16,13 @@ namespace bump
 		{
 		public:
 
-			explicit physics_system(high_res_duration_t update_time = high_res_duration_from_seconds(1.f / 120.f));
+			explicit physics_system(entt::registry& registry, high_res_duration_t update_time = high_res_duration_from_seconds(1.f / 120.f));
 
-			void update(entt::registry& registry, high_res_duration_t dt);
+			void update(high_res_duration_t dt);
 
 		private:
+
+			entt::registry& m_registry;
 
 			high_res_duration_t m_update_time;
 			high_res_duration_t m_accumulator;

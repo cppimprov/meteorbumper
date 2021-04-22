@@ -31,7 +31,7 @@ namespace bump
 		gamestate do_game(app& app)
 		{
 			auto registry = entt::registry();
-			auto physics_system = physics::physics_system();
+			auto physics_system = physics::physics_system(registry);
 
 			auto const camera_height = 150.f;
 			auto scene_camera = perspective_camera();
@@ -130,7 +130,7 @@ namespace bump
 						player.m_controls.apply(player_physics, crosshair, glm::vec2(app.m_window.get_size()), camera_matrices(scene_camera));
 
 						// physics:
-						physics_system.update(registry, dt);
+						physics_system.update(dt);
 
 						// update player state:
 						player.update(dt);

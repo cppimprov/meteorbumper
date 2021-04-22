@@ -62,10 +62,14 @@ namespace bump
 			bool is_empty() { return m_particles.empty(); }
 			void clear();
 
+			void spawn_once(std::size_t particle_count);
+
 			void update(high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
 			
 		private:
+
+			void spawn_particle();
 
 			entt::registry& m_registry;
 

@@ -22,19 +22,17 @@ int main(int , char* [])
 
 // todo next:
 
-	// particle effects:
-		// spawn lots of particles in one go?
-		// "fire and forget" events for explosions etc.?
+	// remove strafing / manouvering (not really necessary)
+		// reduce drag
 
 	// player shield visual:
-		// "hex grid" effect shield
-		// nearly transparent blue, render after player...
-		// when hit... light up the part of the shield hit? blue particle effect?
-		// when destroyed, shattering animation and don't render any more...
-		// ...
+		// draw shield (iso sphere?)
+		// make collision circle larger with shield
+		// shield down / recharge particle effects
 
 	// player armor visual:
 		// when hit, yellow particle effect?
+		// fewer, less speedy particles
 	
 	// lighting!
 		// g-buffers
@@ -42,8 +40,6 @@ int main(int , char* [])
 		// proper materials
 	
 	// effects:
-		// engine boost particles
-		// engine maneuvering thruster "smoke" type jets
 		// weapon hits (rock chunks / dust, laser "dissolve" type effect)
 		// asteroid explode / split effects
 		// lights for:

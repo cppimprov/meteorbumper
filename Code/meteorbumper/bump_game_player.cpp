@@ -508,11 +508,14 @@ namespace bump
 			m_controls(),
 			m_weapons(registry, assets.m_shaders.at("player_laser")),
 			m_left_engine_boost_effect(registry, assets.m_shaders.at("particle_effect")),
-			m_right_engine_boost_effect(registry, assets.m_shaders.at("particle_effect"))
+			m_right_engine_boost_effect(registry, assets.m_shaders.at("particle_effect")),
+			m_shield_hit_effect(registry, assets.m_shaders.at("particle_effect"))
 		{
 			// setup player physics
 			{
 				m_entity = registry.create();
+
+				registry.emplace<player_tag>(m_entity);
 
 				auto const mass_kg = 20.f;
 				auto const radius_m = 3.f;
@@ -532,13 +535,17 @@ namespace bump
 				collider.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
 				collider.set_restitution(m_player_shield_restitution);
 
-				auto hit_callback = [=] (entt::entity other, physics::collision_data const&, float rv)
+				auto hit_callback = [this] (entt::entity other, physics::collision_data const& hit, float rv)
 				{
 					if (m_registry.has<asteroid_field::asteroid_data>(other))
 					{
 						auto const max_damage = 100.f;
 						auto const vf = glm::pow(glm::clamp(rv / 100.f, 0.f, 1.f), 2.f); // damage factor from velocity
 						auto const damage = glm::mix(0.f, max_damage, vf);
+
+						// do shield hit effect
+						if (m_health.has_shield())
+							m_frame_shield_hits.push_back({ hit.m_point, hit.m_normal * 10.f });
 
 						m_health.take_damage(damage);
 					}
@@ -564,12 +571,15 @@ namespace bump
 				collider.set_callback(std::move(hit_callback));
 			}
 
-			// setup player effects
+			// setup engine effects
 			{
 				auto const color_map = std::map<float, glm::vec4>
 				{
-					{ 0.f, { 1.f, 0.f, 0.f, 1.f } },
-					{ 1.f, { 0.f, 1.f, 0.f, 1.f } },
+					{ 0.0f, { 1.f, 1.f, 0.9f, 1.f } },
+					{ 0.2f, { 1.f, 0.85f, 0.42f, 1.f } },
+					{ 0.4f, { 0.95f, 0.30f, 0.09f, 0.95f } },
+					{ 0.7f, { 0.52f, 0.40f, 0.29f, 0.80f } },
+					{ 1.0f, { 0.29f, 0.22f, 0.17f, 0.25f } },
 				};
 
 				auto const l_pos = glm::vec3{ -0.8f, 0.1f, 2.2f };
@@ -577,7 +587,7 @@ namespace bump
 				set_position(l_mat, l_pos);
 
 				m_left_engine_boost_effect.set_origin(l_mat);
-				m_left_engine_boost_effect.set_base_velocity({ 0.f, 0.f, 5.f });
+				m_left_engine_boost_effect.set_base_velocity({ 0.f, 0.f, 15.f });
 				m_left_engine_boost_effect.set_random_velocity({ 5.f, 5.f, 0.5f });
 				m_left_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_left_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
@@ -589,12 +599,29 @@ namespace bump
 				set_position(r_mat, r_pos);
 
 				m_right_engine_boost_effect.set_origin(r_mat);
-				m_right_engine_boost_effect.set_base_velocity({ 0.f, 0.f, 5.f });
+				m_right_engine_boost_effect.set_base_velocity({ 0.f, 0.f, 15.f });
 				m_right_engine_boost_effect.set_random_velocity({ 5.f, 5.f, 0.5f });
 				m_right_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_right_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
 				m_right_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 400.f));
 				m_right_engine_boost_effect.set_color_map(color_map);
+			}
+
+			// setup shield / armor hit effects
+			{
+				auto const color_map = std::map<float, glm::vec4>
+				{
+					{ 0.0f, { 0.507f, 0.627f, 0.840f, 1.f } },
+					{ 0.7f, { 0.507f, 0.627f, 0.840f, 0.5f } },
+					{ 1.0f, { 1.0f, 1.0f, 1.0f, 0.2f } },
+				};
+
+				// note: position / velocity are set before each spawn
+				m_shield_hit_effect.set_spawn_radius(0.1f);
+				m_shield_hit_effect.set_random_velocity({ 10.f, 10.f, 10.f });
+				m_shield_hit_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
+				m_shield_hit_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
+				m_shield_hit_effect.set_color_map(color_map);
 			}
 		}
 
@@ -613,7 +640,7 @@ namespace bump
 
 			m_health.update(dt);
 
-			// update particle effect positions
+			// update particle effects
 			{
 				auto const enabled = (m_controls.m_boost_axis == 1.f);
 
@@ -632,6 +659,20 @@ namespace bump
 				m_right_engine_boost_effect.set_spawn_enabled(enabled);
 				m_right_engine_boost_effect.set_origin(r_mat);
 				m_right_engine_boost_effect.update(dt);
+
+				for (auto const& hit : m_frame_shield_hits)
+				{
+					auto m = glm::mat4(1.f);
+					set_position(m, std::get<0>(hit));
+
+					m_shield_hit_effect.set_origin(m);
+					//m_shield_hit_effect.set_base_velocity(std::get<1>(hit));
+					m_shield_hit_effect.spawn_once(100);
+				}
+
+				m_frame_shield_hits.clear();
+
+				m_shield_hit_effect.update(dt);
 			}
 
 			// if we have shields, make collisions "bouncier" by increasing restitution
@@ -646,6 +687,7 @@ namespace bump
 
 			m_left_engine_boost_effect.render(renderer, matrices);
 			m_right_engine_boost_effect.render(renderer, matrices);
+			m_shield_hit_effect.render(renderer, matrices);
 		}
 		
 	} // game

@@ -50,7 +50,7 @@ namespace bump
 			using shape_type = std::variant<sphere_shape, inverse_sphere_shape>;
 			using callback_type = std::function<void(entt::entity, collision_data const&, float)>;
 
-			collider();
+			explicit collider();
 
 			void set_shape(shape_type shape) { m_shape = shape; }
 			shape_type get_shape() const { return m_shape; }
@@ -73,7 +73,7 @@ namespace bump
 			shape_type m_shape;
 			std::uint32_t m_layer;      // bitmask of layers this object is on
 			std::uint32_t m_layer_mask; // bitmask of layers this object collides with
-			callback_type m_callback;
+			callback_type m_callback;   // note: callback must not do anything to invalidate this collider (e.g. spawn entities with colliders).
 		};
 
 		std::optional<collision_data> dispatch_find_collision(rigidbody const& p1, collider const& c1, rigidbody const& p2, collider const& c2);

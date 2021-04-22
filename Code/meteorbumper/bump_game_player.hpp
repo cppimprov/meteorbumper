@@ -12,7 +12,7 @@
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
-#include <iostream>
+#include <tuple>
 #include <vector>
 
 namespace bump
@@ -55,7 +55,6 @@ namespace bump
 
 			player_lasers(player_lasers const&) = delete;
 			player_lasers& operator=(player_lasers const&) = delete;
-			
 			player_lasers(player_lasers&&) = delete;
 			player_lasers& operator=(player_lasers&&) = delete;
 
@@ -160,12 +159,19 @@ namespace bump
 			high_res_duration_t m_time_since_last_hit;
 		};
 
+		class player_tag { }; // empty tag type to identify the player entity
+
 		class player
 		{
 		public:
 
 			explicit player(entt::registry& registry, assets& assets);
 			~player();
+			
+			player(player const&) = delete;
+			player& operator=(player const&) = delete;
+			player(player&&) = delete;
+			player& operator=(player&&) = delete;
 
 			void update(high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
@@ -180,6 +186,9 @@ namespace bump
 
 			particle_effect m_left_engine_boost_effect;
 			particle_effect m_right_engine_boost_effect;
+
+			particle_effect m_shield_hit_effect;
+			std::vector<std::tuple<glm::vec3, glm::vec3>> m_frame_shield_hits;
 
 			float m_player_shield_restitution = 0.8f;
 			float m_player_armor_restitution = 0.25f;

@@ -9,18 +9,19 @@ namespace bump
 	namespace physics
 	{
 		
-		physics_system::physics_system(high_res_duration_t update_time):
+		physics_system::physics_system(entt::registry& registry, high_res_duration_t update_time):
+			m_registry(registry),
 			m_update_time(update_time),
 			m_accumulator(0) { }
 
-		void physics_system::update(entt::registry& registry, high_res_duration_t dt)
+		void physics_system::update(high_res_duration_t dt)
 		{
 			m_accumulator += dt;
 
 			while (m_accumulator >= m_update_time)
 			{
 				// check for collisions
-				auto colliders = registry.view<rigidbody, collider>();
+				auto colliders = m_registry.view<rigidbody, collider>();
 
 				if (!colliders.empty())
 				{
@@ -88,7 +89,7 @@ namespace bump
 				}
 
 				// update physics components
-				auto view = registry.view<rigidbody>();
+				auto view = m_registry.view<rigidbody>();
 				
 				for (auto id : view)
 					view.get<rigidbody>(id).update(m_update_time);
@@ -97,7 +98,7 @@ namespace bump
 			}
 
 			// clear forces
-			auto view = registry.view<rigidbody>();
+			auto view = m_registry.view<rigidbody>();
 
 			for (auto id : view)
 			{
