@@ -99,7 +99,7 @@ class PlatformMSVC:
 		return name + '.lib'
 
 	def write_rules(self, n):
-		n.rule('cc', 'cl.exe -c $cc_flags $cc_build_flags $cc_warning_level $cc_defines $cc_out_obj $cc_out_pdb $cc_in_includes $cc_in_files', deps = 'msvc')
+		n.rule('cc', 'cl.exe /showIncludes -c $cc_flags $cc_build_flags $cc_warning_level $cc_defines $cc_out_obj $cc_out_pdb $cc_in_includes $cc_in_files', deps = 'msvc')
 		n.rule('ar', 'lib.exe $ar_flags $ar_out_file $ar_in_files')
 		n.rule('rc', 'rc.exe $out_file $in_file')
 		n.rule('link', 'link.exe $link_flags $link_build_flags $link_out_exe $link_out_pdb $link_in_lib_dirs $link_in_files $res_file')

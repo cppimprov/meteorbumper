@@ -149,7 +149,7 @@ namespace bump
 
 		} // unnamed
 
-		player_lasers::player_lasers(entt::registry& registry, gl::shader_program const& shader):
+		player_lasers::player_lasers(entt::registry& registry, gl::shader_program const& shader, gl::shader_program const& hit_shader):
 			m_registry(registry),
 			m_shader(shader),
 			m_in_Color(shader.get_attribute_location("in_Color")),
@@ -161,7 +161,9 @@ namespace bump
 			m_time_since_firing(m_firing_period),
 			m_beam_speed_m_per_s(100.f),
 			m_beam_length_factor(0.5f),
-			m_upgrade_level(0)
+			m_low_damage_hit_effects(registry, hit_shader), 
+			m_medium_damage_hit_effects(registry, hit_shader),
+			m_high_damage_hit_effects(registry, hit_shader)
 		{
 			// set up instance buffers
 			m_instance_color.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
@@ -195,6 +197,51 @@ namespace bump
 			};
 
 			m_emitters.push_back(std::move(right_emitter));
+
+			// set up hit effects
+			{
+				auto const low_damage_color_map = std::map<float, glm::vec4>
+				{
+					{ 0.0f, { g_low_damage_color, 1.f } },
+					{ 0.7f, { g_low_damage_color, 0.8f } },
+					{ 1.0f, { g_low_damage_color, 0.2f } },
+				};
+
+				m_low_damage_hit_effects.set_spawn_radius(0.2f);
+				m_low_damage_hit_effects.set_random_velocity({ 10.f, 10.f, 10.f });
+				m_low_damage_hit_effects.set_max_lifetime(high_res_duration_from_seconds(0.75f));
+				m_low_damage_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(0.05f));
+				m_low_damage_hit_effects.set_color_map(low_damage_color_map);
+				m_low_damage_hit_effects.set_max_particle_count(100);
+				
+				auto const medium_damage_color_map = std::map<float, glm::vec4>
+				{
+					{ 0.0f, { g_medium_damage_color, 1.f } },
+					{ 0.7f, { g_medium_damage_color, 0.8f } },
+					{ 1.0f, { g_medium_damage_color, 0.2f } },
+				};
+
+				m_medium_damage_hit_effects.set_spawn_radius(0.2f);
+				m_medium_damage_hit_effects.set_random_velocity({ 10.f, 10.f, 10.f });
+				m_medium_damage_hit_effects.set_max_lifetime(high_res_duration_from_seconds(0.75f));
+				m_medium_damage_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(0.05f));
+				m_medium_damage_hit_effects.set_color_map(medium_damage_color_map);
+				m_medium_damage_hit_effects.set_max_particle_count(100);
+				
+				auto const high_damage_color_map = std::map<float, glm::vec4>
+				{
+					{ 0.0f, { g_high_damage_color, 1.f } },
+					{ 0.7f, { g_high_damage_color, 0.8f } },
+					{ 1.0f, { g_high_damage_color, 0.2f } },
+				};
+
+				m_high_damage_hit_effects.set_spawn_radius(0.2f);
+				m_high_damage_hit_effects.set_random_velocity({ 10.f, 10.f, 10.f });
+				m_high_damage_hit_effects.set_max_lifetime(high_res_duration_from_seconds(0.75f));
+				m_high_damage_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(0.05f));
+				m_high_damage_hit_effects.set_color_map(high_damage_color_map);
+				m_high_damage_hit_effects.set_max_particle_count(100);
+			}
 		}
 
 		player_lasers::~player_lasers()
@@ -319,7 +366,7 @@ namespace bump
 			}
 		}
 
-		void player_lasers::update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
+		void player_lasers::update(bool fire, glm::mat4 const& player_transform, glm::vec3 player_velocity, high_res_duration_t dt)
 		{
 			m_time_since_firing += dt;
 
@@ -334,16 +381,24 @@ namespace bump
 					beam_physics.set_mass(0.1f);
 					beam_physics.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(0.1f, 0.1f));
 					beam_physics.set_position(transform_point_to_world(player_transform, emitter.m_origin));
-					beam_physics.set_velocity(forwards(player_transform) * m_beam_speed_m_per_s);
+					beam_physics.set_velocity(player_velocity + forwards(player_transform) * m_beam_speed_m_per_s);
 
 					auto& beam_collision = m_registry.emplace<physics::collider>(beam_entity);
 					beam_collision.set_shape({ physics::sphere_shape{ 0.1f } }); // todo: line!
 					beam_collision.set_collision_layer(physics::collision_layers::PLAYER_WEAPONS);
 					beam_collision.set_collision_mask(~physics::collision_layers::PLAYER);
 
-					auto deleter = [=] (entt::entity, physics::collision_data const&, float)
+					auto deleter = [=] (entt::entity, physics::collision_data const& hit, float)
 					{
-						m_registry.get<beam_segment>(beam_entity).m_collided = true;
+						auto& bs = m_registry.get<beam_segment>(beam_entity);
+						bs.m_collided = true;
+
+						if (bs.m_color == g_low_damage_color)
+							m_low_damage_frame_hit_positions.push_back(hit.m_point);
+						else if (bs.m_color == g_medium_damage_color)
+							m_medium_damage_frame_hit_positions.push_back(hit.m_point);
+						else if (bs.m_color == g_high_damage_color)
+							m_high_damage_frame_hit_positions.push_back(hit.m_point);
 					};
 
 					beam_collision.set_callback(std::move(deleter));
@@ -403,6 +458,41 @@ namespace bump
 				
 				emitter.m_beams.erase(first_dead_beam, emitter.m_beams.end());
 			}
+
+			// update hit effects
+			for (auto p : m_low_damage_frame_hit_positions)
+			{
+				auto m = glm::mat4(1.f);
+				set_position(m, p);
+
+				m_low_damage_hit_effects.set_origin(m);
+				m_low_damage_hit_effects.spawn_once(15);
+			}
+			m_low_damage_frame_hit_positions.clear();
+			
+			for (auto p : m_medium_damage_frame_hit_positions)
+			{
+				auto m = glm::mat4(1.f);
+				set_position(m, p);
+
+				m_medium_damage_hit_effects.set_origin(m);
+				m_medium_damage_hit_effects.spawn_once(15);
+			}
+			m_medium_damage_frame_hit_positions.clear();
+			
+			for (auto p : m_high_damage_frame_hit_positions)
+			{
+				auto m = glm::mat4(1.f);
+				set_position(m, p);
+
+				m_high_damage_hit_effects.set_origin(m);
+				m_high_damage_hit_effects.spawn_once(15);
+			}
+			m_high_damage_frame_hit_positions.clear();
+
+			m_low_damage_hit_effects.update(dt);
+			m_medium_damage_hit_effects.update(dt);
+			m_high_damage_hit_effects.update(dt);
 		}
 
 		void player_lasers::render(gl::renderer& renderer, camera_matrices const& matrices)
@@ -428,40 +518,44 @@ namespace bump
 			// upload beam instance data to gpu buffers
 			auto const instance_count = m_frame_instance_colors.size();
 
-			if (instance_count == 0)
-				return; // nothing to render
+			if (instance_count != 0)
+			{
+				m_instance_color.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_colors.front()), 3, instance_count, GL_STREAM_DRAW);
+				m_instance_position.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_positions.front()), 3, instance_count, GL_STREAM_DRAW);
+				m_instance_direction.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_directions.front()), 3, instance_count, GL_STREAM_DRAW);
+				m_instance_beam_length.set_data(GL_ARRAY_BUFFER, m_frame_instance_beam_lengths.data(), 1, instance_count, GL_STREAM_DRAW);
 
-			m_instance_color.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_colors.front()), 3, instance_count, GL_STREAM_DRAW);
-			m_instance_position.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_positions.front()), 3, instance_count, GL_STREAM_DRAW);
-			m_instance_direction.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_instance_directions.front()), 3, instance_count, GL_STREAM_DRAW);
-			m_instance_beam_length.set_data(GL_ARRAY_BUFFER, m_frame_instance_beam_lengths.data(), 1, instance_count, GL_STREAM_DRAW);
+				// render beams
+				auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
+				
+				renderer.set_program(m_shader);
+				renderer.set_uniform_4x4f(m_u_MVP, mvp);
+				renderer.set_vertex_array(m_vertex_array);
 
-			// render beams
-			auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
-			
-			renderer.set_program(m_shader);
-			renderer.set_uniform_4x4f(m_u_MVP, mvp);
-			renderer.set_vertex_array(m_vertex_array);
+				renderer.draw_arrays(GL_POINTS, 1, instance_count);
 
-			renderer.draw_arrays(GL_POINTS, 1, instance_count);
+				renderer.clear_vertex_array();
+				renderer.clear_program();
 
-			renderer.clear_vertex_array();
-			renderer.clear_program();
+				// clear frame instance buffers
+				m_frame_instance_colors.clear();
+				m_frame_instance_positions.clear();
+				m_frame_instance_directions.clear();
+				m_frame_instance_beam_lengths.clear();
+			}
 
-			// clear frame instance buffers
-			m_frame_instance_colors.clear();
-			m_frame_instance_positions.clear();
-			m_frame_instance_directions.clear();
-			m_frame_instance_beam_lengths.clear();
+			m_low_damage_hit_effects.render(renderer, matrices);
+			m_medium_damage_hit_effects.render(renderer, matrices);
+			m_high_damage_hit_effects.render(renderer, matrices);
 		}
 
-		player_weapons::player_weapons(entt::registry& registry, gl::shader_program const& laser_shader):
-			m_lasers(registry, laser_shader)
+		player_weapons::player_weapons(entt::registry& registry, gl::shader_program const& laser_shader, gl::shader_program const& laser_hit_shader):
+			m_lasers(registry, laser_shader, laser_hit_shader)
 			{ }
 			
-		void player_weapons::update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt)
+		void player_weapons::update(bool fire, glm::mat4 const& player_transform, glm::vec3 player_velocity, high_res_duration_t dt)
 		{
-			m_lasers.update(fire, player_transform, dt);
+			m_lasers.update(fire, player_transform, player_velocity, dt);
 		}
 
 		void player_weapons::render(gl::renderer& renderer, camera_matrices const& matrices)
@@ -507,10 +601,11 @@ namespace bump
 			m_ship_renderable(assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship")),
 			m_shield_renderable(assets.m_shaders.at("player_shield"), assets.m_models.at("player_shield")),
 			m_controls(),
-			m_weapons(registry, assets.m_shaders.at("player_laser")),
+			m_weapons(registry, assets.m_shaders.at("player_laser"), assets.m_shaders.at("particle_effect")),
 			m_left_engine_boost_effect(registry, assets.m_shaders.at("particle_effect")),
 			m_right_engine_boost_effect(registry, assets.m_shaders.at("particle_effect")),
-			m_shield_hit_effect(registry, assets.m_shaders.at("particle_effect"))
+			m_shield_hit_effect(registry, assets.m_shaders.at("particle_effect")),
+			m_armor_hit_effect(registry, assets.m_shaders.at("particle_effect"))
 		{
 			// setup player physics
 			{
@@ -545,7 +640,9 @@ namespace bump
 
 						// do shield hit effect
 						if (m_health.has_shield())
-							m_frame_shield_hits.push_back({ hit.m_point, hit.m_normal * 10.f });
+							m_frame_shield_hits.push_back({ hit.m_point, hit.m_normal });
+						else
+							m_frame_armor_hits.push_back({ hit.m_point, hit.m_normal });
 
 						m_health.take_damage(damage);
 					}
@@ -609,19 +706,31 @@ namespace bump
 
 			// setup shield / armor hit effects
 			{
-				auto const color_map = std::map<float, glm::vec4>
+				auto const shield_color_map = std::map<float, glm::vec4>
 				{
 					{ 0.0f, { 0.507f, 0.627f, 0.840f, 1.f } },
 					{ 0.7f, { 0.507f, 0.627f, 0.840f, 0.5f } },
 					{ 1.0f, { 1.0f, 1.0f, 1.0f, 0.2f } },
 				};
 
-				// note: position / velocity are set before each spawn
 				m_shield_hit_effect.set_spawn_radius(0.1f);
 				m_shield_hit_effect.set_random_velocity({ 10.f, 10.f, 10.f });
-				m_shield_hit_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
+				m_shield_hit_effect.set_max_lifetime(high_res_duration_from_seconds(1.0f));
 				m_shield_hit_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
-				m_shield_hit_effect.set_color_map(color_map);
+				m_shield_hit_effect.set_color_map(shield_color_map);
+
+				auto const armor_color_map = std::map<float, glm::vec4>
+				{
+					{ 0.0f, { 0.828f, 0.801f, 0.044f, 1.f } },
+					{ 0.7f, { 0.828f, 0.445f, 0.033f, 0.5f } },
+					{ 1.0f, { 1.0f, 1.0f, 1.0f, 0.2f } },
+				};
+				
+				m_armor_hit_effect.set_spawn_radius(0.1f);
+				m_armor_hit_effect.set_random_velocity({ 5.f, 5.f, 5.f });
+				m_armor_hit_effect.set_max_lifetime(high_res_duration_from_seconds(5.0f));
+				m_armor_hit_effect.set_max_lifetime_random(high_res_duration_from_seconds(1.0f));
+				m_armor_hit_effect.set_color_map(armor_color_map);
 			}
 		}
 
@@ -637,7 +746,7 @@ namespace bump
 			m_ship_renderable.set_transform(rigidbody.get_transform());
 			m_shield_renderable.set_transform(rigidbody.get_transform());
 
-			m_weapons.update(m_controls.m_firing, rigidbody.get_transform(), dt);
+			m_weapons.update(m_controls.m_firing, rigidbody.get_transform(), rigidbody.get_velocity(), dt);
 
 			m_health.update(dt);
 
@@ -668,12 +777,23 @@ namespace bump
 
 					m_shield_hit_effect.set_origin(m);
 					//m_shield_hit_effect.set_base_velocity(std::get<1>(hit));
-					m_shield_hit_effect.spawn_once(100);
+					m_shield_hit_effect.spawn_once(75);
 				}
-
 				m_frame_shield_hits.clear();
 
+				for (auto const& hit : m_frame_armor_hits)
+				{
+					auto m = glm::mat4(1.f);
+					set_position(m, std::get<0>(hit));
+
+					m_armor_hit_effect.set_origin(m);
+					//m_armor_hit_effect.set_base_velocity(std::get<1>(hit));
+					m_armor_hit_effect.spawn_once(25);
+				}
+				m_frame_armor_hits.clear();
+
 				m_shield_hit_effect.update(dt);
+				m_armor_hit_effect.update(dt);
 			}
 
 			// if we have shields, make collisions "bouncier" by increasing restitution
@@ -693,7 +813,9 @@ namespace bump
 
 			m_left_engine_boost_effect.render(renderer, matrices);
 			m_right_engine_boost_effect.render(renderer, matrices);
+
 			m_shield_hit_effect.render(renderer, matrices);
+			m_armor_hit_effect.render(renderer, matrices);
 		}
 		
 	} // game

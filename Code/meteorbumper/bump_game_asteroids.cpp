@@ -20,7 +20,7 @@ namespace bump
 	namespace game
 	{
 		
-		asteroid_field::asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, gl::shader_program const& shader):
+		asteroid_field::asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, gl::shader_program const& shader, gl::shader_program const& hit_shader):
 			m_registry(registry),
 			m_powerups(powerups),
 			m_shader(shader),
@@ -37,7 +37,8 @@ namespace bump
 			m_asteroid_type_data{
 				{ asteroid_type::SMALL, { 0.5f, 30.f, 200.f } },
 				{ asteroid_type::MEDIUM, { 1.f, 80.f, 750.f } },
-				{ asteroid_type::LARGE, { 2.f, 150.f, 2000.f } } }
+				{ asteroid_type::LARGE, { 2.f, 150.f, 2000.f } } },
+			m_hit_effects(registry, hit_shader)
 		{
 			// setup mesh buffers
 			die_if(model.m_submeshes.size() != 1);
@@ -58,6 +59,23 @@ namespace bump
 			m_scales.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 1, 0, GL_STREAM_DRAW);
 			m_vertex_array.set_array_buffer(m_in_Scale, m_scales, 1);
 
+			// set up collision effects
+			{
+				auto const color_map = std::map<float, glm::vec4>
+				{
+					{ 0.0f, { 0.6f, 0.6f, 0.6f, 1.f } },
+					{ 0.7f, { 0.3f, 0.3f, 0.3f, 0.8f } },
+					{ 0.9f, { 0.3f, 0.3f, 0.3f, 0.7f } },
+					{ 1.0f, { 0.3f, 0.3f, 0.3f, 0.2f } },
+				};
+
+				m_hit_effects.set_spawn_radius(0.25f);
+				m_hit_effects.set_random_velocity({ 10.f, 10.f, 10.f });
+				m_hit_effects.set_max_lifetime(high_res_duration_from_seconds(5.0f));
+				m_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(1.f));
+				m_hit_effects.set_color_map(color_map);
+			}
+
 			spawn_wave();
 		}
 
@@ -69,7 +87,7 @@ namespace bump
 				m_registry.destroy(id);
 		}
 
-		void asteroid_field::update(high_res_duration_t)
+		void asteroid_field::update(high_res_duration_t dt)
 		{
 			auto to_destroy = std::vector<entt::entity>();
 			
@@ -162,6 +180,18 @@ namespace bump
 					m_powerups.spawn(destroyed.m_position, type);
 				}
 			}
+			
+			for (auto p : m_frame_hit_positions)
+			{
+				auto m = glm::mat4(1.f);
+				set_position(m, p);
+
+				m_hit_effects.set_origin(m);
+				m_hit_effects.spawn_once(15);
+			}
+			m_frame_hit_positions.clear();
+
+			m_hit_effects.update(dt);
 
 			if (is_wave_complete())
 				spawn_wave();
@@ -205,6 +235,8 @@ namespace bump
 			m_instance_transforms.clear();
 			m_instance_colors.clear();
 			m_instance_scales.clear();
+
+			m_hit_effects.render(renderer, matrices);
 		}
 		
 		bool asteroid_field::is_wave_complete() const
@@ -281,7 +313,7 @@ namespace bump
 			auto& collider = m_registry.emplace<physics::collider>(id);
 			collider.set_shape({ physics::sphere_shape{ model_radius } });
 
-			auto callback = [=] (entt::entity other, physics::collision_data const&, float)
+			auto callback = [=] (entt::entity other, physics::collision_data const& hit, float)
 			{
 				if (m_registry.has<player_weapon_damage>(other))
 				{
@@ -289,6 +321,9 @@ namespace bump
 					auto& data = m_registry.get<asteroid_data>(id);
 					data.m_hp -= damage.m_damage;
 				}
+
+				if (!m_registry.has<particle_effect::particle_data>(other))
+					m_frame_hit_positions.push_back(hit.m_point);
 			};
 
 			collider.set_callback(callback);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bump_game_particle_effect.hpp"
 #include "bump_gl.hpp"
 #include "bump_time.hpp"
 
@@ -23,7 +24,7 @@ namespace bump
 		{
 		public:
 
-			explicit asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, gl::shader_program const& shader);
+			explicit asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, gl::shader_program const& shader, gl::shader_program const& hit_shader);
 			~asteroid_field();
 
 			void update(high_res_duration_t dt);
@@ -91,6 +92,9 @@ namespace bump
 			std::size_t m_wave_number;
 			std::map<float, asteroid_type> m_asteroid_type_probability;
 			std::map<asteroid_type, asteroid_type_data> m_asteroid_type_data;
+
+			particle_effect m_hit_effects;
+			std::vector<glm::vec3> m_frame_hit_positions;
 		};
 
 	} // game

@@ -58,6 +58,8 @@ namespace bump
 			void set_spawn_period(high_res_duration_t period) { m_spawn_period = period; }
 			high_res_duration_t get_spawn_period() const { return m_spawn_period; }
 
+			void set_max_particle_count(std::size_t particle_count) { m_max_particle_count = particle_count; }
+
 			std::size_t get_size() { return m_particles.size(); }
 			bool is_empty() { return m_particles.empty(); }
 			void clear();
@@ -95,6 +97,7 @@ namespace bump
 			high_res_duration_t m_spawn_period;
 			high_res_duration_t m_spawn_accumulator;
 
+			std::size_t m_max_particle_count;
 			std::vector<entt::entity> m_particles;
 			
 			std::vector<glm::vec3> m_frame_positions;

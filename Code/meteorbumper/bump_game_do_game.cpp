@@ -57,13 +57,13 @@ namespace bump
 			auto player = game::player(registry, app.m_assets);
 
 			auto powerups = game::powerups(registry, app.m_assets.m_shaders.at("powerup"), app.m_assets.m_models.at("powerup_shield"), app.m_assets.m_models.at("powerup_armor"), app.m_assets.m_models.at("powerup_lasers"));
-			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"));
+			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"), app.m_assets.m_shaders.at("particle_effect"));
 
 			auto bounds = game::bounds(registry, 300.f);
 
-			auto particles = particle_field(app.m_assets.m_shaders.at("particle_field"), 25.f, 20);
-			particles.set_base_color_rgb({ 0.75, 0.60, 0.45 });
-			particles.set_color_variation_hsv({ 0.05, 0.25, 0.05 });
+			auto space_dust = particle_field(app.m_assets.m_shaders.at("particle_field"), 25.f, 20);
+			space_dust.set_base_color_rgb({ 0.75, 0.60, 0.45 });
+			space_dust.set_color_variation_hsv({ 0.05, 0.25, 0.05 });
 
 			auto indicators = game::indicators(registry, app.m_assets.m_shaders.at("indicator"));
 
@@ -143,7 +143,7 @@ namespace bump
 						set_position(scene_camera.m_transform, player_position + glm::vec3{ 0.f, camera_height, 0.f });
 						
 						// update particle field position
-						particles.set_position(get_position(scene_camera.m_transform));
+						space_dust.set_position(get_position(scene_camera.m_transform));
 						
 						// update asteroids
 						asteroids.update(dt);
@@ -183,7 +183,7 @@ namespace bump
 						asteroids.render(renderer, scene_matrices);
 						player.render(renderer, scene_matrices);
 						powerups.render(renderer, scene_matrices);
-						particles.render(renderer, scene_matrices);
+						space_dust.render(renderer, scene_matrices);
 					}
 
 					// render ui

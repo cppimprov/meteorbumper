@@ -22,61 +22,35 @@ int main(int , char* [])
 
 // todo next:
 
-	// player armor visual:
-		// when hit, yellow particle effect
-		// fewer, less speedy particles than shield effect
-	
-	// add limit to particles in shield effect?
-	// make player shield particles not collide with player
-
-	// player shield visual:
-		// draw shield as semi-transparent (second pass!)
-		// shield down / recharge particle effects
-
-	// remove strafing / thrusters
-		// reduce drag on player ship
-
 	// lighting!
 		// g-buffers
 		// directional lights, point lights,
 		// proper materials
 	
+	// player shield visual:
+		// draw shield as semi-transparent (second pass!)
+		// shield down / recharge particle effects
+
 	// effects:
-		// weapon hits (rock chunks / dust, laser "dissolve" type effect)
-		// asteroid explode / split effects
+		// experiment with different particle sizes?
+		// asteroid explode / split effects (rock chunks?)
 		// lights for:
 			// (sun) lasers, engine boost, powerups, player searchlight
 		// *subtle* bloom effect?
+		// make player shield particles not collide with player when shield is up, and collide with player when shield is down?
 
-	// player lasers:
-		// add player velocity to lasers?
-		// make lasers slightly faster?
+	// misc:
+		// player collision with powerup slows down player :(
 
 	// player controls:
-		// fix input:
+		// remove strafing / thrusters (-> classic asteroids controls)
+		// reduce drag on player ship
+		// fix key presses:
 			// when both direction keys are pressed, release one -> 
 			// ship should move in the direction of the one still pressed
+		// fix mouse motion:
+			// need so sum up all motion events in a frame (otherwise moving the mouse is slower at low frame rates)
 
-
-	// asteroid shapes:
-
-		// load icosphere, normalize points to make sure they're on a sphere
-		// use vec3 simplex noise to get offset value.
-		// offset points along normal.
-
-		// save mesh on cpu.
-		// create render data and render.
-		// i guess we can use 4d noise if we use an id as the other coordinate???
-		// then we only need to keep a single mesh on the cpu, and use the noise function for calculations!!!
-
-		// so what to do?
-			// easiest thing to do is to make models and export them. we can make sure they're convex.
-				// we need the full 3d collision, right?
-				// (or add convex hull when loading)
-			// how do we then restrict to 2d collision?
-
-			// start with an isosphere mesh, move some vertices in / out based on noise texture?
-		
 	// start screen:
 		// create asteroid swarm
 			// one asteroid in center of screen

@@ -71,6 +71,7 @@ namespace bump
 			m_spawning_enabled(false),
 			m_spawn_period(high_res_duration_from_seconds(1.f / 100.f)),
 			m_spawn_accumulator(0),
+			m_max_particle_count(500u),
 			m_rng(std::random_device()())
 		{
 			m_instance_positions.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
@@ -176,6 +177,9 @@ namespace bump
 
 		void particle_effect::spawn_particle()
 		{
+			if (get_size() >= m_max_particle_count)
+				return;
+
 			auto id = m_registry.create();
 
 			auto const dl = std::uniform_real_distribution<float>(0.f, 1.f);
@@ -190,7 +194,7 @@ namespace bump
 
 			auto const p = random::point_in_ring_3d(m_rng, 0.f, m_spawn_radius_m);
 			auto const d = std::uniform_real_distribution<float>(-1.f, 1.f);
-			auto const v = m_base_velocity + m_random_velocity * glm::vec3(d(m_rng), d(m_rng), d(m_rng));
+			auto const v = m_base_velocity + m_random_velocity * random::point_in_ring_3d(m_rng, 0.f, 1.f);
 
 			auto& rigidbody = m_registry.emplace<physics::rigidbody>(id);
 			rigidbody.set_mass(particle_mass_kg);

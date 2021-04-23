@@ -51,7 +51,7 @@ namespace bump
 		{
 		public:
 
-			explicit player_lasers(entt::registry& registry, gl::shader_program const& shader);
+			explicit player_lasers(entt::registry& registry, gl::shader_program const& shader, gl::shader_program const& hit_shader);
 
 			player_lasers(player_lasers const&) = delete;
 			player_lasers& operator=(player_lasers const&) = delete;
@@ -62,7 +62,7 @@ namespace bump
 
 			void upgrade();
 			
-			void update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt);
+			void update(bool fire, glm::mat4 const& player_transform, glm::vec3 player_velocity, high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
 		private:
@@ -113,15 +113,23 @@ namespace bump
 			std::vector<emitter> m_emitters;
 
 			std::size_t m_upgrade_level;
+
+			particle_effect m_low_damage_hit_effects;
+			particle_effect m_medium_damage_hit_effects;
+			particle_effect m_high_damage_hit_effects;
+
+			std::vector<glm::vec3> m_low_damage_frame_hit_positions;
+			std::vector<glm::vec3> m_medium_damage_frame_hit_positions;
+			std::vector<glm::vec3> m_high_damage_frame_hit_positions;
 		};
 
 		class player_weapons
 		{
 		public:
 
-			explicit player_weapons(entt::registry& registry, gl::shader_program const& laser_shader);
+			explicit player_weapons(entt::registry& registry, gl::shader_program const& laser_shader, gl::shader_program const& laser_hit_shader);
 
-			void update(bool fire, glm::mat4 const& player_transform, high_res_duration_t dt);
+			void update(bool fire, glm::mat4 const& player_transform, glm::vec3 player_velocity, high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
 			player_lasers m_lasers;
@@ -190,6 +198,9 @@ namespace bump
 
 			particle_effect m_shield_hit_effect;
 			std::vector<std::tuple<glm::vec3, glm::vec3>> m_frame_shield_hits;
+
+			particle_effect m_armor_hit_effect;
+			std::vector<std::tuple<glm::vec3, glm::vec3>> m_frame_armor_hits;
 
 			float m_player_shield_restitution = 0.8f;
 			float m_player_armor_restitution = 0.25f;
