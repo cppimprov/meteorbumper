@@ -22,18 +22,20 @@ int main(int , char* [])
 
 // todo next:
 
-	// remove strafing / manouvering (not really necessary)
-		// reduce drag
+	// player armor visual:
+		// when hit, yellow particle effect
+		// fewer, less speedy particles than shield effect
+	
+	// add limit to particles in shield effect?
+	// make player shield particles not collide with player
 
 	// player shield visual:
-		// draw shield (iso sphere?)
-		// make collision circle larger with shield
+		// draw shield as semi-transparent (second pass!)
 		// shield down / recharge particle effects
 
-	// player armor visual:
-		// when hit, yellow particle effect?
-		// fewer, less speedy particles
-	
+	// remove strafing / thrusters
+		// reduce drag on player ship
+
 	// lighting!
 		// g-buffers
 		// directional lights, point lights,

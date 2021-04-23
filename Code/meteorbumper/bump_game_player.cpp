@@ -504,7 +504,8 @@ namespace bump
 		player::player(entt::registry& registry, assets& assets):
 			m_registry(registry),
 			m_entity(entt::null_t()),
-			m_renderable(assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship")),
+			m_ship_renderable(assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship")),
+			m_shield_renderable(assets.m_shaders.at("player_shield"), assets.m_models.at("player_shield")),
 			m_controls(),
 			m_weapons(registry, assets.m_shaders.at("player_laser")),
 			m_left_engine_boost_effect(registry, assets.m_shaders.at("particle_effect")),
@@ -518,19 +519,18 @@ namespace bump
 				registry.emplace<player_tag>(m_entity);
 
 				auto const mass_kg = 20.f;
-				auto const radius_m = 3.f;
 
 				auto& rigidbody = registry.emplace<physics::rigidbody>(m_entity);
 				rigidbody.set_mass(mass_kg);
 
-				rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(mass_kg, radius_m));
+				rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(mass_kg, m_player_ship_radius_m));
 				rigidbody.set_linear_damping(0.998f);
 				rigidbody.set_angular_damping(0.998f);
 				rigidbody.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
 				rigidbody.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
 
 				auto& collider = registry.emplace<physics::collider>(m_entity);
-				collider.set_shape({ physics::sphere_shape{ radius_m } });
+				collider.set_shape({ physics::sphere_shape{ m_player_shield_radius_m } });
 				collider.set_collision_layer(physics::collision_layers::PLAYER);
 				collider.set_collision_mask(~physics::collision_layers::PLAYER_WEAPONS);
 				collider.set_restitution(m_player_shield_restitution);
@@ -634,7 +634,8 @@ namespace bump
 		{
 			auto const& rigidbody = m_registry.get<physics::rigidbody>(m_entity);
 
-			m_renderable.set_transform(rigidbody.get_transform());
+			m_ship_renderable.set_transform(rigidbody.get_transform());
+			m_shield_renderable.set_transform(rigidbody.get_transform());
 
 			m_weapons.update(m_controls.m_firing, rigidbody.get_transform(), dt);
 
@@ -678,11 +679,16 @@ namespace bump
 			// if we have shields, make collisions "bouncier" by increasing restitution
 			auto& collider = m_registry.get<physics::collider>(m_entity);
 			collider.set_restitution(m_health.has_shield() ? m_player_shield_restitution : m_player_armor_restitution);
+			collider.set_shape({ physics::sphere_shape{ m_health.has_shield() ? m_player_shield_radius_m : m_player_ship_radius_m } });
 		}
 
 		void player::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
-			m_renderable.render(renderer, matrices);
+			m_ship_renderable.render(renderer, matrices);
+
+			// if (m_health.has_shield())
+			// 	m_shield_renderable.render(renderer, matrices);
+			
 			m_weapons.render(renderer, matrices);
 
 			m_left_engine_boost_effect.render(renderer, matrices);

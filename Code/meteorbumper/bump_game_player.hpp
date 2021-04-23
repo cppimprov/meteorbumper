@@ -179,7 +179,8 @@ namespace bump
 			entt::registry& m_registry;
 
 			entt::entity m_entity;
-			basic_renderable m_renderable;
+			basic_renderable m_ship_renderable;
+			basic_renderable m_shield_renderable;
 			player_controls m_controls;
 			player_weapons m_weapons;
 			player_health m_health;
@@ -192,6 +193,8 @@ namespace bump
 
 			float m_player_shield_restitution = 0.8f;
 			float m_player_armor_restitution = 0.25f;
+			float m_player_shield_radius_m = 5.f;
+			float m_player_ship_radius_m = 3.f;
 		};
 
 	} // game

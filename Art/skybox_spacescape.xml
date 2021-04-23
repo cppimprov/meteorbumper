@@ -2,7 +2,7 @@
 <spacescapelayers>
     <layer>
         <destBlendFactor>one</destBlendFactor>
-        <farColor>0.776471 0.447059 0.447059 1</farColor>
+        <farColor>0.317647 0.2 0.2 1</farColor>
         <maskEnabled>false</maskEnabled>
         <maskGain>0.5</maskGain>
         <maskLacunarity>2</maskLacunarity>
@@ -14,31 +14,10 @@
         <maskSeed>1</maskSeed>
         <maskThreshold>0</maskThreshold>
         <name>distant stars - blue / red</name>
-        <nearColor>0.223529 0.764706 0.996078 1</nearColor>
+        <nearColor>0.298039 0.329412 0.435294 1</nearColor>
         <numPoints>1000</numPoints>
         <pointSize>1</pointSize>
-        <seed>0</seed>
-        <sourceBlendFactor>one</sourceBlendFactor>
-        <type>points</type>
-    </layer>
-    <layer>
-        <destBlendFactor>one</destBlendFactor>
-        <farColor>0 0 0 1</farColor>
-        <maskEnabled>false</maskEnabled>
-        <maskGain>0.5</maskGain>
-        <maskLacunarity>2</maskLacunarity>
-        <maskNoiseType>fbm</maskNoiseType>
-        <maskOctaves>1</maskOctaves>
-        <maskOffset>1</maskOffset>
-        <maskPower>1</maskPower>
-        <maskScale>1</maskScale>
-        <maskSeed>1</maskSeed>
-        <maskThreshold>0</maskThreshold>
-        <name>distant stars - yellow</name>
-        <nearColor>0.984314 1 0.027451 1</nearColor>
-        <numPoints>100</numPoints>
-        <pointSize>2</pointSize>
-        <seed>0</seed>
+        <seed>123456</seed>
         <sourceBlendFactor>one</sourceBlendFactor>
         <type>points</type>
     </layer>
@@ -56,16 +35,37 @@
         <maskSeed>1</maskSeed>
         <maskThreshold>0</maskThreshold>
         <name>distant stars - white</name>
-        <nearColor>0.623529 0.623529 0.623529 1</nearColor>
+        <nearColor>0.32549 0.32549 0.32549 1</nearColor>
         <numPoints>5000</numPoints>
         <pointSize>1</pointSize>
-        <seed>0</seed>
+        <seed>654897</seed>
         <sourceBlendFactor>one</sourceBlendFactor>
         <type>points</type>
     </layer>
     <layer>
         <destBlendFactor>one</destBlendFactor>
-        <farColor>0.937255 0.654902 0 1</farColor>
+        <farColor>0.329412 0.329412 0.329412 1</farColor>
+        <maskEnabled>false</maskEnabled>
+        <maskGain>0.5</maskGain>
+        <maskLacunarity>2</maskLacunarity>
+        <maskNoiseType>fbm</maskNoiseType>
+        <maskOctaves>1</maskOctaves>
+        <maskOffset>1</maskOffset>
+        <maskPower>1</maskPower>
+        <maskScale>1</maskScale>
+        <maskSeed>1</maskSeed>
+        <maskThreshold>0</maskThreshold>
+        <name>close stars</name>
+        <nearColor>0.686275 0.686275 0.313726 1</nearColor>
+        <numPoints>750</numPoints>
+        <pointSize>1</pointSize>
+        <seed>357319</seed>
+        <sourceBlendFactor>one</sourceBlendFactor>
+        <type>points</type>
+    </layer>
+    <layer>
+        <destBlendFactor>one</destBlendFactor>
+        <farColor>0.666667 0.298039 0 1</farColor>
         <maskEnabled>false</maskEnabled>
         <maskGain>0.5</maskGain>
         <maskLacunarity>2</maskLacunarity>
@@ -76,15 +76,36 @@
         <maskScale>1</maskScale>
         <maskSeed>1</maskSeed>
         <maskThreshold>0</maskThreshold>
-        <maxSize>0.025</maxSize>
+        <maxSize>0.01</maxSize>
         <minSize>0.001</minSize>
-        <name>large white stars</name>
-        <nearColor>1 1 1 1</nearColor>
+        <name>billboards</name>
+        <nearColor>1 0.992157 0.866667 1</nearColor>
         <numBillboards>100</numBillboards>
-        <seed>0</seed>
+        <seed>98798654</seed>
         <sourceBlendFactor>one</sourceBlendFactor>
         <texture>default.png</texture>
         <type>billboards</type>
+    </layer>
+    <layer>
+        <destBlendFactor>one</destBlendFactor>
+        <farColor>0.666667 0.298039 0 1</farColor>
+        <maskEnabled>false</maskEnabled>
+        <maskGain>0.5</maskGain>
+        <maskLacunarity>2</maskLacunarity>
+        <maskNoiseType>fbm</maskNoiseType>
+        <maskOctaves>1</maskOctaves>
+        <maskOffset>1</maskOffset>
+        <maskPower>1</maskPower>
+        <maskScale>1</maskScale>
+        <maskSeed>1</maskSeed>
+        <maskThreshold>0</maskThreshold>
+        <name>billboard points</name>
+        <nearColor>1 0.992157 0.866667 1</nearColor>
+        <numPoints>100</numPoints>
+        <pointSize>1</pointSize>
+        <seed>98798654</seed>
+        <sourceBlendFactor>one</sourceBlendFactor>
+        <type>points</type>
     </layer>
     <layer>
         <destBlendFactor>one</destBlendFactor>
