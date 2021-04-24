@@ -12,6 +12,7 @@
 #include "bump_game_player.hpp"
 #include "bump_game_powerups.hpp"
 #include "bump_game_skybox.hpp"
+#include "bump_gbuffers.hpp"
 #include "bump_physics.hpp"
 #include "bump_timer.hpp"
 
@@ -30,6 +31,8 @@ namespace bump
 
 		gamestate do_game(app& app)
 		{
+			auto gbuf = gbuffers(3u, app.m_window.get_size());
+
 			auto registry = entt::registry();
 			auto physics_system = physics::physics_system(registry);
 
@@ -87,7 +90,6 @@ namespace bump
 					auto callbacks = input::input_callbacks();
 					callbacks.m_quit = [&] () { quit = true; };
 					callbacks.m_pause = [&] (bool pause) { paused = pause; if (!paused) timer = frame_timer(); };
-
 					callbacks.m_input = [&] (input::control_id id, input::raw_input in)
 					{
 						if (paused) return;
@@ -112,6 +114,7 @@ namespace bump
 
 						else if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
 					};
+					callbacks.m_resize = [&] (glm::i32vec2 size) { gbuf.recreate(gbuf.m_buffers.size(), size); };
 
 					app.m_input_handler.poll_input(callbacks);
 

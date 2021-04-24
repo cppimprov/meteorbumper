@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 #include <functional>
 #include <string>
 
@@ -84,6 +86,7 @@ namespace bump
 			std::function<void()> m_quit;
 			std::function<void(bool)> m_pause; // true is paused
 			std::function<void(control_id, raw_input)> m_input;
+			std::function<void(glm::i32vec2)> m_resize;
 		};
 		
 	} // input

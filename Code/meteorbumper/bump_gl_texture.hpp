@@ -17,9 +17,9 @@ namespace bump
 		{
 		public:
 
-			GLenum m_type;
 			GLenum m_format;
-			void const* m_data;
+			GLenum m_type;
+			void const* m_data = nullptr;
 		};
 
 		// null data (blank texture)
@@ -27,29 +27,29 @@ namespace bump
 		template<class ComponentT>
 		texture_data_source make_texture_data_source(GLenum format)
 		{
-			return { traits::component_type_v<ComponentT>, format, nullptr };
+			return { format, traits::component_type_v<ComponentT>, nullptr };
 		}
 
 		// null data (blank texture)
 		// manually specify the data type
-		inline texture_data_source make_texture_data_source(GLenum type, GLenum format)
+		inline texture_data_source make_texture_data_source(GLenum format, GLenum type)
 		{
-			return { type, format, nullptr };
+			return { format, type, nullptr };
 		}
 
 		// infers data type from ComponentT
 		template<class ComponentT>
 		texture_data_source make_texture_data_source(GLenum format, ComponentT const* data)
 		{
-			return { traits::component_type_v<ComponentT>, format, data };
+			return { format, traits::component_type_v<ComponentT>, data };
 		}
 
 		// manually specify the data type (NOT inferred from ComponentT)
 		// needed for (for example) depth textures, where the data type does not match the format
 		template<class ComponentT>
-		texture_data_source make_texture_data_source(GLenum type, GLenum format, ComponentT const* data)
+		texture_data_source make_texture_data_source(GLenum format, GLenum type, ComponentT const* data)
 		{
-			return { type, format, data };
+			return { format, type, data };
 		}
 
 		class texture_2d : public object_handle

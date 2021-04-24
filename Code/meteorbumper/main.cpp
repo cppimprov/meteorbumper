@@ -22,16 +22,27 @@ int main(int , char* [])
 
 // todo next:
 
+	// add range utils for integers
+
+	// gbuffers:
+		// diffuse rgb, object type tag
+		// normal xyz,
+		// depth (float as vec3), 
+		
 	// lighting!
 		// g-buffers
-		// directional lights, point lights,
-		// proper materials
+			// add gbuffers to start screen as well...
+			// blit info, then copy to screen (temp).
+			// get lighting pass working and blit to screen.
+		// directional lights, point lights, spot lights
+		// proper materials!
 	
 	// player shield visual:
 		// draw shield as semi-transparent (second pass!)
 		// shield down / recharge particle effects
 
 	// effects:
+		// particles shouldn't collide w/ powerups
 		// experiment with different particle sizes?
 		// asteroid explode / split effects (rock chunks?)
 		// lights for:

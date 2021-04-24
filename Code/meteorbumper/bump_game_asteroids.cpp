@@ -71,7 +71,7 @@ namespace bump
 
 				m_hit_effects.set_spawn_radius(0.25f);
 				m_hit_effects.set_random_velocity({ 10.f, 10.f, 10.f });
-				m_hit_effects.set_max_lifetime(high_res_duration_from_seconds(5.0f));
+				m_hit_effects.set_max_lifetime(high_res_duration_from_seconds(4.0f));
 				m_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(1.f));
 				m_hit_effects.set_color_map(color_map);
 			}

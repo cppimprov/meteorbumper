@@ -265,6 +265,16 @@ namespace bump
 					continue;
 				}
 
+				// window resized
+				if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+				{
+					
+					if (callbacks.m_resize)
+						callbacks.m_resize({ e.window.data1, e.window.data2 });
+
+					continue;
+				}
+
 				// controller connection / disconnection
 				// todo: handle SDL_CONTROLLERDEVICEREMAPPED?
 				if (e.type == SDL_CONTROLLERDEVICEADDED)
