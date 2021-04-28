@@ -12,6 +12,8 @@
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
+#include <Tracy.hpp>
+
 #include <random>
 
 namespace bump
@@ -199,6 +201,8 @@ namespace bump
 
 		void asteroid_field::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			ZoneScopedN("asteroid_field::render()");
+
 			// get instance data from components
 			auto view = m_registry.view<asteroid_data, physics::rigidbody>();
 

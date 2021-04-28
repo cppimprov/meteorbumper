@@ -22,7 +22,12 @@ int main(int , char* [])
 
 // todo next:
 
-	// add range utils for integers
+	// performance:
+		// fix asteroid_field particle_effect::render... periodically slow
+		// ui render...  periodically slow
+		// fix mouse input!
+
+	// add range utils for integer iteration
 
 	// gbuffers:
 		// diffuse rgb, object type tag
@@ -42,7 +47,6 @@ int main(int , char* [])
 		// shield down / recharge particle effects
 
 	// effects:
-		// particles shouldn't collide w/ powerups
 		// experiment with different particle sizes?
 		// asteroid explode / split effects (rock chunks?)
 		// lights for:

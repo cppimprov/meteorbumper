@@ -6,6 +6,8 @@
 #include "bump_game_powerups.hpp"
 #include "bump_physics.hpp"
 
+#include <Tracy.hpp>
+
 #include <iostream>
 
 namespace bump
@@ -497,6 +499,8 @@ namespace bump
 
 		void player_lasers::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			ZoneScopedN("player_lasers::render()");
+
 			// get beam instance data for this frame
 			auto view = m_registry.view<beam_segment, physics::rigidbody>();
 
@@ -804,6 +808,8 @@ namespace bump
 
 		void player::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			ZoneScopedN("player::render()");
+
 			m_ship_renderable.render(renderer, matrices);
 
 			// if (m_health.has_shield())
@@ -811,11 +817,19 @@ namespace bump
 			
 			m_weapons.render(renderer, matrices);
 
-			m_left_engine_boost_effect.render(renderer, matrices);
-			m_right_engine_boost_effect.render(renderer, matrices);
+			{
+				ZoneScopedN("player::render() - engine boost effects");
 
-			m_shield_hit_effect.render(renderer, matrices);
-			m_armor_hit_effect.render(renderer, matrices);
+				m_left_engine_boost_effect.render(renderer, matrices);
+				m_right_engine_boost_effect.render(renderer, matrices);
+			}
+
+			{
+				ZoneScopedN("player::render() - shield / armor effects");
+				
+				m_shield_hit_effect.render(renderer, matrices);
+				m_armor_hit_effect.render(renderer, matrices);
+			}
 		}
 		
 	} // game

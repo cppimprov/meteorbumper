@@ -476,8 +476,13 @@ class PlatformMSVC:
 		]
 		self.write_static_lib(n, build_type, sdlmixer, '3')
 
+		tracy = ProjectStaticLib.from_name('tracy', self, build_type)
+		tracy.defines = { BuildType.debug: [], BuildType.release: [ 'TRACY_ENABLE' ], BuildType.master: [] }[build_type]
+		tracy.src_files = [ join_file(tracy.code_dir, 'TracyClient.cpp') ]
+		self.write_static_lib(n, build_type, tracy)
+
 		meteorbumper = ProjectExe.from_name('meteorbumper', self, build_type)
-		meteorbumper.defines = freetype.defines + harfbuzz.defines + glew.defines + stb.defines + glm.defines + sdl.defines + [ 'MUSIC_WAV' ]
+		meteorbumper.defines = freetype.defines + harfbuzz.defines + glew.defines + stb.defines + glm.defines + sdl.defines + tracy.defines + [ 'MUSIC_WAV' ]
 		meteorbumper.inc_dirs = [
 			entt.code_dir,
 			json.code_dir,
@@ -488,6 +493,7 @@ class PlatformMSVC:
 			glm.code_dir,
 			join_dir(sdl.code_dir, 'include'),
 			sdlmixer.code_dir,
+			tracy.code_dir,
 		]
 		meteorbumper.libs = [
 			join_file(freetype.deploy_dir, self.get_lib_name(freetype.project_name)),
@@ -497,6 +503,7 @@ class PlatformMSVC:
 			join_file(sdlmain.deploy_dir, self.get_lib_name(sdlmain.project_name)),
 			join_file(sdl.deploy_dir, self.get_lib_name(sdl.project_name)),
 			join_file(sdlmixer.deploy_dir, self.get_lib_name(sdlmixer.project_name)),
+			join_file(tracy.deploy_dir, self.get_lib_name(tracy.project_name)),
 		]
 		meteorbumper.standard_libs = [ 'User32.lib', 'Shell32.lib', 'Ole32.lib', 'OpenGL32.lib', 'gdi32.lib', 'Winmm.lib', 'Advapi32.lib', 'Version.lib', 'Imm32.lib', 'Setupapi.lib', 'OleAut32.lib' ]
 		self.write_exe(n, build_type, meteorbumper)

@@ -5,6 +5,8 @@
 #include "bump_transform.hpp"
 #include "bump_physics.hpp"
 
+#include <Tracy.hpp>
+
 namespace bump
 {
 	
@@ -135,44 +137,54 @@ namespace bump
 
 		void particle_effect::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			ZoneScopedN("particle_effect::render()");
+
 			if (m_particles.empty())
 				return;
 
 			auto instance_count = m_particles.size();
 
-			m_frame_positions.reserve(instance_count);
-			m_frame_colors.reserve(instance_count);
-
-			auto view = m_registry.view<particle_data, physics::rigidbody>();
-
-			for (auto id : m_particles)
 			{
-				auto [p, rb] = view.get<particle_data, physics::rigidbody>(id);
-				auto const lf = std::clamp(high_res_duration_to_seconds(p.m_lifetime) / high_res_duration_to_seconds(p.m_max_lifetime), 0.f, 1.f);
+				ZoneScopedN("particle_effect::render() - get data");
 
-				m_frame_positions.push_back(rb.get_position());
-				m_frame_colors.push_back(get_color_from_map(m_color_map, lf));
+				m_frame_positions.reserve(instance_count);
+				m_frame_colors.reserve(instance_count);
+
+				auto view = m_registry.view<particle_data, physics::rigidbody>();
+
+				for (auto id : m_particles)
+				{
+					auto [p, rb] = view.get<particle_data, physics::rigidbody>(id);
+					auto const lf = std::clamp(high_res_duration_to_seconds(p.m_lifetime) / high_res_duration_to_seconds(p.m_max_lifetime), 0.f, 1.f);
+
+					m_frame_positions.push_back(rb.get_position());
+					m_frame_colors.push_back(get_color_from_map(m_color_map, lf));
+				}
+				
+				m_instance_positions.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_positions.front()), 3, instance_count, GL_STREAM_DRAW);
+				m_instance_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_colors.front()), 4, instance_count, GL_STREAM_DRAW);
+
+				m_frame_positions.clear();
+				m_frame_colors.clear();
 			}
+			
+			{
+				ZoneScopedN("particle_effect::render() - render");
 
-			m_instance_positions.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_positions.front()), 3, instance_count, GL_STREAM_DRAW);
-			m_instance_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_colors.front()), 4, instance_count, GL_STREAM_DRAW);
+				renderer.set_blending(gl::renderer::blending::ADD);
 
-			renderer.set_blending(gl::renderer::blending::ADD);
+				renderer.set_program(m_shader);
+				renderer.set_uniform_4x4f(m_u_MVP, matrices.model_view_projection_matrix(glm::mat4(1.f)));
+				renderer.set_uniform_1f(m_u_Size, 1.f); // todo: make this configurable?
+				renderer.set_vertex_array(m_vertex_array);
 
-			renderer.set_program(m_shader);
-			renderer.set_uniform_4x4f(m_u_MVP, matrices.model_view_projection_matrix(glm::mat4(1.f)));
-			renderer.set_uniform_1f(m_u_Size, 1.f); // todo: make this configurable?
-			renderer.set_vertex_array(m_vertex_array);
+				renderer.draw_arrays(GL_POINTS, 1, instance_count);
 
-			renderer.draw_arrays(GL_POINTS, 1, instance_count);
+				renderer.clear_vertex_array();
+				renderer.clear_program();
 
-			renderer.clear_vertex_array();
-			renderer.clear_program();
-
-			renderer.set_blending(gl::renderer::blending::NONE);
-
-			m_frame_positions.clear();
-			m_frame_colors.clear();
+				renderer.set_blending(gl::renderer::blending::NONE);
+			}
 		}
 
 		void particle_effect::spawn_particle()

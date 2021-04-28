@@ -18,6 +18,26 @@ namespace bump
 		namespace
 		{
 
+			struct get_aabb
+			{
+				explicit get_aabb(rigidbody const& p):
+					p(&p) { }
+
+				aabb operator()(sphere_shape const& s)
+				{
+					return { p->get_position() - glm::vec3(s.m_radius), p->get_position() + glm::vec3(s.m_radius) };
+				}
+
+				aabb operator()(inverse_sphere_shape const&)
+				{
+					die(); // don't ever call this! it doesn't make sense
+					
+					return { };
+				}
+				
+				rigidbody const* p;
+			};
+			
 			std::optional<collision_data> flip_collision(std::optional<collision_data> hit)
 			{
 				if (hit)
@@ -28,7 +48,6 @@ namespace bump
 
 				return hit;
 			}
-
 			struct find_collision
 			{
 				find_collision(rigidbody const& p1, rigidbody const& p2):
@@ -101,8 +120,13 @@ namespace bump
 				// 	return { };
 				// }
 			};
-			
+
 		} // unnamed
+
+		aabb dispatch_get_aabb(rigidbody const& p, collider const& c)
+		{
+			return std::visit(get_aabb(p), c.get_shape());
+		}
 
 		std::optional<collision_data> dispatch_find_collision(rigidbody const& p1, collider const& c1, rigidbody const& p2, collider const& c2)
 		{

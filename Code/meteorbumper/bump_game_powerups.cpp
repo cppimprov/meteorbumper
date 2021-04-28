@@ -6,6 +6,8 @@
 #include "bump_physics.hpp"
 #include "bump_mbp_model.hpp"
 
+#include <Tracy.hpp>
+
 namespace bump
 {
 	
@@ -89,6 +91,8 @@ namespace bump
 
 		void powerups::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			ZoneScopedN("powerups::render()");
+
 			auto view = m_registry.view<powerup_data, physics::rigidbody>();
 
 			for (auto id : view)

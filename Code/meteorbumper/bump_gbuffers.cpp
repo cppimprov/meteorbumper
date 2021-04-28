@@ -49,5 +49,4 @@ namespace bump
 	// then:
 		// lighting pass + lights!
 
-	
 } // bump

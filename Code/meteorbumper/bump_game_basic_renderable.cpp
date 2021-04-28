@@ -3,6 +3,8 @@
 #include "bump_camera.hpp"
 #include "bump_mbp_model.hpp"
 
+#include <Tracy.hpp>
+
 namespace bump
 {
 	
@@ -34,6 +36,8 @@ namespace bump
 
 		void basic_renderable::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			ZoneScopedN("basic_renderable::render()");
+
 			auto mvp = matrices.model_view_projection_matrix(m_transform);
 
 			renderer.set_program(*m_shader);

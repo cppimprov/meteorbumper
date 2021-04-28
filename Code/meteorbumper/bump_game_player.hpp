@@ -65,6 +65,14 @@ namespace bump
 			void update(bool fire, glm::mat4 const& player_transform, glm::vec3 player_velocity, high_res_duration_t dt);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
+			struct beam_segment
+			{
+				glm::vec3 m_color;
+				float m_beam_length;
+				high_res_duration_t m_lifetime;
+				bool m_collided;
+			};
+
 		private:
 
 			entt::registry& m_registry;
@@ -86,14 +94,6 @@ namespace bump
 			std::vector<glm::vec3> m_frame_instance_positions;
 			std::vector<glm::vec3> m_frame_instance_directions;
 			std::vector<float> m_frame_instance_beam_lengths;
-
-			struct beam_segment
-			{
-				glm::vec3 m_color;
-				float m_beam_length;
-				high_res_duration_t m_lifetime;
-				bool m_collided;
-			};
 
 			struct emitter
 			{

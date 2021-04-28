@@ -2,6 +2,7 @@
 
 #include <entt.hpp>
 #include <glm/glm.hpp>
+#include <glm/ext.hpp>
 
 #include <cstdint>
 #include <functional>
@@ -24,6 +25,16 @@ namespace bump
 		struct inverse_sphere_shape
 		{
 			float m_radius = 1.f;
+		};
+
+		struct aabb
+		{
+			glm::vec3 min = glm::vec3(std::numeric_limits<float>::max());
+			glm::vec3 max = glm::vec3(std::numeric_limits<float>::min());
+
+			bool is_valid() const { return glm::all(glm::lessThan(min, max)); }
+
+			// todo: standard math operators?
 		};
 
 		enum collision_layers : std::uint32_t
@@ -76,9 +87,11 @@ namespace bump
 			callback_type m_callback;   // note: callback must not do anything to invalidate this collider (e.g. spawn entities with colliders).
 		};
 
+		aabb dispatch_get_aabb(rigidbody const& p, collider const& c);
 		std::optional<collision_data> dispatch_find_collision(rigidbody const& p1, collider const& c1, rigidbody const& p2, collider const& c2);
 		void resolve_impulse(rigidbody& a, rigidbody& b, collision_data const& c, float e); // e == restitution
 		void resolve_projection(rigidbody& a, rigidbody& b, collision_data const& c);
+
 		
 	} // physics
 	

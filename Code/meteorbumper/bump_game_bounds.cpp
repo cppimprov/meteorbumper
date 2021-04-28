@@ -13,6 +13,8 @@ namespace bump
 			m_id(entt::null)
 		{
 			m_id = registry.create();
+			
+			registry.emplace<bounds_tag>(m_id);
 
 			auto& rigidbody = registry.emplace<physics::rigidbody>(m_id);
 			rigidbody.set_infinite_mass();

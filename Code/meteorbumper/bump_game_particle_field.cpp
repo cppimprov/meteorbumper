@@ -2,6 +2,8 @@
 
 #include "bump_camera.hpp"
 
+#include <Tracy.hpp>
+
 #include <random>
 
 namespace bump
@@ -54,6 +56,8 @@ namespace bump
 
 		void particle_field::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			ZoneScopedN("particle_field::render()");
+
 			// transparency / sorting?
 			
 			float radius = m_radius;

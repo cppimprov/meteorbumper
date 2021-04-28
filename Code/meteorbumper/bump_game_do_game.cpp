@@ -21,6 +21,8 @@
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
+#include <Tracy.hpp>
+
 #include <iostream>
 
 namespace bump
@@ -86,6 +88,8 @@ namespace bump
 			{
 				// input
 				{
+					ZoneScopedN("MainLoop - Input");
+					
 					auto quit = false;
 					auto callbacks = input::input_callbacks();
 					callbacks.m_quit = [&] () { quit = true; };
@@ -124,13 +128,14 @@ namespace bump
 
 				// update
 				{
+					ZoneScopedN("MainLoop - Update");
+
 					auto dt = timer.get_last_frame_time();
 
 					if (!paused)
 					{
 						// apply player input:
-						auto& player_physics = registry.get<physics::rigidbody>(player.m_entity);
-						player.m_controls.apply(player_physics, crosshair, glm::vec2(app.m_window.get_size()), camera_matrices(scene_camera));
+						player.m_controls.apply(registry.get<physics::rigidbody>(player.m_entity), crosshair, glm::vec2(app.m_window.get_size()), camera_matrices(scene_camera));
 
 						// physics:
 						physics_system.update(dt);
@@ -142,7 +147,7 @@ namespace bump
 							return { do_start }; // player died! todo: explosion effect, game over text!
 
 						// update camera position
-						auto player_position = get_position(player_physics.get_transform());
+						auto player_position = get_position(registry.get<physics::rigidbody>(player.m_entity).get_transform());
 						set_position(scene_camera.m_transform, player_position + glm::vec3{ 0.f, camera_height, 0.f });
 						
 						// update particle field position
@@ -163,6 +168,8 @@ namespace bump
 
 				// render
 				{
+					ZoneScopedN("MainLoop - Render");
+
 					app.m_renderer.clear_color_buffers({ 1.f, 0.f, 0.f, 1.f });
 					app.m_renderer.clear_depth_buffers();
 
@@ -182,6 +189,8 @@ namespace bump
 
 					// render scene
 					{
+						ZoneScopedN("MainLoop - Render Scene");
+
 						skybox.render(renderer, scene_camera, scene_matrices);
 						asteroids.render(renderer, scene_matrices);
 						player.render(renderer, scene_matrices);
@@ -191,6 +200,8 @@ namespace bump
 
 					// render ui
 					{
+						ZoneScopedN("MainLoop - Render UI");
+
 						indicators.render(renderer, glm::vec2(app.m_window.get_size()), scene_matrices, ui_matrices);
 						crosshair.render(renderer, ui_matrices);
 						fps.render(renderer, ui_matrices);
@@ -200,6 +211,8 @@ namespace bump
 				}
 
 				timer.tick();
+
+				FrameMark;
 			}
 
 			return { };

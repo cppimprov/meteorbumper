@@ -4,6 +4,8 @@
 #include "bump_mbp_model.hpp"
 #include "bump_transform.hpp"
 
+#include <Tracy.hpp>
+
 namespace bump
 {
 	
@@ -31,6 +33,8 @@ namespace bump
 
 		void skybox::render(gl::renderer& renderer, perspective_camera const& scene_camera, camera_matrices const& matrices)
 		{
+			ZoneScopedN("skybox::render()");
+
 			auto model = glm::translate(glm::mat4(1.f), get_position(scene_camera.m_transform));
 			auto mvp = matrices.model_view_projection_matrix(model);
 

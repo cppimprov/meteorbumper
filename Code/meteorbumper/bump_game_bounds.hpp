@@ -7,6 +7,8 @@ namespace bump
 	
 	namespace game
 	{
+
+		struct bounds_tag { };
 		
 		class bounds
 		{
