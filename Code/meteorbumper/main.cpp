@@ -22,7 +22,7 @@ int main(int , char* [])
 
 // todo next:
 
-	// fix asteorid splitting (new asteroids appear a long way outside existing asteroid?)
+	// fix asteroid splitting (new asteroids appear a long way outside existing asteroid?)
 
 	// gbuffers:
 		// diffuse rgb, object type tag

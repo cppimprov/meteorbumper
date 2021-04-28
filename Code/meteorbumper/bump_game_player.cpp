@@ -745,12 +745,13 @@ namespace bump
 
 		void player::update(high_res_duration_t dt)
 		{
-			auto const& rigidbody = m_registry.get<physics::rigidbody>(m_entity);
+			auto const player_transform = m_registry.get<physics::rigidbody>(m_entity).get_transform();
+			auto const player_velocity = m_registry.get<physics::rigidbody>(m_entity).get_velocity();
 
-			m_ship_renderable.set_transform(rigidbody.get_transform());
-			m_shield_renderable.set_transform(rigidbody.get_transform());
+			m_ship_renderable.set_transform(player_transform);
+			m_shield_renderable.set_transform(player_transform);
 
-			m_weapons.update(m_controls.m_firing, rigidbody.get_transform(), rigidbody.get_velocity(), dt);
+			m_weapons.update(m_controls.m_firing, player_transform, player_velocity, dt);
 
 			m_health.update(dt);
 
@@ -759,7 +760,7 @@ namespace bump
 				auto const enabled = (m_controls.m_boost_axis == 1.f);
 
 				auto const l_pos = glm::vec3{ -0.8f, 0.1f, 2.2f };
-				auto l_mat = rigidbody.get_transform();
+				auto l_mat = player_transform;
 				translate_in_local(l_mat, l_pos);
 
 				m_left_engine_boost_effect.set_spawn_enabled(enabled);
@@ -767,7 +768,7 @@ namespace bump
 				m_left_engine_boost_effect.update(dt);
 
 				auto const r_pos = glm::vec3{ 0.8f, 0.1f, 2.2f };
-				auto r_mat = rigidbody.get_transform();
+				auto r_mat = player_transform;
 				translate_in_local(r_mat, r_pos);
 				
 				m_right_engine_boost_effect.set_spawn_enabled(enabled);
