@@ -1,5 +1,7 @@
 #include "bump_game_fps_counter.hpp"
 
+#include <Tracy.hpp>
+
 namespace bump
 {
 	
@@ -48,6 +50,8 @@ namespace bump
 
 		void fps_counter::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			ZoneScopedN("fps_counter::render()");
+
 			auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
 
 			renderer.set_blending(gl::renderer::blending::BLEND);

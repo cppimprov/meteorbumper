@@ -112,8 +112,8 @@ namespace bump
 						else if (id == control_id::KEYBOARDKEY_A) player.m_controls.m_horizontal_axis = -in.m_value;
 						else if (id == control_id::KEYBOARDKEY_D) player.m_controls.m_horizontal_axis = in.m_value;
 						else if (id == control_id::KEYBOARDKEY_SPACE) player.m_controls.m_boost_axis = in.m_value;
-						else if (id == control_id::MOUSEMOTION_X) { player.m_controls.m_mouse_motion.x = (in.m_value / app.m_window.get_size().x); player.m_controls.m_mouse_update = true; }
-						else if (id == control_id::MOUSEMOTION_Y) { player.m_controls.m_mouse_motion.y = (in.m_value / app.m_window.get_size().y); player.m_controls.m_mouse_update = true; }
+						else if (id == control_id::MOUSEMOTION_X) { player.m_controls.m_mouse_motion.x += (in.m_value / app.m_window.get_size().x); player.m_controls.m_mouse_update = true; }
+						else if (id == control_id::MOUSEMOTION_Y) { player.m_controls.m_mouse_motion.y += (in.m_value / app.m_window.get_size().y); player.m_controls.m_mouse_update = true; }
 						else if (id == control_id::MOUSEBUTTON_LEFT) player.m_controls.m_firing = in.m_value;
 
 						else if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
@@ -207,7 +207,10 @@ namespace bump
 						fps.render(renderer, ui_matrices);
 					}
 
-					app.m_window.swap_buffers();
+					{
+						ZoneScopedN("MainLoop - Swap Buffers ");
+						app.m_window.swap_buffers();
+					}
 				}
 
 				timer.tick();

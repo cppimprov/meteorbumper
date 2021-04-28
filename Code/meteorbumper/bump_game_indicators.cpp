@@ -8,7 +8,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/glm.hpp>
 
-#include <iostream>
+#include <Tracy.hpp>
 
 namespace bump
 {
@@ -35,6 +35,8 @@ namespace bump
 
 		void indicators::render(gl::renderer& renderer, glm::vec2 window_size, camera_matrices const& screen_matrices, camera_matrices const& ui_matrices)
 		{
+			ZoneScopedN("indicators::render()");
+
 			auto scene_mvp = screen_matrices.model_view_projection_matrix(glm::mat4(1.f));
 
 			struct id_distance

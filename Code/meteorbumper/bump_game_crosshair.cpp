@@ -1,5 +1,7 @@
 #include "bump_game_crosshair.hpp"
 
+#include <Tracy.hpp>
+
 namespace bump
 {
 	
@@ -25,6 +27,8 @@ namespace bump
 
 		void crosshair::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
+			ZoneScopedN("crosshair::render()");
+
 			auto const mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
 
 			renderer.set_blending(gl::renderer::blending::BLEND);

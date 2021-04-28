@@ -22,12 +22,7 @@ int main(int , char* [])
 
 // todo next:
 
-	// performance:
-		// fix asteroid_field particle_effect::render... periodically slow
-		// ui render...  periodically slow
-		// fix mouse input!
-
-	// add range utils for integer iteration
+	// fix asteorid splitting (new asteroids appear a long way outside existing asteroid?)
 
 	// gbuffers:
 		// diffuse rgb, object type tag
@@ -63,8 +58,6 @@ int main(int , char* [])
 		// fix key presses:
 			// when both direction keys are pressed, release one -> 
 			// ship should move in the direction of the one still pressed
-		// fix mouse motion:
-			// need so sum up all motion events in a frame (otherwise moving the mouse is slower at low frame rates)
 
 	// start screen:
 		// create asteroid swarm
