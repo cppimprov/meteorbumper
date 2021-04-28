@@ -199,9 +199,9 @@ namespace bump
 				spawn_wave();
 		}
 
-		void asteroid_field::render(gl::renderer& renderer, camera_matrices const& matrices)
+		void asteroid_field::render_scene(gl::renderer& renderer, camera_matrices const& matrices)
 		{
-			ZoneScopedN("asteroid_field::render()");
+			ZoneScopedN("asteroid_field::render_scene()");
 
 			// get instance data from components
 			auto view = m_registry.view<asteroid_data, physics::rigidbody>();
@@ -239,6 +239,11 @@ namespace bump
 			m_instance_transforms.clear();
 			m_instance_colors.clear();
 			m_instance_scales.clear();
+		}
+		
+		void asteroid_field::render_particles(gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			ZoneScopedN("asteroid_field::render_particles()");
 
 			m_hit_effects.render(renderer, matrices);
 		}

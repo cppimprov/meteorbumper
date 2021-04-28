@@ -807,32 +807,37 @@ namespace bump
 			collider.set_shape({ physics::sphere_shape{ m_health.has_shield() ? m_player_shield_radius_m : m_player_ship_radius_m } });
 		}
 
-		void player::render(gl::renderer& renderer, camera_matrices const& matrices)
+		void player::render_scene(gl::renderer& renderer, camera_matrices const& matrices)
 		{
-			ZoneScopedN("player::render()");
+			ZoneScopedN("player::render_scene()");
 
 			m_ship_renderable.render(renderer, matrices);
 
 			// if (m_health.has_shield())
 			// 	m_shield_renderable.render(renderer, matrices);
-			
+		}
+
+		void player::render_particles(gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			ZoneScopedN("player::render_particles()");
+
 			m_weapons.render(renderer, matrices);
 
 			{
-				ZoneScopedN("player::render() - engine boost effects");
+				ZoneScopedN("player::render_particles() - engine boost effects");
 
 				m_left_engine_boost_effect.render(renderer, matrices);
 				m_right_engine_boost_effect.render(renderer, matrices);
 			}
 
 			{
-				ZoneScopedN("player::render() - shield / armor effects");
+				ZoneScopedN("player::render_particles() - shield / armor effects");
 				
 				m_shield_hit_effect.render(renderer, matrices);
 				m_armor_hit_effect.render(renderer, matrices);
 			}
 		}
-		
+
 	} // game
 	
 } // bump

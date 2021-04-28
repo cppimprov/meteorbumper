@@ -21,7 +21,6 @@ namespace bump
 		{
 			auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
 			m_vertex_buffer.set_data(GL_ARRAY_BUFFER, vertices.begin(), 2, 6, GL_STATIC_DRAW);
-
 			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertex_buffer);
 		}
 

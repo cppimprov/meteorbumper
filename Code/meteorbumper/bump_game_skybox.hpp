@@ -17,7 +17,7 @@ namespace bump
 
 			skybox(mbp_model const& model, gl::shader_program const& shader, gl::texture_cubemap const& texture);
 
-			void render(gl::renderer& renderer, perspective_camera const& scene_camera, camera_matrices const& matrices);
+			void render_scene(gl::renderer& renderer, perspective_camera const& scene_camera, camera_matrices const& matrices);
 
 		private:
 

@@ -41,6 +41,17 @@ namespace bump
 			
 			die_if_error();
 		}
+
+		void framebuffer::set_draw_buffers(std::vector<GLenum> const& buffers)
+		{
+			die_if(!is_valid());
+
+			glBindFramebuffer(GL_FRAMEBUFFER, get_id());
+			glDrawBuffers(static_cast<GLsizei>(buffers.size()), buffers.data());
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+			die_if_error();
+		}
 		
 		GLenum framebuffer::get_status() const
 		{

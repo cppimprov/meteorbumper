@@ -26,17 +26,18 @@ namespace bump
 			{
 				{ "text_quad", { "text_quad.vert", "text_quad.frag" } },
 				{ "press_start", { "press_start_text.vert", "press_start_text.frag" } },
-				{ "skybox", { "skybox.vert", "skybox.frag" } },
-				{ "player_ship", { "default_material.vert", "default_material.frag" } },
-				{ "player_shield", { "default_material.vert", "default_material.frag" } },
-				{ "asteroid", { "asteroid.vert", "asteroid.frag" } },
-				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
-				{ "particle_effect", { "particle_effect.vert", "particle_effect.frag" } },
+				{ "skybox", { "skybox.vert", "g_buffers_write.frag", "skybox.frag" } },
+				{ "player_ship", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
+				{ "player_shield", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
+				{ "asteroid", { "asteroid.vert", "g_buffers_write.frag", "asteroid.frag" } },
+				{ "particle_field", { "particle_field.vert", "g_buffers_write.frag", "particle_field.frag" } },
+				{ "particle_effect", { "particle_effect.vert", "g_buffers_write.frag", "particle_effect.frag" } },
 				{ "indicator", { "indicator.vert", "indicator.frag" } },
 				{ "crosshair", { "crosshair.vert", "crosshair.frag" } },
-				{ "player_laser", { "player_laser.vert", "player_laser.geom", "player_laser.frag" } },
+				{ "player_laser", { "player_laser.vert", "player_laser.geom", "g_buffers_write.frag", "player_laser.frag" } },
 				{ "fps_counter", { "fps_counter.vert", "fps_counter.frag" } },
-				{ "powerup", { "default_material.vert", "default_material.frag" } },
+				{ "powerup", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
+				{ "temp_blit_renderpass", { "textured_quad.vert", "g_buffers_read.frag", "textured_quad.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>

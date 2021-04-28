@@ -1,6 +1,7 @@
 #include "bump_gl_renderer.hpp"
 
 #include "bump_gl_error.hpp"
+#include "bump_gl_framebuffer.hpp"
 #include "bump_gl_shader.hpp"
 #include "bump_gl_texture.hpp"
 #include "bump_gl_vertex_array.hpp"
@@ -20,6 +21,19 @@ namespace bump
 		{
 			set_depth_test(depth_test::LESS);
 			set_point_size_mode(point_size_mode::PROGRAM);
+		}
+
+		void renderer::set_framebuffer(framebuffer const& fb)
+		{
+			die_if(!fb.is_valid());
+			die_if(!fb.is_complete());
+
+			glBindFramebuffer(GL_FRAMEBUFFER, fb.get_id());
+		}
+
+		void renderer::clear_framebuffer()
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
 		void renderer::set_viewport(glm::ivec2 position, glm::uvec2 size)
@@ -121,6 +135,8 @@ namespace bump
 		
 		void renderer::set_program(shader_program const& program)
 		{
+			die_if(!program.is_valid());
+
 			glUseProgram(program.get_id());
 		}
 
@@ -131,24 +147,32 @@ namespace bump
 		
 		void renderer::set_texture_2d(GLuint location, texture_2d const& texture)
 		{
+			die_if(!texture.is_valid());
+
 			glActiveTexture(GL_TEXTURE0 + location);
 			glBindTexture(GL_TEXTURE_2D, texture.get_id());
 		}
 		
 		void renderer::set_texture_cubemap(GLuint location, texture_cubemap const& texture)
 		{
+			die_if(!texture.is_valid());
+			
 			glActiveTexture(GL_TEXTURE0 + location);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, texture.get_id());
 		}
 
 		void renderer::set_texture_2d_array(GLuint location, texture_2d_array const& texture)
 		{
+			die_if(!texture.is_valid());
+			
 			glActiveTexture(GL_TEXTURE0 + location);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, texture.get_id());
 		}
 
 		void renderer::set_texture_3d(GLuint location, texture_3d const& texture)
 		{
+			die_if(!texture.is_valid());
+			
 			glActiveTexture(GL_TEXTURE0 + location);
 			glBindTexture(GL_TEXTURE_3D, texture.get_id());
 		}
@@ -179,6 +203,8 @@ namespace bump
 		
 		void renderer::set_vertex_array(vertex_array const& vertex_array)
 		{
+			die_if(!vertex_array.is_valid());
+			
 			glBindVertexArray(vertex_array.get_id());
 		}
 

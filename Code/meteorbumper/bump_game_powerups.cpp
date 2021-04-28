@@ -89,9 +89,9 @@ namespace bump
 			m_entities.erase(first_dead_entity, m_entities.end());
 		}
 
-		void powerups::render(gl::renderer& renderer, camera_matrices const& matrices)
+		void powerups::render_scene(gl::renderer& renderer, camera_matrices const& matrices)
 		{
-			ZoneScopedN("powerups::render()");
+			ZoneScopedN("powerups::render_scene()");
 
 			auto view = m_registry.view<powerup_data, physics::rigidbody>();
 

@@ -11,6 +11,7 @@ namespace bump
 	namespace gl
 	{
 
+		class framebuffer;
 		class shader_program;
 		class texture_2d;
 		class texture_cubemap;
@@ -25,6 +26,9 @@ namespace bump
 			renderer();
 
 			void set_viewport(glm::ivec2 position, glm::uvec2 size);
+
+			void set_framebuffer(framebuffer const& fb);
+			void clear_framebuffer();
 
 			void clear_color_buffers(glm::f32vec4 color = { 0.f, 0.f, 0.f, 0.f });
 			void clear_depth_buffers(float depth = 1.f);

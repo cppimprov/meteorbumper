@@ -128,9 +128,9 @@ namespace bump
 						auto scene_camera_matrices = camera_matrices(scene_camera);
 
 						// render skybox
-						skybox.render(app.m_renderer, scene_camera, scene_camera_matrices);
+						skybox.render_scene(app.m_renderer, scene_camera, scene_camera_matrices);
 
-						particles.render(app.m_renderer, scene_camera_matrices);
+						particles.render_particles(app.m_renderer, scene_camera_matrices);
 
 						// ...
 					}

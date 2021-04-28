@@ -20,6 +20,8 @@ namespace bump
 			void attach(GLenum location, TextureT const& texture) { attach(location, texture.get_id()); }
 			void detach(GLenum location);
 
+			void set_draw_buffers(std::vector<GLenum> const& buffers);
+
 			GLenum get_status() const;
 			bool is_complete() const;
 

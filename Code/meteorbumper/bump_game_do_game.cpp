@@ -34,6 +34,7 @@ namespace bump
 		gamestate do_game(app& app)
 		{
 			auto gbuf = gbuffers(3u, app.m_window.get_size());
+			auto blit_pass = textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
 
 			auto registry = entt::registry();
 			auto physics_system = physics::physics_system(registry);
@@ -118,7 +119,7 @@ namespace bump
 
 						else if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
 					};
-					callbacks.m_resize = [&] (glm::i32vec2 size) { gbuf.recreate(gbuf.m_buffers.size(), size); };
+					callbacks.m_resize = [&] (glm::ivec2 size) { gbuf.recreate(gbuf.m_buffers.size(), size); };
 
 					app.m_input_handler.poll_input(callbacks);
 
@@ -170,9 +171,6 @@ namespace bump
 				{
 					ZoneScopedN("MainLoop - Render");
 
-					app.m_renderer.clear_color_buffers({ 1.f, 0.f, 0.f, 1.f });
-					app.m_renderer.clear_depth_buffers();
-
 					{ 
 						auto const size = glm::vec2(app.m_window.get_size());
 						scene_camera.m_projection.m_size = size;
@@ -180,24 +178,47 @@ namespace bump
 						ui_camera.m_projection.m_size = size;
 						ui_camera.m_viewport.m_size = size;
 					}
-
-					app.m_renderer.set_viewport({ 0, 0 }, glm::uvec2(app.m_window.get_size()));
 					
 					auto& renderer = app.m_renderer;
 					auto scene_matrices = camera_matrices(scene_camera);
 					auto ui_matrices = camera_matrices(ui_camera);
 
+					renderer.set_framebuffer(gbuf.m_framebuffer);
+
+					renderer.clear_color_buffers({ 0.39f, 0.58f, 0.93f, 1.f });
+					renderer.clear_depth_buffers();
+					renderer.set_viewport({ 0, 0 }, glm::uvec2(app.m_window.get_size()));
+					
 					// render scene
 					{
 						ZoneScopedN("MainLoop - Render Scene");
 
-						skybox.render(renderer, scene_camera, scene_matrices);
-						asteroids.render(renderer, scene_matrices);
-						player.render(renderer, scene_matrices);
-						powerups.render(renderer, scene_matrices);
-						space_dust.render(renderer, scene_matrices);
+						skybox.render_scene(renderer, scene_camera, scene_matrices);
+						asteroids.render_scene(renderer, scene_matrices);
+						player.render_scene(renderer, scene_matrices);
+						powerups.render_scene(renderer, scene_matrices);
 					}
 
+					// todo: lighting pass
+
+					// render particles
+					{
+						asteroids.render_particles(renderer, scene_matrices);
+						player.render_particles(renderer, scene_matrices);
+						space_dust.render_particles(renderer, scene_matrices);
+					}
+
+					renderer.clear_framebuffer();
+
+					renderer.clear_color_buffers({ 0.93f, 0.58f, 0.39f, 1.f });
+					renderer.clear_depth_buffers();
+
+					// blit pass (temp)
+					{
+						blit_pass.m_size = glm::vec2(app.m_window.get_size());
+						blit_pass.render(gbuf.m_buffers.front(), renderer, ui_matrices);
+					}
+					
 					// render ui
 					{
 						ZoneScopedN("MainLoop - Render UI");

@@ -31,9 +31,9 @@ namespace bump
 			m_vertex_array.set_index_buffer(m_indices);
 		}
 
-		void skybox::render(gl::renderer& renderer, perspective_camera const& scene_camera, camera_matrices const& matrices)
+		void skybox::render_scene(gl::renderer& renderer, perspective_camera const& scene_camera, camera_matrices const& matrices)
 		{
-			ZoneScopedN("skybox::render()");
+			ZoneScopedN("skybox::render_scene()");
 
 			auto model = glm::translate(glm::mat4(1.f), get_position(scene_camera.m_transform));
 			auto mvp = matrices.model_view_projection_matrix(model);

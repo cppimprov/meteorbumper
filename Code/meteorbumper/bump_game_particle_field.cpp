@@ -54,12 +54,10 @@ namespace bump
 			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertices);
 		}
 
-		void particle_field::render(gl::renderer& renderer, camera_matrices const& matrices)
+		void particle_field::render_particles(gl::renderer& renderer, camera_matrices const& matrices)
 		{
-			ZoneScopedN("particle_field::render()");
+			ZoneScopedN("particle_field::render_particles()");
 
-			// transparency / sorting?
-			
 			float radius = m_radius;
 			float diameter = 2.f * radius;
 			glm::vec3 origin = glm::floor(m_position / diameter) * diameter;

@@ -29,7 +29,7 @@ namespace bump
 			void set_color_variation_hsv(glm::vec3 color_variation_hsv) { m_color_variation_hsv = color_variation_hsv; }
 			glm::vec3 get_color_variation_hsv() { return m_color_variation_hsv; }
 
-			void render(gl::renderer& renderer, camera_matrices const& matrices);
+			void render_particles(gl::renderer& renderer, camera_matrices const& matrices);
 
 		private:
 

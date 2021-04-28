@@ -1,6 +1,9 @@
 #pragma once
 
+#include "bump_camera.hpp"
 #include "bump_gl.hpp"
+
+#include <glm/gtx/std_based_type.hpp>
 
 namespace bump
 {
@@ -9,9 +12,9 @@ namespace bump
 	{
 	public:
 
-		explicit gbuffers(std::size_t buffer_count, glm::vec<2, GLsizei> screen_size);
+		explicit gbuffers(std::size_t buffer_count, glm::ivec2 screen_size);
 
-		void recreate(std::size_t buffer_count, glm::vec<2, GLsizei> screen_size);
+		void recreate(std::size_t buffer_count, glm::ivec2 screen_size);
 
 		gl::framebuffer m_framebuffer;
 		std::vector<gl::texture_2d> m_buffers;
@@ -22,7 +25,7 @@ namespace bump
 	{
 	public:
 
-		explicit lighting_rendertarget(glm::vec<2, GLsizei> screen_size);
+		explicit lighting_rendertarget(glm::ivec2 screen_size);
 
 		gl::framebuffer m_framebuffer;
 		gl::texture_2d m_target;
@@ -37,7 +40,7 @@ namespace bump
 		glm::vec2 m_position;
 		glm::vec2 m_size;
 
-		gl::texture_2d* m_texture = nullptr;
+		void render(gl::texture_2d const& texture, gl::renderer& renderer, camera_matrices const& ui_matrices);
 
 	private:
 
