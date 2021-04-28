@@ -35,7 +35,9 @@ namespace bump
 
 			gl::shader_program const* m_shader;
 			GLint m_in_VertexPosition;
+			GLint m_in_VertexNormal;
 			GLint m_u_MVP;
+			GLint m_u_NormalMatrix;
 			GLint m_u_Color;
 
 			struct submesh_data
@@ -43,6 +45,7 @@ namespace bump
 				glm::vec3 m_color;
 
 				gl::buffer m_vertices;
+				gl::buffer m_normals;
 				gl::buffer m_indices;
 				gl::vertex_array m_vertex_array;
 			};

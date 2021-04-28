@@ -33,7 +33,7 @@ namespace bump
 
 		gamestate do_game(app& app)
 		{
-			auto gbuf = gbuffers(3u, app.m_window.get_size());
+			auto gbuf = gbuffers(2u, app.m_window.get_size());
 			auto blit_pass = textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
 
 			auto registry = entt::registry();
@@ -207,6 +207,8 @@ namespace bump
 						player.render_particles(renderer, scene_matrices);
 						space_dust.render_particles(renderer, scene_matrices);
 					}
+
+					// todo: transparent object pass
 
 					renderer.clear_framebuffer();
 

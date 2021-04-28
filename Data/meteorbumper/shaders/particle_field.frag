@@ -7,8 +7,6 @@ void g_set_object_type(const in float id);
 in vec3 vert_Color;
 in float vert_Alpha;
 
-//layout(location = 0) out vec4 out_Color;
-
 void main()
 {
 	// scale alpha with distance from center so particles look round, not square

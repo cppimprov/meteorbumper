@@ -2,11 +2,9 @@
 
 layout(location = 0) out vec4 g_buffer_1;
 layout(location = 1) out vec4 g_buffer_2;
-layout(location = 2) out vec4 g_buffer_3;
 
 // buffer1: vec3 diffuse, float object_type_id
 // buffer2: 16 bit normal.x, 16 bit normal.y
-// buffer3: 24 bit depth, float undef
 
 
 // Packing technique based on a (now non-existent) gamedev.net topic that used to be here:
@@ -58,8 +56,4 @@ void g_set_normal(const in vec3 normal) {
 	vec2 sn = normal_to_spherical_normal(normal);
 	g_buffer_2.xy = float_to_vec2(sn.x);
 	g_buffer_2.zw = float_to_vec2(sn.y);
-}
-
-void g_set_depth(const in float depth) {
-	g_buffer_3.xyz = float_to_vec3(depth);
 }

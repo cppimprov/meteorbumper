@@ -55,6 +55,7 @@ namespace bump
 			auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
 
 			renderer.set_blending(gl::renderer::blending::BLEND);
+			renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
 			renderer.set_program(m_shader);
 
 			renderer.set_uniform_4x4f(m_u_MVP, mvp);
@@ -83,6 +84,7 @@ namespace bump
 			renderer.clear_texture_2d(0);
 			renderer.clear_vertex_array();
 			renderer.clear_program();
+			renderer.set_depth_test(gl::renderer::depth_test::LESS);
 			renderer.set_blending(gl::renderer::blending::NONE);
 		}
 		

@@ -153,7 +153,8 @@ namespace bump
 			m_buffer_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_colors.front()), 3, m_frame_colors.size(), GL_STREAM_DRAW);
 
 			auto mvp = ui_matrices.model_view_projection_matrix(glm::mat4(1.f));
-			
+
+			renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
 			renderer.set_program(m_shader);
 			renderer.set_uniform_4x4f(m_u_MVP, mvp);
 			renderer.set_uniform_1f(m_u_Size, 3.f);
@@ -163,6 +164,7 @@ namespace bump
 
 			renderer.clear_vertex_array();
 			renderer.clear_program();
+			renderer.set_depth_test(gl::renderer::depth_test::LESS);
 
 			m_frame_positions.clear();
 			m_frame_directions.clear();

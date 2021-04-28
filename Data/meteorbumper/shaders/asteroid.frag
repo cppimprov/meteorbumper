@@ -6,14 +6,9 @@ void g_set_object_type(const in float id);
 
 in vec3 vert_Color;
 
-//layout(location = 0) out vec4 out_Color;
-
 void main()
 {
-	//out_Color = vec4(vert_Color, 1.0);
-
-	g_set_object_type(g_TYPE_OBJECT);
 	g_set_diffuse(vert_Color);
+	g_set_object_type(g_TYPE_OBJECT);
 	// todo: normal
-	// todo: depth
 }

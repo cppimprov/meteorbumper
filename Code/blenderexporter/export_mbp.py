@@ -245,14 +245,14 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 
 		# check for invalid normals (length != 1.0) (only check the first one for now)
 		has_normals = True
-		if not math.isclose(Vector(vertex_data[0].normal).length, 1.0, rel_tol = 1e-07):
+		if not math.isclose(Vector(vertex_data[0].normal).length, 1.0, rel_tol = 1e-04):
 			self.report({'INFO'}, 'Skipping export of normals, tangents and bitangents.')
 			has_normals = False
 		
 		# check for invalid tangents (length != 1.0) (only check the first one for now)
 		# bitangents should be valid if both normals and tangents are
 		has_tangents = True
-		if not has_normals or not math.isclose(Vector(vertex_data[0].tangent).length, 1.0, rel_tol = 1e-07):
+		if not has_normals or not math.isclose(Vector(vertex_data[0].tangent).length, 1.0, rel_tol = 1e-04):
 			self.report({'INFO'}, 'Skipping export of tangents and bitangents.')
 			has_tangents = False
 		

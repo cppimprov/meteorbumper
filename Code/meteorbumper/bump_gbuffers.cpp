@@ -95,7 +95,8 @@ namespace bump
 
 	// todo:
 
-		// remove gbuffer stuff from particle rendering for now!
+		// write depth when drawing objects (not skybox)!
+
 		// add lighting pass!
 
 		// transparent rendering questions:
