@@ -4,6 +4,7 @@
 #include "bump_game_asteroids.hpp"
 #include "bump_game_crosshair.hpp"
 #include "bump_game_powerups.hpp"
+#include "bump_gbuffers.hpp"
 #include "bump_physics.hpp"
 
 #include <Tracy.hpp>
@@ -414,6 +415,11 @@ namespace bump
 					auto& damage = m_registry.emplace<player_weapon_damage>(beam_entity);
 					damage.m_damage = emitter.m_damage;
 
+					auto& light = m_registry.emplace<point_light>(beam_entity);
+					light.m_position = beam_physics.get_position();
+					light.m_color = segment.m_color;
+					light.m_radius = 5.f; // ?
+
 					emitter.m_beams.push_back(beam_entity);
 				}
 
@@ -425,40 +431,49 @@ namespace bump
 			auto const firing_period_s = high_res_duration_to_seconds(m_firing_period);
 			auto const max_beam_length = m_beam_speed_m_per_s * firing_period_s * m_beam_length_factor;
 
-			auto view = m_registry.view<beam_segment>();
-
-			for (auto& emitter : m_emitters)
+			// update beam lifetimes
 			{
-				// update the length of the most recently fired beam
-				if (!emitter.m_beams.empty())
+				auto view = m_registry.view<beam_segment, physics::rigidbody, point_light>();
+
+				for (auto& emitter : m_emitters)
 				{
-					auto& first = view.get<beam_segment>(emitter.m_beams.back());
-
-					if (first.m_beam_length < max_beam_length)
+					// update the length of the most recently fired beam
+					if (!emitter.m_beams.empty())
 					{
-						first.m_beam_length += m_beam_speed_m_per_s * dt_s;
-						first.m_beam_length = std::min(first.m_beam_length, max_beam_length);
+						auto& first = view.get<beam_segment>(emitter.m_beams.back());
+
+						if (first.m_beam_length < max_beam_length)
+						{
+							first.m_beam_length += m_beam_speed_m_per_s * dt_s;
+							first.m_beam_length = std::min(first.m_beam_length, max_beam_length);
+						}
 					}
-				}
 
-				// update beam lifetimes
-				for (auto beam : emitter.m_beams)
-					view.get<beam_segment>(beam).m_lifetime += dt;
-				
-				// find and remove dead beams
-				auto first_dead_beam = std::remove_if(emitter.m_beams.begin(), emitter.m_beams.end(),
-					[&] (entt::entity b)
+					// update beam lifetimes
+					for (auto id : emitter.m_beams)
 					{
-						auto const& segment = view.get<beam_segment>(b);
-						auto result = (segment.m_lifetime > emitter.m_max_lifetime) || segment.m_collided;
+						auto [b, rb, l] = view.get<beam_segment, physics::rigidbody, point_light>(id);
 
-						if (result)
-							m_registry.destroy(b);
+						b.m_lifetime += dt;
+						l.m_position = rb.get_position();
+						// todo: dim the light / reduce light radius based on lifetime!
+					}
+					
+					// find and remove dead beams
+					auto first_dead_beam = std::remove_if(emitter.m_beams.begin(), emitter.m_beams.end(),
+						[&] (entt::entity b)
+						{
+							auto const& segment = view.get<beam_segment>(b);
+							auto result = (segment.m_lifetime > emitter.m_max_lifetime) || segment.m_collided;
 
-						return result;
-					});
-				
-				emitter.m_beams.erase(first_dead_beam, emitter.m_beams.end());
+							if (result)
+								m_registry.destroy(b);
+
+							return result;
+						});
+					
+					emitter.m_beams.erase(first_dead_beam, emitter.m_beams.end());
+				}
 			}
 
 			// update hit effects

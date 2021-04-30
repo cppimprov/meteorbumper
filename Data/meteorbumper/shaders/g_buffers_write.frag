@@ -53,7 +53,8 @@ void g_set_object_type(const in float id) {
 }
 
 void g_set_normal(const in vec3 normal) {
-	vec2 sn = normal_to_spherical_normal(normal);
-	g_buffer_2.xy = float_to_vec2(sn.x);
-	g_buffer_2.zw = float_to_vec2(sn.y);
+	// vec2 sn = normal_to_spherical_normal(normal);
+	// g_buffer_2.xy = float_to_vec2(sn.x);
+	// g_buffer_2.zw = float_to_vec2(sn.y);
+	g_buffer_2.xyz = normal.xyz;
 }

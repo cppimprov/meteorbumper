@@ -30,14 +30,16 @@ namespace bump
 				{ "player_ship", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
 				{ "player_shield", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
 				{ "asteroid", { "asteroid.vert", "g_buffers_write.frag", "asteroid.frag" } },
-				{ "particle_field", { "particle_field.vert", "g_buffers_write.frag", "particle_field.frag" } },
-				{ "particle_effect", { "particle_effect.vert", "g_buffers_write.frag", "particle_effect.frag" } },
+				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
+				{ "particle_effect", { "particle_effect.vert", "particle_effect.frag" } },
 				{ "indicator", { "indicator.vert", "indicator.frag" } },
 				{ "crosshair", { "crosshair.vert", "crosshair.frag" } },
 				{ "player_laser", { "player_laser.vert", "player_laser.geom", "g_buffers_write.frag", "player_laser.frag" } },
 				{ "fps_counter", { "fps_counter.vert", "fps_counter.frag" } },
 				{ "powerup", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
-				{ "temp_blit_renderpass", { "textured_quad.vert", "g_buffers_read.frag", "textured_quad.frag" } },
+				{ "temp_blit_renderpass", { "textured_quad.vert", "textured_quad.frag" } },
+				{ "light_directional", { "light_directional.vert", "g_buffers_read.frag", "light_directional.frag" } },
+				{ "light_point", { "light_point.vert", "g_buffers_read.frag", "light_point.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>
@@ -49,6 +51,7 @@ namespace bump
 				{ "powerup_shield", "powerup_shield.mbp_model" },
 				{ "powerup_armor", "powerup_armor.mbp_model" },
 				{ "powerup_lasers", "powerup_lasers.mbp_model" },
+				{ "point_light", "point_light.mbp_model" },
 			};
 
 			auto const cubemaps = std::vector<cubemap_metadata>

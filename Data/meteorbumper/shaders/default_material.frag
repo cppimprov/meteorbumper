@@ -11,8 +11,7 @@ uniform vec3 u_Color;
 
 void main()
 {
-	//g_set_diffuse(u_Color);
-	g_set_diffuse(vert_Normal * 0.5 + 0.5); // temp!
+	g_set_diffuse(u_Color);
 	g_set_object_type(g_TYPE_OBJECT);
 	g_set_normal(vert_Normal);
 }

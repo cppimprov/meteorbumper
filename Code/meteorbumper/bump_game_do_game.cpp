@@ -33,11 +33,17 @@ namespace bump
 
 		gamestate do_game(app& app)
 		{
-			auto gbuf = gbuffers(2u, app.m_window.get_size());
-			auto blit_pass = textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
-
 			auto registry = entt::registry();
 			auto physics_system = physics::physics_system(registry);
+			
+			auto gbuf = gbuffers(2u, app.m_window.get_size());
+			auto blit_pass = textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
+			auto lighting_rt = lighting_rendertarget(app.m_window.get_size());
+			auto lighting = lighting_system(registry, app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_models.at("point_light"));
+
+			auto test_light_id = registry.create();
+			auto& test_light = registry.emplace<directional_light>(test_light_id);
+			test_light.m_direction = glm::normalize(glm::vec3(-1.f, -1.f, 0.f));
 
 			auto const camera_height = 150.f;
 			auto scene_camera = perspective_camera();
@@ -119,7 +125,11 @@ namespace bump
 
 						else if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
 					};
-					callbacks.m_resize = [&] (glm::ivec2 size) { gbuf.recreate(gbuf.m_buffers.size(), size); };
+					callbacks.m_resize = [&] (glm::ivec2 size)
+					{
+						gbuf.recreate(gbuf.m_buffers.size(), size);
+						lighting_rt.recreate(size);
+					};
 
 					app.m_input_handler.poll_input(callbacks);
 
@@ -199,7 +209,12 @@ namespace bump
 						powerups.render_scene(renderer, scene_matrices);
 					}
 
-					// todo: lighting pass
+					renderer.set_framebuffer(lighting_rt.m_framebuffer);
+
+					// lighting
+					{
+						lighting.render(renderer, glm::vec2(app.m_window.get_size()), scene_matrices, ui_matrices, gbuf);
+					}
 
 					// render particles
 					{
@@ -218,7 +233,7 @@ namespace bump
 					// blit pass (temp)
 					{
 						blit_pass.m_size = glm::vec2(app.m_window.get_size());
-						blit_pass.render(gbuf.m_buffers.front(), renderer, ui_matrices);
+						blit_pass.render(lighting_rt.m_texture, renderer, ui_matrices);
 					}
 					
 					// render ui

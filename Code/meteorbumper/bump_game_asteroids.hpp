@@ -66,18 +66,23 @@ namespace bump
 			gl::shader_program const& m_shader;
 
 			GLint m_in_VertexPosition;
+			GLint m_in_VertexNormal;
 			GLint m_in_MVP;
+			GLint m_in_NormalMatrix;
 			GLint m_in_Color;
 			GLint m_in_Scale;
 			
 			gl::buffer m_vertices;
+			gl::buffer m_normals;
 			gl::buffer m_indices;
 			gl::buffer m_transforms;
+			gl::buffer m_normal_matrices;
 			gl::buffer m_colors;
 			gl::buffer m_scales;
 			gl::vertex_array m_vertex_array;
 
 			std::vector<glm::mat4> m_instance_transforms;
+			std::vector<glm::mat3> m_instance_normal_matrices;
 			std::vector<glm::vec3> m_instance_colors;
 			std::vector<float> m_instance_scales;
 

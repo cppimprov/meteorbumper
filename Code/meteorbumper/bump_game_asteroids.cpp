@@ -14,6 +14,7 @@
 
 #include <Tracy.hpp>
 
+#include <iostream>
 #include <random>
 
 namespace bump
@@ -27,7 +28,9 @@ namespace bump
 			m_powerups(powerups),
 			m_shader(shader),
 			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
+			m_in_VertexNormal(shader.get_attribute_location("in_VertexNormal")),
 			m_in_MVP(shader.get_attribute_location("in_MVP")),
+			m_in_NormalMatrix(shader.get_attribute_location("in_NormalMatrix")),
 			m_in_Color(shader.get_attribute_location("in_Color")),
 			m_in_Scale(shader.get_attribute_location("in_Scale")),
 			m_rng(std::random_device()()),
@@ -49,13 +52,18 @@ namespace bump
 
 			m_vertices.set_data(GL_ARRAY_BUFFER, mesh.m_mesh.m_vertices.data(), 3, mesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
 			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertices);
+			
+			m_normals.set_data(GL_ARRAY_BUFFER, mesh.m_mesh.m_normals.data(), 3, mesh.m_mesh.m_normals.size() / 3, GL_STATIC_DRAW);
+			m_vertex_array.set_array_buffer(m_in_VertexNormal, m_normals);
 
 			m_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, mesh.m_mesh.m_indices.data(), 1, mesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
 			m_vertex_array.set_index_buffer(m_indices);
 
 			// set up instance buffers
 			m_transforms.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 16, 0, GL_STREAM_DRAW);
-			m_vertex_array.set_array_buffer(m_in_MVP, m_transforms, 1);
+			m_vertex_array.set_array_buffer(m_in_MVP, m_transforms, 4, 4, 1);
+			m_normal_matrices.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 9, 0, GL_STREAM_DRAW);
+			m_vertex_array.set_array_buffer(m_in_NormalMatrix, m_normal_matrices, 3, 3, 1);
 			m_colors.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
 			m_vertex_array.set_array_buffer(m_in_Color, m_colors, 1);
 			m_scales.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 1, 0, GL_STREAM_DRAW);
@@ -212,18 +220,17 @@ namespace bump
 			for (auto id : view)
 			{
 				auto [data, physics] = view.get<asteroid_data, physics::rigidbody>(id);
-				m_instance_transforms.push_back(matrices.model_view_projection_matrix(physics.get_transform()));
+				auto const transform = physics.get_transform();
+				m_instance_transforms.push_back(matrices.model_view_projection_matrix(transform));
+				m_instance_normal_matrices.push_back(matrices.normal_model_matrix(transform));
 				m_instance_colors.push_back(data.m_color);
 				m_instance_scales.push_back(data.m_model_scale);
 			}
 
 			// upload instance data to buffers
-			static_assert(sizeof(glm::mat4) == sizeof(float) * 16, "Unexpected matrix size.");
 			m_transforms.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_transforms.front()), 16, m_instance_transforms.size(), GL_STREAM_DRAW);
-			
-			static_assert(sizeof(glm::vec3) == sizeof(float) * 3, "Unexpected vector size.");
+			m_normal_matrices.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_normal_matrices.front()), 9, m_instance_normal_matrices.size(), GL_STREAM_DRAW);
 			m_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_colors.front()), 3, m_instance_colors.size(), GL_STREAM_DRAW);
-
 			m_scales.set_data(GL_ARRAY_BUFFER, m_instance_scales.data(), 1, m_instance_scales.size(), GL_STREAM_DRAW);
 
 			// render
@@ -237,6 +244,7 @@ namespace bump
 
 			// clear instance data
 			m_instance_transforms.clear();
+			m_instance_normal_matrices.clear();
 			m_instance_colors.clear();
 			m_instance_scales.clear();
 		}

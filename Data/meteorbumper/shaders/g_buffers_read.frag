@@ -1,6 +1,7 @@
 #version 400
 
 uniform sampler2D g_buffer_1, g_buffer_2, g_buffer_3;
+uniform sampler2D g_buffer_depth;
 
 // buffer1: vec3 diffuse, float object_type_id
 // buffer2: 16 bit normal.x, 16 bit normal.y
@@ -53,22 +54,27 @@ float g_get_object_type(const in vec2 tex_coords) {
 	return texture(g_buffer_1, tex_coords).a;
 }
 
-vec3 g_get_normal(const in vec2 tex_coords) {
-	vec4 packed_value = texture(g_buffer_2, tex_coords).rgba;
-	vec2 sn = vec2(vec2_to_float(packed_value.xy), vec2_to_float(packed_value.zw));
-	return spherical_normal_to_normal(sn);
+vec3 g_get_ws_normal(const in vec2 tex_coords) {
+	//vec4 packed_value = texture(g_buffer_2, tex_coords).rgba;
+	//vec2 sn = vec2(vec2_to_float(packed_value.xy), vec2_to_float(packed_value.zw));
+	//return spherical_normal_to_normal(sn);
+	return texture(g_buffer_2, tex_coords).xyz;
 }
 
-// vec3 g_get_ws_position(const in vec2 tex_coords, const in float depth, const in mat4 inv_p_matrix, const in mat4 inv_mv_matrix) {
-// 	vec4 ss_pos = vec4(tex_coords * 2.0 - 1.0, depth, 1.0);
-	
-// 	vec4 vs_pos = inv_p_matrix * ss_pos;
-	
-// 	vs_pos.xyz /= vs_pos.w;
-// 	vs_pos.w = 1.0;
-	
-// 	return (inv_mv_matrix * vs_pos).xyz;
-// }
+float g_get_depth(const in vec2 tex_coords) {
+	return texture(g_buffer_depth, tex_coords).x;
+}
+
+vec3 g_get_ws_position(const in vec2 tex_coords, const in float depth, const in mat4 inv_p_matrix, const in mat4 inv_v_matrix) {
+	vec4 ss_pos = vec4(tex_coords * 2.0 - 1.0, depth, 1.0);
+
+	vec4 vs_pos = inv_p_matrix * ss_pos;
+
+	vs_pos.xyz /= vs_pos.w;
+	vs_pos.w = 1.0;
+
+	return (inv_v_matrix * vs_pos).xyz;
+}
 
 // vec3 g_get_vs_position(const in vec2 tex_coords, const in float depth, const in mat4 inv_p_matrix) {
 // 	vec4 ss_pos = vec4(tex_coords * 2.0 - 1.0, depth, 1.0);

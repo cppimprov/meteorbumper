@@ -40,6 +40,9 @@ int main(int , char* [])
 		// shield down / recharge particle effects
 
 	// effects:
+		// dont' collide player engine particles with player!
+		// don't produce particles when asteroids hit bounds!
+		
 		// experiment with different particle sizes?
 		// asteroid explode / split effects (rock chunks?)
 		// lights for:
@@ -47,8 +50,9 @@ int main(int , char* [])
 		// *subtle* bloom effect?
 		// make player shield particles not collide with player when shield is up, and collide with player when shield is down?
 
-	// misc:
+	// misc fixes:
 		// player collision with powerup slows down player :(
+		// frustum culling when rendering?
 
 	// player controls:
 		// remove strafing / thrusters (-> classic asteroids controls)
