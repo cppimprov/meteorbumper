@@ -62,12 +62,7 @@ namespace bump
 		return m_view_projection * model;
 	}
 
-	glm::mat3 camera_matrices::normal_model_matrix(glm::mat4 const& model) const
-	{
-		return glm::transpose(glm::inverse(glm::mat3(model)));
-	}
-
-	glm::mat3 camera_matrices::normal_view_matrix(glm::mat4 const& model) const
+	glm::mat3 camera_matrices::normal_matrix(glm::mat4 const& model) const
 	{
 		return glm::transpose(glm::inverse(glm::mat3(model_view_matrix(model))));
 	}

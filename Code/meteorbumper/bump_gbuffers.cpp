@@ -1,5 +1,6 @@
 #include "bump_gbuffers.hpp"
 
+#include "bump_camera.hpp"
 #include "bump_narrow_cast.hpp"
 #include "bump_mbp_model.hpp"
 
@@ -125,8 +126,21 @@ namespace bump
 	
 	void lighting_system::render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf)
 	{
+		renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
+		renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
+		renderer.set_blending(gl::renderer::blending::ADD);
+
 		m_renderable_directional.render(renderer, screen_size, scene_matrices, ui_matrices, gbuf);
-		m_renderable_point.render(renderer, scene_matrices, gbuf);
+
+		renderer.set_depth_test(gl::renderer::depth_test::GREATER_EQUAL);
+		renderer.set_face_culling(gl::renderer::face_culling::COUNTER_CLOCKWISE);
+
+		//m_renderable_point.render(renderer, scene_matrices, gbuf);
+
+		renderer.set_face_culling(gl::renderer::face_culling::CLOCKWISE);
+		renderer.set_blending(gl::renderer::blending::NONE);
+		renderer.set_depth_write(gl::renderer::depth_write::ENABLED);
+		renderer.set_depth_test(gl::renderer::depth_test::LESS);
 	}
 
 	lighting_system::directional_light_renderable::directional_light_renderable(entt::registry& registry, gl::shader_program const& shader):
@@ -140,8 +154,7 @@ namespace bump
 		m_g_buffer_1(m_shader.get_uniform_location("g_buffer_1")),
 		m_g_buffer_2(m_shader.get_uniform_location("g_buffer_2")),
 		m_g_buffer_depth(m_shader.get_uniform_location("g_buffer_depth")),
-		m_u_InvProjMatrix(m_shader.get_uniform_location("u_InvProjMatrix")),
-		m_u_InvViewMatrix(m_shader.get_uniform_location("u_InvViewMatrix"))
+		m_u_InvProjMatrix(m_shader.get_uniform_location("u_InvProjMatrix"))
 	{
 		auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
 		m_buffer_vertices.set_data(GL_ARRAY_BUFFER, vertices.begin(), 2, 6, GL_STATIC_DRAW);
@@ -166,7 +179,7 @@ namespace bump
 			for (auto id : view)
 			{
 				auto const& l = view.get<directional_light>(id);
-				m_frame_light_directions.push_back(l.m_direction);
+				m_frame_light_directions.push_back(glm::vec3(scene_matrices.m_view * glm::vec4(l.m_direction, 0.f)));
 				m_frame_light_colors.push_back(l.m_color);
 			}
 
@@ -192,7 +205,6 @@ namespace bump
 			renderer.set_texture_2d(1, gbuf.m_buffers[1]);
 			renderer.set_texture_2d(2, gbuf.m_depth_stencil);
 			renderer.set_uniform_4x4f(m_u_InvProjMatrix, scene_matrices.m_inv_projection);
-			renderer.set_uniform_4x4f(m_u_InvViewMatrix, scene_matrices.m_inv_view);
 			renderer.set_vertex_array(m_vertex_array);
 
 			renderer.draw_arrays(GL_TRIANGLES, m_buffer_vertices.get_element_count(), m_buffer_light_directions.get_element_count());
@@ -217,11 +229,11 @@ namespace bump
 		m_g_buffer_1(m_shader.get_uniform_location("g_buffer_1")),
 		m_g_buffer_2(m_shader.get_uniform_location("g_buffer_2")),
 		m_g_buffer_depth(m_shader.get_uniform_location("g_buffer_depth")),
-		m_u_InvProjMatrix(m_shader.get_uniform_location("u_InvProjMatrix")),
-		m_u_InvViewMatrix(m_shader.get_uniform_location("u_InvViewMatrix"))
+		m_u_InvProjMatrix(m_shader.get_uniform_location("u_InvProjMatrix"))
 	{
 		die_if(model.m_submeshes.size() != 1);
-		// ...
+
+		// TODO: get vertex data!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 		m_buffer_light_positions.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
 		m_vertex_array.set_array_buffer(m_in_LightPosition, m_buffer_light_positions, 1);
@@ -245,7 +257,7 @@ namespace bump
 			for (auto id : view)
 			{
 				auto const& l = view.get<point_light>(id);
-				m_frame_light_positions.push_back(l.m_position);
+				m_frame_light_positions.push_back(glm::vec3(scene_matrices.m_view * glm::vec4(l.m_position, 1.0)));
 				m_frame_light_colors.push_back(l.m_color);
 				m_frame_light_radii.push_back(l.m_radius);
 			}
@@ -272,7 +284,6 @@ namespace bump
 			renderer.set_texture_2d(1, gbuf.m_buffers[1]);
 			renderer.set_texture_2d(2, gbuf.m_depth_stencil);
 			renderer.set_uniform_4x4f(m_u_InvProjMatrix, scene_matrices.m_inv_projection);
-			renderer.set_uniform_4x4f(m_u_InvViewMatrix, scene_matrices.m_inv_view);
 			renderer.set_vertex_array(m_vertex_array);
 
 			renderer.draw_indexed(GL_TRIANGLES, m_buffer_indices.get_element_count(), m_buffer_indices.get_component_type(), m_buffer_light_positions.get_element_count());
@@ -284,34 +295,12 @@ namespace bump
 
 	// todo:
 
-		// lighting pass should be:
-
-			// turn off depth test
-			// turn off depth write
-			// set alpha blend to one one, and enable
-
-				// render directional lights.
-
-			// set depth test to gequal, and winding to cw. ???
-
-				// render point lights
-				// render spot lights
-
-			// put everything back!
-
-		// don't render skybox to gbuffers.
-		// render it to the main screen before blitting over the lighting render target
-		// (make sure to discard "empty" pixels from render target.
-
-		// fix view vector in shaders (-p would only be correct in view space).
-		// use view space for lighting calculations?
-
-		// change g_TYPE_FOO to match what we need here...
+		// blit skybox somewhere...
+			// either to the main framebuffer after lighting
+			// do we want the lighting target to ONLY be lighting? or what?
 
 		// rename gbuffers.hpp/cpp to lighting.hpp/cpp put stuff in a lighting namespace
 		
-		// directional light uvs are off by 0.5 pixels. use gl_FragCoord to get uv instead!!!
-
 		// test spherical normal conversion vs storing normal directly. is it actually better?
 
 		// write material parameters to gbuffers and use in lighting calculations

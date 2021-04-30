@@ -21,6 +21,7 @@ namespace bump
 		{
 			set_depth_test(depth_test::LESS);
 			set_point_size_mode(point_size_mode::PROGRAM);
+			set_face_culling(face_culling::CLOCKWISE);
 		}
 
 		void renderer::set_framebuffer(framebuffer const& fb)
@@ -119,10 +120,25 @@ namespace bump
 
 		void renderer::set_depth_write(depth_write mode)
 		{
-			if (mode == depth_write::ENABLED)
-				glDepthMask(GL_TRUE);
-			else
-				glDepthMask(GL_FALSE);
+			glDepthMask(mode == depth_write::ENABLED ? GL_TRUE : GL_FALSE);
+		}
+
+		void renderer::set_face_culling(face_culling mode)
+		{
+			if (mode == face_culling::NONE)
+			{
+				glDisable(GL_CULL_FACE);
+			}
+			else if (mode == face_culling::CLOCKWISE)
+			{
+				glFrontFace(GL_CCW);
+				glEnable(GL_CULL_FACE);
+			}
+			else if (mode == face_culling::COUNTER_CLOCKWISE)
+			{
+				glFrontFace(GL_CW);
+				glEnable(GL_CULL_FACE);
+			}
 		}
 		
 		void renderer::set_seamless_cubemaps(seamless_cubemaps mode)

@@ -47,7 +47,7 @@ namespace bump
 			ZoneScopedN("basic_renderable::render()");
 
 			auto mvp = matrices.model_view_projection_matrix(m_transform);
-			auto n = matrices.normal_model_matrix(m_transform);
+			auto n = matrices.normal_matrix(m_transform);
 
 			renderer.set_program(*m_shader);
 

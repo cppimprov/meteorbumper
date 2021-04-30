@@ -76,8 +76,7 @@ namespace bump
 
 		glm::mat4 model_view_matrix(glm::mat4 const& model) const;
 		glm::mat4 model_view_projection_matrix(glm::mat4 const& model) const;
-		glm::mat3 normal_model_matrix(glm::mat4 const& model) const;
-		glm::mat3 normal_view_matrix(glm::mat4 const& model) const;
+		glm::mat3 normal_matrix(glm::mat4 const& model) const;
 		
 		glm::mat4 m_view;
 		glm::mat4 m_projection;

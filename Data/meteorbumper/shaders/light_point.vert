@@ -3,13 +3,13 @@
 in vec3 in_VertexPosition;
 in vec3 in_LightPosition;
 in vec3 in_LightColor;
-in vec3 in_LightRadius;
+in float in_LightRadius;
 
 uniform mat4 u_MVP;
 
 out vec3 vert_LightPosition;
 out vec3 vert_LightColor;
-out vec3 vert_LightRadius;
+out float vert_LightRadius;
 
 void main()
 {

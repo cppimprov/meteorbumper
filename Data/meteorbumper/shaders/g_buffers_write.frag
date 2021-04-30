@@ -32,9 +32,8 @@ vec2 float_to_vec2(const in float value) {
 // Spherical normal technique from here:
 // http://aras-p.info/texts/CompactNormalStorage.html#method03spherical
 
-const float g_TYPE_NOTHING = 0.0;
-const float g_TYPE_TERRAIN = 1.0 / 255.0;
-const float g_TYPE_OBJECT = 2.0 / 255.0;
+const float g_TYPE_SKYBOX = 0.0;
+const float g_TYPE_OBJECT = 1.0 / 255.0;
 
 const float PI = 3.14159265358979323846f;
 

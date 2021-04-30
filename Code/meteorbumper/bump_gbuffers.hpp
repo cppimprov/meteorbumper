@@ -107,7 +107,6 @@ namespace bump
 			GLint m_g_buffer_2;
 			GLint m_g_buffer_depth;
 			GLint m_u_InvProjMatrix;
-			GLint m_u_InvViewMatrix;
 
 			gl::buffer m_buffer_vertices;
 			gl::buffer m_buffer_light_directions;
@@ -140,7 +139,6 @@ namespace bump
 			GLint m_g_buffer_2;
 			GLint m_g_buffer_depth;
 			GLint m_u_InvProjMatrix;
-			GLint m_u_InvViewMatrix;
 
 			gl::buffer m_buffer_vertices;
 			gl::buffer m_buffer_indices;

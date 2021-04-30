@@ -8,14 +8,12 @@ in float in_LightRadius;
 uniform mat4 u_MVP;
 uniform vec2 u_Size;
 
-out vec2 vert_UV;
 out vec3 vert_LightDirection;
 out vec3 vert_LightColor;
 out float vert_LightRadius;
 
 void main()
 {
-	vert_UV = in_VertexPosition;
 	vert_LightDirection = in_LightDirection;
 	vert_LightColor = in_LightColor;
 	vert_LightRadius = in_LightRadius;

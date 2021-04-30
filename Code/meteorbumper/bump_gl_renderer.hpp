@@ -46,6 +46,9 @@ namespace bump
 			enum class depth_write { ENABLED, DISABLED };
 			void set_depth_write(depth_write mode);
 
+			enum class face_culling { NONE, CLOCKWISE, COUNTER_CLOCKWISE };
+			void set_face_culling(face_culling mode);
+
 			enum class seamless_cubemaps { ENABLED, DISABLED };
 			void set_seamless_cubemaps(seamless_cubemaps mode);
 

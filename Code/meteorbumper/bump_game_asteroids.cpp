@@ -222,7 +222,7 @@ namespace bump
 				auto [data, physics] = view.get<asteroid_data, physics::rigidbody>(id);
 				auto const transform = physics.get_transform();
 				m_instance_transforms.push_back(matrices.model_view_projection_matrix(transform));
-				m_instance_normal_matrices.push_back(matrices.normal_model_matrix(transform));
+				m_instance_normal_matrices.push_back(matrices.normal_matrix(transform));
 				m_instance_colors.push_back(data.m_color);
 				m_instance_scales.push_back(data.m_model_scale);
 			}

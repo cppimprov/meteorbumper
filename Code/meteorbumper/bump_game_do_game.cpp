@@ -39,7 +39,7 @@ namespace bump
 			auto gbuf = gbuffers(2u, app.m_window.get_size());
 			auto blit_pass = textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
 			auto lighting_rt = lighting_rendertarget(app.m_window.get_size());
-			auto lighting = lighting_system(registry, app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_models.at("point_light"));
+			auto lighting = lighting_system(registry, app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_shaders.at("light_point"), app.m_assets.m_models.at("point_light"));
 
 			auto test_light_id = registry.create();
 			auto& test_light = registry.emplace<directional_light>(test_light_id);
@@ -210,6 +210,8 @@ namespace bump
 					}
 
 					renderer.set_framebuffer(lighting_rt.m_framebuffer);
+
+					renderer.clear_color_buffers({ 0.f, 0.f, 0.f, 1.f });
 
 					// lighting
 					{
