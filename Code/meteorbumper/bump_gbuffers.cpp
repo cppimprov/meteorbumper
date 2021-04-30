@@ -119,6 +119,46 @@ namespace bump
 		renderer.set_depth_test(gl::renderer::depth_test::LESS);
 	}
 
+
+	skybox_blit_quad::skybox_blit_quad(gl::shader_program const& shader):
+		m_shader(shader),
+		m_in_VertexPosition(m_shader.get_attribute_location("in_VertexPosition")),
+		m_u_MVP(m_shader.get_uniform_location("u_MVP")),
+		m_u_Position(m_shader.get_uniform_location("u_Position")),
+		m_u_Size(m_shader.get_uniform_location("u_Size")),
+		m_g_buffer_1(m_shader.get_uniform_location("g_buffer_1"))
+	{
+		auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
+		m_vertex_buffer.set_data(GL_ARRAY_BUFFER, vertices.begin(), 2, 6, GL_STATIC_DRAW);
+		m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertex_buffer);
+	}
+	
+	void skybox_blit_quad::render(gl::renderer& renderer, camera_matrices const& matrices, gbuffers const& gbuf)
+	{
+		ZoneScopedN("skybox_blit_quad::render()");
+
+		auto const mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
+
+		renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
+
+		renderer.set_program(m_shader);
+		renderer.set_uniform_4x4f(m_u_MVP, mvp);
+		renderer.set_uniform_2f(m_u_Position, glm::vec2(0.f));
+		renderer.set_uniform_2f(m_u_Size, glm::vec2(gbuf.m_buffers.front().get_size()));
+		renderer.set_uniform_1i(m_g_buffer_1, 0);
+		
+		renderer.set_texture_2d(0, gbuf.m_buffers.front());
+		renderer.set_vertex_array(m_vertex_array);
+
+		renderer.draw_arrays(GL_TRIANGLES, m_vertex_buffer.get_element_count());
+
+		renderer.clear_vertex_array();
+		renderer.clear_texture_2d(0);
+		renderer.clear_program();
+
+		renderer.set_depth_test(gl::renderer::depth_test::LESS);
+	}
+
 	lighting_system::lighting_system(entt::registry& registry, gl::shader_program const& directional_light_shader, gl::shader_program const& point_light_shader, mbp_model const& point_light_model):
 		m_registry(registry),
 		m_renderable_directional(registry, directional_light_shader),
@@ -126,6 +166,8 @@ namespace bump
 	
 	void lighting_system::render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf)
 	{
+		ZoneScopedN("lighting_system::render()");
+
 		renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
 		renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
 		renderer.set_blending(gl::renderer::blending::ADD);
@@ -295,15 +337,14 @@ namespace bump
 
 	// todo:
 
-		// blit skybox somewhere...
-			// either to the main framebuffer after lighting
-			// do we want the lighting target to ONLY be lighting? or what?
+		// add fullscreen quad to blit skybox to the lighting rt
+		// change lighting rt to rgb instead of rgba?
+
+		// write material parameters to gbuffers and use in lighting calculations
 
 		// rename gbuffers.hpp/cpp to lighting.hpp/cpp put stuff in a lighting namespace
 		
 		// test spherical normal conversion vs storing normal directly. is it actually better?
-
-		// write material parameters to gbuffers and use in lighting calculations
 
 		// transparent rendering questions:
 			// where to do transparent rendering?

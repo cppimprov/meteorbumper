@@ -37,6 +37,7 @@ namespace bump
 				{ "player_laser", { "player_laser.vert", "player_laser.geom", "g_buffers_write.frag", "player_laser.frag" } },
 				{ "fps_counter", { "fps_counter.vert", "fps_counter.frag" } },
 				{ "powerup", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
+				{ "skybox_blit", { "skybox_blit.vert", "g_buffers_read.frag", "skybox_blit.frag" } },
 				{ "temp_blit_renderpass", { "textured_quad.vert", "textured_quad.frag" } },
 				{ "light_directional", { "light_directional.vert", "g_buffers_read.frag", "light_directional.frag" } },
 				{ "light_point", { "light_point.vert", "g_buffers_read.frag", "light_point.frag" } },
