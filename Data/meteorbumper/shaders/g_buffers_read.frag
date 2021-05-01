@@ -61,7 +61,7 @@ vec3 g_get_normal(const in vec2 tex_coords) {
 	//vec4 packed_value = texture(g_buffer_2, tex_coords).rgba;
 	//vec2 sn = vec2(vec2_to_float(packed_value.xy), vec2_to_float(packed_value.zw));
 	//return spherical_normal_to_normal(sn);
-	return texture(g_buffer_2, tex_coords).xyz;
+	return texture(g_buffer_2, tex_coords).xyz * 2.0 - 1.0;
 }
 
 float g_get_depth(const in vec2 tex_coords) {

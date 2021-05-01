@@ -57,7 +57,7 @@ void g_set_normal(const in vec3 normal) {
 	// vec2 sn = normal_to_spherical_normal(normal);
 	// g_buffer_2.xy = float_to_vec2(sn.x);
 	// g_buffer_2.zw = float_to_vec2(sn.y);
-	g_buffer_2.xyz = normal.xyz;
+	g_buffer_2.xyz = normal.xyz * 0.5 + 0.5;
 }
 
 void g_set_depth(const in float depth) {

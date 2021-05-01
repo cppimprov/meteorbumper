@@ -8,7 +8,7 @@ vec3 g_get_normal(const in vec2 tex_coords);
 float g_get_depth(const in vec2 tex_coords);
 vec3 g_get_vs_position(const in vec2 tex_coords, const in float depth, const in mat4 inv_p_matrix);
 
-in vec3 vert_LightPosition;
+in vec3 vert_LightPosition; // vs
 in vec3 vert_LightColor;
 in float vert_LightRadius;
 

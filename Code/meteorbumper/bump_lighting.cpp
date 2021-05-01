@@ -239,7 +239,6 @@ namespace bump
 			{
 				auto mvp = ui_matrices.model_view_projection_matrix(glm::mat4(1.f));
 
-				renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
 				renderer.set_program(m_shader);
 				renderer.set_uniform_4x4f(m_u_MVP, mvp);
 				renderer.set_uniform_2f(m_u_Size, screen_size);
@@ -259,7 +258,6 @@ namespace bump
 				renderer.clear_texture_2d(1);
 				renderer.clear_texture_2d(0);
 				renderer.clear_program();
-				renderer.set_depth_test(gl::renderer::depth_test::LESS);
 			}
 		}
 
@@ -359,10 +357,6 @@ namespace bump
 
 // todo:
 
-	// fix point lights only lighting the right-hand side of the asteroids!!??
-
-	// go through shader variables and append _vs or _ws or whatever where we need to!
-
 	// base color (standard diffuse)
 	// metallic (?) -> reflection...
 	// emissive
@@ -376,6 +370,8 @@ namespace bump
 		// read + use
 
 	// change lighting rt to rgb instead of rgba?
+	
+	// go through shader variables and append _vs or _ws or whatever where we need to!
 
 	// test spherical normal conversion vs storing normal directly. is it actually better?
 

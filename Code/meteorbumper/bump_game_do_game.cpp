@@ -44,7 +44,7 @@ namespace bump
 
 			auto test_light_id = registry.create();
 			auto& test_light = registry.emplace<lighting::directional_light>(test_light_id);
-			test_light.m_direction = glm::normalize(glm::vec3(-1.f, -1.f, 0.f));
+			test_light.m_direction = glm::normalize(glm::vec3(-1.f, -1.f, -1.f));
 
 			auto const camera_height = 150.f;
 			auto scene_camera = perspective_camera();
