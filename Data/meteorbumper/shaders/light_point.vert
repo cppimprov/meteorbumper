@@ -2,6 +2,7 @@
 
 in vec3 in_VertexPosition;
 in vec3 in_LightPosition;
+in vec3 in_LightPosition_vs;
 in vec3 in_LightColor;
 in float in_LightRadius;
 
@@ -13,7 +14,7 @@ out float vert_LightRadius;
 
 void main()
 {
-	vert_LightPosition = in_LightPosition;
+	vert_LightPosition = in_LightPosition_vs;
 	vert_LightColor = in_LightColor;
 	vert_LightRadius = in_LightRadius;
 

@@ -418,7 +418,7 @@ namespace bump
 					auto& light = m_registry.emplace<lighting::point_light>(beam_entity);
 					light.m_position = beam_physics.get_position();
 					light.m_color = segment.m_color;
-					light.m_radius = 5.f; // ?
+					light.m_radius = 15.f;
 
 					emitter.m_beams.push_back(beam_entity);
 				}
@@ -547,6 +547,8 @@ namespace bump
 				// render beams
 				auto mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
 				
+				renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
+
 				renderer.set_program(m_shader);
 				renderer.set_uniform_4x4f(m_u_MVP, mvp);
 				renderer.set_vertex_array(m_vertex_array);
@@ -555,6 +557,8 @@ namespace bump
 
 				renderer.clear_vertex_array();
 				renderer.clear_program();
+
+				renderer.set_depth_write(gl::renderer::depth_write::ENABLED);
 
 				// clear frame instance buffers
 				m_frame_instance_colors.clear();

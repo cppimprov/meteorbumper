@@ -156,6 +156,7 @@ namespace bump
 				gl::shader_program const& m_shader;
 				GLint m_in_VertexPosition;
 				GLint m_in_LightPosition;
+				GLint m_in_LightPosition_vs;
 				GLint m_in_LightColor;
 				GLint m_in_LightRadius;
 				GLint m_u_MVP;
@@ -167,11 +168,13 @@ namespace bump
 				gl::buffer m_buffer_vertices;
 				gl::buffer m_buffer_indices;
 				gl::buffer m_buffer_light_positions;
+				gl::buffer m_buffer_light_positions_vs;
 				gl::buffer m_buffer_light_colors;
 				gl::buffer m_buffer_light_radii;
 				gl::vertex_array m_vertex_array;
 
 				std::vector<glm::vec3> m_frame_light_positions;
+				std::vector<glm::vec3> m_frame_light_positions_vs;
 				std::vector<glm::vec3> m_frame_light_colors;
 				std::vector<float> m_frame_light_radii;
 			};

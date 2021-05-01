@@ -171,6 +171,7 @@ namespace bump
 			{
 				ZoneScopedN("particle_effect::render() - render");
 
+				renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
 				renderer.set_blending(gl::renderer::blending::ADD);
 
 				renderer.set_program(m_shader);
@@ -184,6 +185,7 @@ namespace bump
 				renderer.clear_program();
 
 				renderer.set_blending(gl::renderer::blending::NONE);
+				renderer.set_depth_write(gl::renderer::depth_write::ENABLED);
 			}
 		}
 

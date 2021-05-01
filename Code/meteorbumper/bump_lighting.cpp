@@ -180,7 +180,7 @@ namespace bump
 			renderer.set_depth_test(gl::renderer::depth_test::GREATER_EQUAL);
 			renderer.set_face_culling(gl::renderer::face_culling::COUNTER_CLOCKWISE);
 
-			//m_renderable_point.render(renderer, scene_matrices, gbuf);
+			m_renderable_point.render(renderer, scene_matrices, gbuf);
 
 			renderer.set_face_culling(gl::renderer::face_culling::CLOCKWISE);
 			renderer.set_blending(gl::renderer::blending::NONE);
@@ -268,6 +268,7 @@ namespace bump
 			m_shader(shader),
 			m_in_VertexPosition(m_shader.get_attribute_location("in_VertexPosition")),
 			m_in_LightPosition(m_shader.get_attribute_location("in_LightPosition")),
+			m_in_LightPosition_vs(m_shader.get_attribute_location("in_LightPosition_vs")),
 			m_in_LightColor(m_shader.get_attribute_location("in_LightColor")),
 			m_in_LightRadius(m_shader.get_attribute_location("in_LightRadius")),
 			m_u_MVP(m_shader.get_uniform_location("u_MVP")),
@@ -277,11 +278,20 @@ namespace bump
 			m_u_InvProjMatrix(m_shader.get_uniform_location("u_InvProjMatrix"))
 		{
 			die_if(model.m_submeshes.size() != 1);
+			auto const& mesh = model.m_submeshes.front().m_mesh;
 
-			// TODO: get vertex data!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+			die_if(mesh.m_vertices.empty());
+			m_buffer_vertices.set_data(GL_ARRAY_BUFFER, mesh.m_vertices.data(), 3, mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
+			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_buffer_vertices);
+
+			die_if(mesh.m_indices.empty());
+			m_buffer_indices.set_data(GL_ARRAY_BUFFER, mesh.m_indices.data(), 1, mesh.m_indices.size(), GL_STATIC_DRAW);
+			m_vertex_array.set_index_buffer(m_buffer_indices);
 
 			m_buffer_light_positions.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
 			m_vertex_array.set_array_buffer(m_in_LightPosition, m_buffer_light_positions, 1);
+			m_buffer_light_positions_vs.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
+			m_vertex_array.set_array_buffer(m_in_LightPosition_vs, m_buffer_light_positions_vs, 1);
 			m_buffer_light_colors.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
 			m_vertex_array.set_array_buffer(m_in_LightColor, m_buffer_light_colors, 1);
 			m_buffer_light_radii.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 1, 0, GL_STREAM_DRAW);
@@ -296,22 +306,26 @@ namespace bump
 				if (view.empty()) return;
 
 				m_frame_light_positions.reserve(view.size());
+				m_frame_light_positions_vs.reserve(view.size());
 				m_frame_light_colors.reserve(view.size());
 				m_frame_light_radii.reserve(view.size());
 
 				for (auto id : view)
 				{
 					auto const& l = view.get<point_light>(id);
-					m_frame_light_positions.push_back(glm::vec3(scene_matrices.m_view * glm::vec4(l.m_position, 1.0)));
+					m_frame_light_positions.push_back(l.m_position);
+					m_frame_light_positions_vs.push_back(glm::vec3(scene_matrices.m_view * glm::vec4(l.m_position, 1.0)));
 					m_frame_light_colors.push_back(l.m_color);
 					m_frame_light_radii.push_back(l.m_radius);
 				}
 
 				m_buffer_light_positions.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_light_positions.front()), 3, m_frame_light_positions.size(), GL_STREAM_DRAW);
+				m_buffer_light_positions_vs.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_light_positions_vs.front()), 3, m_frame_light_positions_vs.size(), GL_STREAM_DRAW);
 				m_buffer_light_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_light_colors.front()), 3, m_frame_light_colors.size(), GL_STREAM_DRAW);
 				m_buffer_light_radii.set_data(GL_ARRAY_BUFFER, m_frame_light_radii.data(), 1, m_frame_light_radii.size(), GL_STREAM_DRAW);
 
 				m_frame_light_positions.clear();
+				m_frame_light_positions_vs.clear();
 				m_frame_light_colors.clear();
 				m_frame_light_radii.clear();
 			}
@@ -345,6 +359,10 @@ namespace bump
 
 // todo:
 
+	// fix point lights only lighting the right-hand side of the asteroids!!??
+
+	// go through shader variables and append _vs or _ws or whatever where we need to!
+
 	// base color (standard diffuse)
 	// metallic (?) -> reflection...
 	// emissive
@@ -357,7 +375,6 @@ namespace bump
 		// write
 		// read + use
 
-	// particles need to use depth testing!
 	// change lighting rt to rgb instead of rgba?
 
 	// test spherical normal conversion vs storing normal directly. is it actually better?

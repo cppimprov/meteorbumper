@@ -66,6 +66,7 @@ namespace bump
 			auto m = glm::translate(glm::mat4(1.f), origin);
 			auto mvp = matrices.model_view_projection_matrix(m);
 
+			renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
 			renderer.set_blending(gl::renderer::blending::BLEND);
 
 			renderer.set_program(m_shader);
@@ -83,6 +84,7 @@ namespace bump
 			renderer.clear_vertex_array();
 			renderer.clear_program();
 			renderer.set_blending(gl::renderer::blending::NONE);
+			renderer.set_depth_write(gl::renderer::depth_write::ENABLED);
 		}
 		
 	} // game
