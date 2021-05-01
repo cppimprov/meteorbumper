@@ -358,19 +358,21 @@ namespace bump
 // todo:
 
 	// base color (standard diffuse)
-	// metallic (?) -> reflection...
-	// emissive
-	// specular
-	// roughness
+		// metallic (?) -> reflection...
+		// emissive
+		// specular
+		// roughness
 
 	// material parameters:
 		// what parameters / lighting model to use?
 		// add another gbuffer target?
 		// write
 		// read + use
+		
+	// nicer falloff equation (pixar?)
 
 	// change lighting rt to rgb instead of rgba?
-	
+
 	// go through shader variables and append _vs or _ws or whatever where we need to!
 
 	// test spherical normal conversion vs storing normal directly. is it actually better?
@@ -378,6 +380,5 @@ namespace bump
 	// transparent rendering questions:
 		// where to do transparent rendering?
 		// should particles write to the depth buffer?
-		// do we need a separate texture to render transparent stuff onto first?
 	
 	// add gbuffers to start screen too

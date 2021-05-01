@@ -230,6 +230,8 @@ namespace bump
 					// todo: transparent object pass
 
 					renderer.clear_framebuffer();
+					
+					renderer.set_framebuffer_color_encoding(gl::renderer::framebuffer_color_encoding::SRGB);
 
 					renderer.clear_color_buffers({ 0.93f, 0.58f, 0.39f, 1.f });
 					renderer.clear_depth_buffers();
@@ -248,6 +250,8 @@ namespace bump
 						crosshair.render(renderer, ui_matrices);
 						fps.render(renderer, ui_matrices);
 					}
+
+					renderer.set_framebuffer_color_encoding(gl::renderer::framebuffer_color_encoding::RGB);
 
 					{
 						ZoneScopedN("MainLoop - Swap Buffers ");

@@ -80,7 +80,7 @@ namespace bump
 				hflip(pixels, width, height, channels);
 			}
 
-			out.set_data(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (int)i, { width, height }, GL_RGB8, 
+			out.set_data(GL_TEXTURE_CUBE_MAP_POSITIVE_X + (int)i, { width, height }, GL_SRGB8, 
 				gl::make_texture_data_source(GL_RGB, pixels));
 
 			stbi_image_free(pixels);

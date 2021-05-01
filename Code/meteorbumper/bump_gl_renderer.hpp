@@ -30,6 +30,9 @@ namespace bump
 			void set_framebuffer(framebuffer const& fb);
 			void clear_framebuffer();
 
+			enum class framebuffer_color_encoding { RGB, SRGB };
+			void set_framebuffer_color_encoding(framebuffer_color_encoding mode);
+
 			void clear_color_buffers(glm::f32vec4 color = { 0.f, 0.f, 0.f, 0.f });
 			void clear_depth_buffers(float depth = 1.f);
 

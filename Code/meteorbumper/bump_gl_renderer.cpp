@@ -37,6 +37,14 @@ namespace bump
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
+		void renderer::set_framebuffer_color_encoding(framebuffer_color_encoding mode)
+		{
+			if (mode == framebuffer_color_encoding::SRGB)
+				glEnable(GL_FRAMEBUFFER_SRGB);
+			else
+				glDisable(GL_FRAMEBUFFER_SRGB);
+		}
+
 		void renderer::set_viewport(glm::ivec2 position, glm::uvec2 size)
 		{
 			glViewport(position.x, position.y, narrow_cast<GLsizei>(size.x), narrow_cast<GLsizei>(size.y));

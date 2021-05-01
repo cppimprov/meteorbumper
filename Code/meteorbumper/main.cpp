@@ -4,7 +4,9 @@
 #include "bump_log.hpp"
 
 #include <SDL.h>
+
 #include <cstdlib>
+#include <iostream>
 
 int main(int , char* [])
 {
@@ -22,18 +24,12 @@ int main(int , char* [])
 
 // todo next:
 
-	// gbuffers:
-		// diffuse rgb, object type tag
-		// normal xyz,
-		// depth (float as vec3), 
-		
-	// lighting!
-		// g-buffers
-			// add gbuffers to start screen as well...
-			// blit info, then copy to screen (temp).
-			// get lighting pass working and blit to screen.
-		// directional lights, point lights, spot lights
-		// proper materials!
+	// fix player collision w/ engine particles.
+
+	// allow asteroids to rotate (properly) or prevent the occasional rotation we get atm.
+
+	// materials:
+		// what to use?
 	
 	// player shield visual:
 		// draw shield as semi-transparent (second pass!)
