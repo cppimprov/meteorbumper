@@ -9,6 +9,7 @@ in float in_Scale;
 
 out vec3 vert_Color;
 out vec3 vert_Normal;
+out vec2 vert_Depth;
 
 void main()
 {
@@ -16,4 +17,5 @@ void main()
 	vert_Normal = in_NormalMatrix * in_VertexNormal;
 
 	gl_Position = in_MVP * vec4(in_VertexPosition * in_Scale, 1.0);
+	vert_Depth = gl_Position.zw;
 }

@@ -12,7 +12,7 @@
 #include "bump_game_player.hpp"
 #include "bump_game_powerups.hpp"
 #include "bump_game_skybox.hpp"
-#include "bump_gbuffers.hpp"
+#include "bump_lighting.hpp"
 #include "bump_physics.hpp"
 #include "bump_timer.hpp"
 
@@ -36,14 +36,14 @@ namespace bump
 			auto registry = entt::registry();
 			auto physics_system = physics::physics_system(registry);
 			
-			auto gbuf = gbuffers(2u, app.m_window.get_size());
-			auto skybox_blit = skybox_blit_quad(app.m_assets.m_shaders.at("skybox_blit"));
-			auto blit_pass = textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
-			auto lighting_rt = lighting_rendertarget(app.m_window.get_size());
-			auto lighting = lighting_system(registry, app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_shaders.at("light_point"), app.m_assets.m_models.at("point_light"));
+			auto gbuf = lighting::gbuffers(3u, app.m_window.get_size());
+			auto skybox_blit = lighting::skybox_blit_quad(app.m_assets.m_shaders.at("skybox_blit"));
+			auto blit_pass = lighting::textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
+			auto lighting_rt = lighting::lighting_rendertarget(app.m_window.get_size(), gbuf.m_depth_stencil);
+			auto lighting = lighting::lighting_system(registry, app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_shaders.at("light_point"), app.m_assets.m_models.at("point_light"));
 
 			auto test_light_id = registry.create();
-			auto& test_light = registry.emplace<directional_light>(test_light_id);
+			auto& test_light = registry.emplace<lighting::directional_light>(test_light_id);
 			test_light.m_direction = glm::normalize(glm::vec3(-1.f, -1.f, 0.f));
 
 			auto const camera_height = 150.f;
@@ -129,7 +129,7 @@ namespace bump
 					callbacks.m_resize = [&] (glm::ivec2 size)
 					{
 						gbuf.recreate(gbuf.m_buffers.size(), size);
-						lighting_rt.recreate(size);
+						lighting_rt.recreate(size, gbuf.m_depth_stencil);
 					};
 
 					app.m_input_handler.poll_input(callbacks);
@@ -219,7 +219,7 @@ namespace bump
 						skybox_blit.render(renderer, ui_matrices, gbuf);
 						lighting.render(renderer, glm::vec2(app.m_window.get_size()), scene_matrices, ui_matrices, gbuf);
 					}
-
+					
 					// render particles
 					{
 						asteroids.render_particles(renderer, scene_matrices);

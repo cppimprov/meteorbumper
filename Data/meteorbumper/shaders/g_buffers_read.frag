@@ -1,10 +1,10 @@
 #version 400
 
 uniform sampler2D g_buffer_1, g_buffer_2, g_buffer_3;
-uniform sampler2D g_buffer_depth;
 
 // buffer1: vec3 diffuse, float object_type_id
 // buffer2: 16 bit normal.x, 16 bit normal.y
+// buffer3: 24 bit depth, float undef
 
 
 // Packing technique based on a (now non-existent) gamedev.net topic that used to be here:
@@ -65,7 +65,7 @@ vec3 g_get_normal(const in vec2 tex_coords) {
 }
 
 float g_get_depth(const in vec2 tex_coords) {
-	return texture(g_buffer_depth, tex_coords).x;
+	return vec3_to_float(texture(g_buffer_3, tex_coords).rgb);
 }
 
 vec3 g_get_ws_position(const in vec2 tex_coords, const in float depth, const in mat4 inv_p_matrix, const in mat4 inv_v_matrix) {

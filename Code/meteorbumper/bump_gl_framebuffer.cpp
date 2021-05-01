@@ -18,7 +18,7 @@ namespace bump
 			reset(id, [] (GLuint id) { glDeleteFramebuffers(1, &id); });
 		}
 
-		void framebuffer::attach(GLenum location, GLuint texture_id)
+		void framebuffer::attach_texture(GLenum location, GLuint texture_id)
 		{
 			die_if(!is_valid());
 
@@ -31,12 +31,34 @@ namespace bump
 			die_if_error();
 		}
 
-		void framebuffer::detach(GLenum location)
+		void framebuffer::attach_renderbuffer(GLenum location, GLuint renderbuffer_id)
+		{
+			die_if(!is_valid());
+
+			glBindFramebuffer(GL_FRAMEBUFFER, get_id());
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, location, GL_RENDERBUFFER, renderbuffer_id);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+			die_if_error();
+		}
+
+		void framebuffer::detach_texture(GLenum location)
 		{
 			die_if(!is_valid());
 
 			glBindFramebuffer(GL_FRAMEBUFFER, get_id());
 			glFramebufferTexture(GL_FRAMEBUFFER, location, 0, 0);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			
+			die_if_error();
+		}
+		
+		void framebuffer::detach_renderbuffer(GLenum location)
+		{
+			die_if(!is_valid());
+
+			glBindFramebuffer(GL_FRAMEBUFFER, get_id());
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, location, GL_RENDERBUFFER, 0);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			
 			die_if_error();

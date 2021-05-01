@@ -4,7 +4,7 @@
 #include "bump_game_asteroids.hpp"
 #include "bump_game_crosshair.hpp"
 #include "bump_game_powerups.hpp"
-#include "bump_gbuffers.hpp"
+#include "bump_lighting.hpp"
 #include "bump_physics.hpp"
 
 #include <Tracy.hpp>
@@ -415,7 +415,7 @@ namespace bump
 					auto& damage = m_registry.emplace<player_weapon_damage>(beam_entity);
 					damage.m_damage = emitter.m_damage;
 
-					auto& light = m_registry.emplace<point_light>(beam_entity);
+					auto& light = m_registry.emplace<lighting::point_light>(beam_entity);
 					light.m_position = beam_physics.get_position();
 					light.m_color = segment.m_color;
 					light.m_radius = 5.f; // ?
@@ -433,7 +433,7 @@ namespace bump
 
 			// update beam lifetimes
 			{
-				auto view = m_registry.view<beam_segment, physics::rigidbody, point_light>();
+				auto view = m_registry.view<beam_segment, physics::rigidbody, lighting::point_light>();
 
 				for (auto& emitter : m_emitters)
 				{
@@ -452,7 +452,7 @@ namespace bump
 					// update beam lifetimes
 					for (auto id : emitter.m_beams)
 					{
-						auto [b, rb, l] = view.get<beam_segment, physics::rigidbody, point_light>(id);
+						auto [b, rb, l] = view.get<beam_segment, physics::rigidbody, lighting::point_light>(id);
 
 						b.m_lifetime += dt;
 						l.m_position = rb.get_position();
