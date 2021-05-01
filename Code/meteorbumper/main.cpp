@@ -28,6 +28,10 @@ int main(int , char* [])
 
 	// allow asteroids to rotate (properly) or prevent the occasional rotation we get atm.
 
+	// increase gbuffer color precision? (skybox texture shows especially bad banding).
+		// try rendering skybox directly to lighting texture?
+		// try using float gbuffers?
+
 	// materials:
 		// what to use?
 	

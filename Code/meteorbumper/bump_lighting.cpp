@@ -68,7 +68,7 @@ namespace bump
 			m_framebuffer = gl::framebuffer();
 
 			m_texture = gl::texture_2d();
-			m_texture.set_data(screen_size, GL_RGBA8, gl::make_texture_data_source(GL_RGBA, GL_UNSIGNED_BYTE));
+			m_texture.set_data(screen_size, GL_RGBA16F, gl::make_texture_data_source(GL_RGBA, GL_FLOAT));
 			m_texture.set_min_filter(GL_NEAREST);
 			m_texture.set_mag_filter(GL_NEAREST);
 
@@ -118,47 +118,6 @@ namespace bump
 			renderer.clear_texture_2d(0);
 			renderer.clear_program();
 
-			renderer.set_depth_test(gl::renderer::depth_test::LESS);
-		}
-
-		skybox_blit_quad::skybox_blit_quad(gl::shader_program const& shader):
-			m_shader(shader),
-			m_in_VertexPosition(m_shader.get_attribute_location("in_VertexPosition")),
-			m_u_MVP(m_shader.get_uniform_location("u_MVP")),
-			m_u_Position(m_shader.get_uniform_location("u_Position")),
-			m_u_Size(m_shader.get_uniform_location("u_Size")),
-			m_g_buffer_1(m_shader.get_uniform_location("g_buffer_1"))
-		{
-			auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
-			m_vertex_buffer.set_data(GL_ARRAY_BUFFER, vertices.begin(), 2, 6, GL_STATIC_DRAW);
-			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertex_buffer);
-		}
-		
-		void skybox_blit_quad::render(gl::renderer& renderer, camera_matrices const& matrices, gbuffers const& gbuf)
-		{
-			ZoneScopedN("skybox_blit_quad::render()");
-
-			auto const mvp = matrices.model_view_projection_matrix(glm::mat4(1.f));
-
-			renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
-			renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
-
-			renderer.set_program(m_shader);
-			renderer.set_uniform_4x4f(m_u_MVP, mvp);
-			renderer.set_uniform_2f(m_u_Position, glm::vec2(0.f));
-			renderer.set_uniform_2f(m_u_Size, glm::vec2(gbuf.m_buffers.front().get_size()));
-			renderer.set_uniform_1i(m_g_buffer_1, 0);
-			
-			renderer.set_texture_2d(0, gbuf.m_buffers.front());
-			renderer.set_vertex_array(m_vertex_array);
-
-			renderer.draw_arrays(GL_TRIANGLES, m_vertex_buffer.get_element_count());
-
-			renderer.clear_vertex_array();
-			renderer.clear_texture_2d(0);
-			renderer.clear_program();
-
-			renderer.set_depth_write(gl::renderer::depth_write::ENABLED);
 			renderer.set_depth_test(gl::renderer::depth_test::LESS);
 		}
 
@@ -375,7 +334,7 @@ namespace bump
 
 	// go through shader variables and append _vs or _ws or whatever where we need to!
 
-	// test spherical normal conversion vs storing normal directly. is it actually better?
+	// test spherical normal conversion, vs storing normal directly, vs storing just x and y, and calculating z
 
 	// transparent rendering questions:
 		// where to do transparent rendering?

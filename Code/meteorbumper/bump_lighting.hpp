@@ -65,27 +65,6 @@ namespace bump
 			gl::vertex_array m_vertex_array;
 		};
 		
-		class skybox_blit_quad
-		{
-		public:
-
-			explicit skybox_blit_quad(gl::shader_program const& shader);
-
-			void render(gl::renderer& renderer, camera_matrices const& ui_matrices, gbuffers const& gbuf);
-
-		private:
-
-			gl::shader_program const& m_shader;
-			GLint m_in_VertexPosition;
-			GLint m_u_MVP;
-			GLint m_u_Position;
-			GLint m_u_Size;
-			GLint m_g_buffer_1;
-
-			gl::buffer m_vertex_buffer;
-			gl::vertex_array m_vertex_array;
-		};
-
 		struct directional_light
 		{
 			glm::vec3 m_direction = glm::vec3{ 0.f, -1.f, 0.f };

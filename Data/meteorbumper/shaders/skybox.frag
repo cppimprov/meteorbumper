@@ -1,16 +1,12 @@
 #version 400
 
-float g_TYPE_SKYBOX;
-void g_set_diffuse(const in vec3 diffuse);
-void g_set_object_type(const in float id);
-
 in vec3 vert_Normal;
 
 uniform samplerCube u_CubemapTexture;
 
+layout(location = 0) out vec4 out_Color;
+
 void main()
 {
-	g_set_object_type(g_TYPE_SKYBOX);
-	g_set_diffuse(texture(u_CubemapTexture, vert_Normal).rgb);
-	// todo: normal
+	out_Color = vec4(texture(u_CubemapTexture, vert_Normal).rgb, 1.0);
 }

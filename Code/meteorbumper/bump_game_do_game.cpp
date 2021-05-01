@@ -37,7 +37,6 @@ namespace bump
 			auto physics_system = physics::physics_system(registry);
 			
 			auto gbuf = lighting::gbuffers(3u, app.m_window.get_size());
-			auto skybox_blit = lighting::skybox_blit_quad(app.m_assets.m_shaders.at("skybox_blit"));
 			auto blit_pass = lighting::textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
 			auto lighting_rt = lighting::lighting_rendertarget(app.m_window.get_size(), gbuf.m_depth_stencil);
 			auto lighting = lighting::lighting_system(registry, app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_shaders.at("light_point"), app.m_assets.m_models.at("point_light"));
@@ -196,7 +195,7 @@ namespace bump
 
 					renderer.set_framebuffer(gbuf.m_framebuffer);
 
-					renderer.clear_color_buffers({ 0.39f, 0.58f, 0.93f, 1.f });
+					renderer.clear_color_buffers({ 0.f, 0.f, 0.f, 1.f });
 					renderer.clear_depth_buffers();
 					renderer.set_viewport({ 0, 0 }, glm::uvec2(app.m_window.get_size()));
 					
@@ -204,7 +203,6 @@ namespace bump
 					{
 						ZoneScopedN("MainLoop - Render Scene");
 
-						skybox.render_scene(renderer, scene_camera, scene_matrices);
 						asteroids.render_scene(renderer, scene_matrices);
 						player.render_scene(renderer, scene_matrices);
 						powerups.render_scene(renderer, scene_matrices);
@@ -216,7 +214,7 @@ namespace bump
 
 					// lighting
 					{
-						skybox_blit.render(renderer, ui_matrices, gbuf);
+						skybox.render_scene(renderer, scene_camera, scene_matrices);
 						lighting.render(renderer, glm::vec2(app.m_window.get_size()), scene_matrices, ui_matrices, gbuf);
 					}
 					
