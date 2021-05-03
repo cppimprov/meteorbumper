@@ -38,17 +38,14 @@ namespace bump
 			auto model = glm::translate(glm::mat4(1.f), get_position(scene_camera.m_transform));
 			auto mvp = matrices.model_view_projection_matrix(model);
 
+			renderer.set_depth_test(gl::renderer::depth_test::LESS_EQUAL);
 			renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
-
 			renderer.set_program(*m_shader);
-
 			renderer.set_uniform_4x4f(m_u_MVP, mvp);
 			renderer.set_uniform_1f(m_u_Scale, 5.f); // note: ensure we render beyond the camera's near plane!
 			renderer.set_uniform_1i(m_u_CubemapTexture, 0);
-
 			renderer.set_texture_cubemap(0, *m_texture);
 			renderer.set_seamless_cubemaps(gl::renderer::seamless_cubemaps::ENABLED);
-			
 			renderer.set_vertex_array(m_vertex_array);
 
 			renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type());
@@ -58,6 +55,7 @@ namespace bump
 			renderer.clear_texture_cubemap(0);
 			renderer.clear_program();
 			renderer.set_depth_write(gl::renderer::depth_write::ENABLED);
+			renderer.set_depth_test(gl::renderer::depth_test::LESS);
 		}
 		
 	} // game

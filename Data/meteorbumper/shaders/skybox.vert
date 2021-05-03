@@ -12,4 +12,5 @@ void main()
 	vert_Normal = in_VertexPosition * 2.0;
 
 	gl_Position = u_MVP * vec4(in_VertexPosition * u_Scale, 1.0);
+	gl_Position.z = gl_Position.w; // ensure depth is always 1.0
 }

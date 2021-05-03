@@ -85,6 +85,7 @@ namespace bump
 			auto player = game::player(registry, app.m_assets);
 
 			auto powerups = game::powerups(registry, app.m_assets.m_shaders.at("powerup"), app.m_assets.m_models.at("powerup_shield"), app.m_assets.m_models.at("powerup_armor"), app.m_assets.m_models.at("powerup_lasers"));
+
 			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"), app.m_assets.m_shaders.at("particle_effect"));
 
 			auto bounds = game::bounds(registry, 300.f);
@@ -230,8 +231,8 @@ namespace bump
 
 					// lighting
 					{
-						skybox.render_scene(renderer, scene_camera, scene_matrices);
 						lighting.render(renderer, glm::vec2(app.m_window.get_size()), scene_matrices, ui_matrices, gbuf);
+						skybox.render_scene(renderer, scene_camera, scene_matrices);
 					}
 					
 					// render particles

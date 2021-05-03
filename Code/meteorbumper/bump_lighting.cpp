@@ -316,18 +316,22 @@ namespace bump
 
 // todo:
 
-	// skybox is rendering on top of geometry???
-
 	// redo colors to work with sRGB
 		// proper directional light setup (dim yellow main light, white backlight, blueish top light?)
 		// darken engine trails
 		// smaller laser light radius
 
 	// what material parameters?
-		// albedo -> color, rgb // diffuse for insulators, reflectivity for metals?
+		// albedo -> rgb // diffuse for insulators, reflectivity for metals?
 		// metallic -> 0.0 to 1.0
 		// smoothness -> 0.0 to 1.0 (matte to reflective / shiny) (could be roughness instead if we want).
-		// emissive -> flag? (turns albedo into emissive output? or additive?)
+		// emissive -> multiplier for albedo color, needs to be rendered in separate pass (can't add it to every light!)
+			// so... if it has an emissive color, replace base_color with emissive color and set a flag.
+			// then we do a separate pass that adds emissive.
+
+			// so for blender, we want to write the emissive color.
+			// and for materials import, we do the replacement...
+
 
 	// albedo
 	// base_color
