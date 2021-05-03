@@ -418,7 +418,7 @@ namespace bump
 					auto& light = m_registry.emplace<lighting::point_light>(beam_entity);
 					light.m_position = beam_physics.get_position();
 					light.m_color = segment.m_color;
-					light.m_radius = 15.f;
+					light.m_radius = 10.f;
 
 					emitter.m_beams.push_back(beam_entity);
 				}
@@ -708,11 +708,12 @@ namespace bump
 
 				m_left_engine_boost_effect.set_origin(l_mat);
 				m_left_engine_boost_effect.set_base_velocity({ 0.f, 0.f, 15.f });
-				m_left_engine_boost_effect.set_random_velocity({ 5.f, 5.f, 0.5f });
+				m_left_engine_boost_effect.set_random_velocity({ 10.f, 10.f, 0.5f });
 				m_left_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_left_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
 				m_left_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 400.f));
 				m_left_engine_boost_effect.set_color_map(color_map);
+				m_left_engine_boost_effect.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS); // not player!
 
 				auto const r_pos = glm::vec3{ 0.8f, 0.1f, 2.2f };
 				auto r_mat = glm::mat4(1.f);
@@ -720,11 +721,12 @@ namespace bump
 
 				m_right_engine_boost_effect.set_origin(r_mat);
 				m_right_engine_boost_effect.set_base_velocity({ 0.f, 0.f, 15.f });
-				m_right_engine_boost_effect.set_random_velocity({ 5.f, 5.f, 0.5f });
+				m_right_engine_boost_effect.set_random_velocity({ 10.f, 10.f, 0.5f });
 				m_right_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_right_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
 				m_right_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 400.f));
 				m_right_engine_boost_effect.set_color_map(color_map);
+				m_right_engine_boost_effect.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS); // not player!
 			}
 
 			// setup shield / armor hit effects

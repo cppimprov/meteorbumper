@@ -67,6 +67,7 @@ namespace bump
 			m_max_lifetime(high_res_duration_from_seconds(2.f)),
 			m_max_lifetime_random(high_res_duration_from_seconds(0.f)),
 			m_color_map(),
+			m_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS | physics::collision_layers::PLAYER),
 			m_base_velocity{ 0.f, 0.f, 0.f },
 			m_random_velocity{ 5.f, 5.f, 5.f },
 			m_spawn_radius_m(0.5f),
@@ -219,7 +220,7 @@ namespace bump
 			auto& collider = m_registry.emplace<physics::collider>(id);
 			collider.set_shape({ physics::sphere_shape{ particle_radius_m } });
 			collider.set_collision_layer(physics::collision_layers::PARTICLES);
-			collider.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS | physics::collision_layers::PLAYER);
+			collider.set_collision_mask(m_collision_mask);
 
 			m_particles.push_back(id);
 		}

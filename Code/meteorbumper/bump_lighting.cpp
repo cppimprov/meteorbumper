@@ -316,23 +316,35 @@ namespace bump
 
 // todo:
 
-	// base color (standard diffuse)
-		// metallic (?) -> reflection...
-		// emissive
-		// specular
-		// roughness
+	// skybox is rendering on top of geometry???
+
+	// redo colors to work with sRGB
+		// proper directional light setup (dim yellow main light, white backlight, blueish top light?)
+		// darken engine trails
+		// smaller laser light radius
+
+	// what material parameters?
+		// albedo -> color, rgb // diffuse for insulators, reflectivity for metals?
+		// metallic -> 0.0 to 1.0
+		// smoothness -> 0.0 to 1.0 (matte to reflective / shiny) (could be roughness instead if we want).
+		// emissive -> flag? (turns albedo into emissive output? or additive?)
+
+	// albedo
+	// base_color
+	// metallic
+	// roughness
+	// emissive
+
+	// r8, g8, b8, m8
+	// er8, eg8, eb8, s8 ???
 
 	// material parameters:
 		// what parameters / lighting model to use?
 		// add another gbuffer target?
 		// write
 		// read + use
-		
-	// nicer falloff equation (pixar?)
-
+	
 	// change lighting rt to rgb instead of rgba?
-
-	// go through shader variables and append _vs or _ws or whatever where we need to!
 
 	// test spherical normal conversion, vs storing normal directly, vs storing just x and y, and calculating z
 
@@ -340,4 +352,4 @@ namespace bump
 		// where to do transparent rendering?
 		// should particles write to the depth buffer?
 	
-	// add gbuffers to start screen too
+	// add gbuffers to start screen too!

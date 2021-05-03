@@ -41,9 +41,22 @@ namespace bump
 			auto lighting_rt = lighting::lighting_rendertarget(app.m_window.get_size(), gbuf.m_depth_stencil);
 			auto lighting = lighting::lighting_system(registry, app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_shaders.at("light_point"), app.m_assets.m_models.at("point_light"));
 
-			auto test_light_id = registry.create();
-			auto& test_light = registry.emplace<lighting::directional_light>(test_light_id);
-			test_light.m_direction = glm::normalize(glm::vec3(-1.f, -1.f, -1.f));
+			{
+				auto dir_light_1 = registry.create();
+				auto& l1 = registry.emplace<lighting::directional_light>(dir_light_1);
+				l1.m_direction = glm::vec3(-0.9245213270187378f, -1.4393192415695921e-08f, -0.3811303377151489f);
+				l1.m_color = glm::vec3(1.00f, 0.998f, 0.629f) * 2.5f;
+
+				auto dir_light_2 = registry.create();
+				auto& l2 = registry.emplace<lighting::directional_light>(dir_light_2);
+				l2.m_direction = glm::vec3(0.3472469449043274f, -0.9376746416091919f, 0.013631058856844902f);
+				l2.m_color = glm::vec3(0.047f, 0.326f, 0.638f) * 0.15f;
+
+				auto dir_light_3 = registry.create();
+				auto& l3 = registry.emplace<lighting::directional_light>(dir_light_3);
+				l3.m_direction = glm::vec3(0.5147935748100281f, 0.8573000431060791f, -0.004921185318380594f);
+				l3.m_color = glm::vec3(0.638f, 0.359f, 0.584f) * 0.20f;
+			}
 
 			auto const camera_height = 150.f;
 			auto scene_camera = perspective_camera();

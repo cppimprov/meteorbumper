@@ -24,16 +24,10 @@ int main(int , char* [])
 
 // todo next:
 
-	// fix player collision w/ engine particles.
-
-	// allow asteroids to rotate (properly) or prevent the occasional rotation we get atm.
-
-	// increase gbuffer color precision? (skybox texture shows especially bad banding).
-		// try rendering skybox directly to lighting texture?
-		// try using float gbuffers?
+	// shadows?
 
 	// materials:
-		// what to use?
+		// what parameters to use?
 	
 	// player shield visual:
 		// draw shield as semi-transparent (second pass!)

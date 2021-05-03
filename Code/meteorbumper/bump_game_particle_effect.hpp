@@ -43,6 +43,9 @@ namespace bump
 			void set_color_map(std::map<float, glm::vec4> colors) { m_color_map = colors; }
 			std::map<float, glm::vec4> get_color_map() const { return m_color_map; }
 
+			void set_collision_mask(std::uint32_t mask) { m_collision_mask = mask; }
+			std::uint32_t get_collision_mask() const { return m_collision_mask; }
+
 			void set_base_velocity(glm::vec3 velocity) { m_base_velocity = velocity; }
 			glm::vec3 get_base_velocity() const { return m_base_velocity; }
 
@@ -89,6 +92,7 @@ namespace bump
 			high_res_duration_t m_max_lifetime;
 			high_res_duration_t m_max_lifetime_random;
 			std::map<float, glm::vec4> m_color_map;
+			std::uint32_t m_collision_mask;
 
 			glm::vec3 m_base_velocity; // in local space
 			glm::vec3 m_random_velocity; // in local space
