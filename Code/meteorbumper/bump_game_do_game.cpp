@@ -91,7 +91,7 @@ namespace bump
 			auto bounds = game::bounds(registry, 300.f);
 
 			auto space_dust = particle_field(app.m_assets.m_shaders.at("particle_field"), 25.f, 20);
-			space_dust.set_base_color_rgb({ 0.75, 0.60, 0.45 });
+			space_dust.set_base_color_rgb({ 0.25, 0.20, 0.15 });
 			space_dust.set_color_variation_hsv({ 0.05, 0.25, 0.05 });
 
 			auto indicators = game::indicators(registry, app.m_assets.m_shaders.at("indicator"));

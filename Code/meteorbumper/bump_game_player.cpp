@@ -695,11 +695,10 @@ namespace bump
 			{
 				auto const color_map = std::map<float, glm::vec4>
 				{
-					{ 0.0f, { 1.f, 1.f, 0.9f, 1.f } },
-					{ 0.2f, { 1.f, 0.85f, 0.42f, 1.f } },
-					{ 0.4f, { 0.95f, 0.30f, 0.09f, 0.95f } },
-					{ 0.7f, { 0.52f, 0.40f, 0.29f, 0.80f } },
-					{ 1.0f, { 0.29f, 0.22f, 0.17f, 0.25f } },
+					{ 0.0f, { 1.f, 0.85f, 0.42f, 1.f } },
+					{ 0.4f, { 0.75f, 0.20f, 0.09f, 0.95f } },
+					{ 0.7f, { 0.32f, 0.20f, 0.12f, 0.80f } },
+					{ 1.0f, { 0.19f, 0.12f, 0.07f, 0.25f } },
 				};
 
 				auto const l_pos = glm::vec3{ -0.8f, 0.1f, 2.2f };
@@ -711,7 +710,7 @@ namespace bump
 				m_left_engine_boost_effect.set_random_velocity({ 10.f, 10.f, 0.5f });
 				m_left_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_left_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
-				m_left_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 400.f));
+				m_left_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 500.f));
 				m_left_engine_boost_effect.set_color_map(color_map);
 				m_left_engine_boost_effect.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS); // not player!
 
@@ -724,7 +723,7 @@ namespace bump
 				m_right_engine_boost_effect.set_random_velocity({ 10.f, 10.f, 0.5f });
 				m_right_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_right_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
-				m_right_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 400.f));
+				m_right_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 500.f));
 				m_right_engine_boost_effect.set_color_map(color_map);
 				m_right_engine_boost_effect.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS); // not player!
 			}

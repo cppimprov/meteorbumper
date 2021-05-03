@@ -4,9 +4,9 @@ layout(location = 0) out vec4 g_buffer_1;
 layout(location = 1) out vec4 g_buffer_2;
 layout(location = 2) out vec4 g_buffer_3;
 
-// buffer1: diffuse.xyz, object_type_id
-// buffer2: normal.xyz, undef
-// buffer3: depth (float as vec3), undef
+// buffer1: diffuse.xyz, metallic
+// buffer2: normal.xyz, roughness
+// buffer3: depth (float as vec3), emissive
 
 
 // Packing technique based on a (now non-existent) gamedev.net topic that used to be here:
@@ -31,15 +31,8 @@ vec2 float_to_vec2(const in float value) {
 }
 
 
-const float g_TYPE_SKYBOX = 0.0;
-const float g_TYPE_OBJECT = 1.0 / 255.0;
-
 void g_set_diffuse(const in vec3 diffuse) {
 	g_buffer_1.xyz = diffuse;
-}
-
-void g_set_object_type(const in float id) {
-	g_buffer_1.w = id;
 }
 
 void g_set_normal(const in vec3 normal) {
@@ -48,4 +41,10 @@ void g_set_normal(const in vec3 normal) {
 
 void g_set_depth(const in float depth) {
 	g_buffer_3.xyz = float_to_vec3(depth);
+}
+
+void g_set_material(const in float metallic, const in float roughness, const in float emissive) {
+	g_buffer_1.w = metallic;
+	g_buffer_2.w = roughness;
+	g_buffer_3.w = emissive;
 }

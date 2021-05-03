@@ -316,15 +316,14 @@ namespace bump
 
 // todo:
 
-	// redo colors to work with sRGB
-		// proper directional light setup (dim yellow main light, white backlight, blueish top light?)
-		// darken engine trails
-		// smaller laser light radius
+	// add cook torrance stuff.
+
+	// adjust asteroid / player / powerup materials
 
 	// what material parameters?
 		// albedo -> rgb // diffuse for insulators, reflectivity for metals?
 		// metallic -> 0.0 to 1.0
-		// smoothness -> 0.0 to 1.0 (matte to reflective / shiny) (could be roughness instead if we want).
+		// roughness -> 0.0 to 1.0
 		// emissive -> multiplier for albedo color, needs to be rendered in separate pass (can't add it to every light!)
 			// so... if it has an emissive color, replace base_color with emissive color and set a flag.
 			// then we do a separate pass that adds emissive.

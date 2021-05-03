@@ -2,9 +2,9 @@
 
 uniform sampler2D g_buffer_1, g_buffer_2, g_buffer_3;
 
-// buffer1: diffuse.xyz, object_type_id
-// buffer2: normal.xyz, undef
-// buffer3: depth (float as vec3), undef
+// buffer1: diffuse.xyz, metallic
+// buffer2: normal.xyz, roughness
+// buffer3: depth (float as vec3), emissive
 
 
 // Packing technique based on a (now non-existent) gamedev.net topic that used to be here:
@@ -26,19 +26,12 @@ float vec2_to_float(const in vec2 value) {
 }
 
 
-const float g_TYPE_SKYBOX = 0.0;
-const float g_TYPE_OBJECT = 1.0 / 255.0;
-
 vec2 g_get_target_size() {
 	return vec2(textureSize(g_buffer_1, 0));
 }
 
 vec3 g_get_diffuse(const in vec2 tex_coords) {
 	return texture(g_buffer_1, tex_coords).rgb;
-}
-
-float g_get_object_type(const in vec2 tex_coords) {
-	return texture(g_buffer_1, tex_coords).a;
 }
 
 vec3 g_get_normal(const in vec2 tex_coords) {
@@ -68,4 +61,10 @@ vec3 g_get_vs_position(const in vec2 tex_coords, const in float depth, const in 
 	vs_pos.xyz /= vs_pos.w;
 	
 	return vs_pos.xyz;
+}
+
+void g_get_material(const in vec2 tex_coords, out float metallic, out float roughness, out float emissive) {
+	metallic = texture(g_buffer_1, tex_coords).w;
+	roughness = texture(g_buffer_2, tex_coords).w;
+	emissive = texture(g_buffer_3, tex_coords).w;
 }

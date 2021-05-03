@@ -39,10 +39,16 @@ namespace bump
 			GLint m_u_MVP;
 			GLint m_u_NormalMatrix;
 			GLint m_u_Color;
+			GLint m_u_Metallic;
+			GLint m_u_Roughness;
+			GLint m_u_Emissive;
 
 			struct submesh_data
 			{
 				glm::vec3 m_color;
+				float m_metallic;
+				float m_roughness;
+				float m_emissive;
 
 				gl::buffer m_vertices;
 				gl::buffer m_normals;

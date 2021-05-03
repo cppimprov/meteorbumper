@@ -41,9 +41,9 @@ namespace bump
 			
 			auto skybox = game::skybox(app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
 
-			auto particles = particle_field(app.m_assets.m_shaders.at("particle_field"), 5.f, 20);
-			particles.set_base_color_rgb({ 0.75, 0.60, 0.45 });
-			particles.set_color_variation_hsv({ 0.05, 0.25, 0.05 });
+			auto space_dust = particle_field(app.m_assets.m_shaders.at("particle_field"), 5.f, 20);
+			space_dust.set_base_color_rgb({ 0.25, 0.20, 0.15 });
+			space_dust.set_color_variation_hsv({ 0.05, 0.25, 0.05 });
 
 			auto press_start = press_start_text(app.m_ft_context, app.m_assets.m_fonts.at("press_start"), app.m_assets.m_shaders.at("text_quad"), app.m_assets.m_shaders.at("press_start"));
 
@@ -105,7 +105,7 @@ namespace bump
 					//debug_cam.update(timer.get_last_frame_time());
 					//scene_camera.m_transform = debug_cam.m_transform;
 
-					particles.set_position(get_position(scene_camera.m_transform));
+					space_dust.set_position(get_position(scene_camera.m_transform));
 				}
 
 				// render
@@ -130,7 +130,7 @@ namespace bump
 						// render skybox
 						skybox.render_scene(app.m_renderer, scene_camera, scene_camera_matrices);
 
-						particles.render_particles(app.m_renderer, scene_camera_matrices);
+						space_dust.render_particles(app.m_renderer, scene_camera_matrices);
 
 						// ...
 					}

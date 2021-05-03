@@ -18,6 +18,9 @@ namespace bump
 			m_u_MVP(shader.get_uniform_location("u_MVP")),
 			m_u_NormalMatrix(shader.get_uniform_location("u_NormalMatrix")),
 			m_u_Color(shader.get_uniform_location("u_Color")),
+			m_u_Metallic(shader.get_uniform_location("u_Metallic")),
+			m_u_Roughness(shader.get_uniform_location("u_Roughness")),
+			m_u_Emissive(shader.get_uniform_location("u_Emissive")),
 			m_transform(1.f)
 		{
 			for (auto const& submesh : model.m_submeshes)
@@ -25,6 +28,15 @@ namespace bump
 				auto s = submesh_data();
 
 				s.m_color = submesh.m_material.m_base_color;
+				s.m_metallic = submesh.m_material.m_metallic;
+				s.m_roughness = submesh.m_material.m_roughness;
+				
+				// emissive material: replace base color with emissive
+				if (submesh.m_material.m_emissive_color != glm::vec3(0.0))
+				{
+					s.m_color = submesh.m_material.m_emissive_color;
+					s.m_emissive = 1.0;
+				}
 
 				die_if(submesh.m_mesh.m_vertices.empty());
 				s.m_vertices.set_data(GL_ARRAY_BUFFER, submesh.m_mesh.m_vertices.data(), 3, submesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
@@ -56,6 +68,9 @@ namespace bump
 				renderer.set_uniform_4x4f(m_u_MVP, mvp);
 				renderer.set_uniform_3x3f(m_u_NormalMatrix, n);
 				renderer.set_uniform_3f(m_u_Color, submesh.m_color);
+				renderer.set_uniform_1f(m_u_Metallic, submesh.m_metallic);
+				renderer.set_uniform_1f(m_u_Roughness, submesh.m_roughness);
+				renderer.set_uniform_1f(m_u_Emissive, submesh.m_emissive);
 
 				renderer.set_vertex_array(submesh.m_vertex_array);
 
