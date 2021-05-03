@@ -508,6 +508,12 @@ class PlatformMSVC:
 		meteorbumper.standard_libs = [ 'User32.lib', 'Shell32.lib', 'Ole32.lib', 'OpenGL32.lib', 'gdi32.lib', 'Winmm.lib', 'Advapi32.lib', 'Version.lib', 'Imm32.lib', 'Setupapi.lib', 'OleAut32.lib' ]
 		self.write_exe(n, build_type, meteorbumper)
 
+		normals_test = ProjectExe.from_name('normals_test', self, build_type)
+		normals_test.defines = glm.defines
+		normals_test.inc_dirs = [ glm.code_dir ]
+		self.write_exe(n, build_type, normals_test)
+
+
 class PlatformGCC:
 
 	def get_platform_name(self):

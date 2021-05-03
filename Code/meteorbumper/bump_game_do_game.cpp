@@ -42,6 +42,9 @@ namespace bump
 			auto lighting = lighting::lighting_system(registry, app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_shaders.at("light_point"), app.m_assets.m_models.at("point_light"));
 
 			{
+				// directions from:
+				// C.selected_objects[0].matrix_world.to_3x3() @ Vector((0.0, 0.0, -1.0)) in Blender, with y = z, and z = -y
+
 				auto dir_light_1 = registry.create();
 				auto& l1 = registry.emplace<lighting::directional_light>(dir_light_1);
 				l1.m_direction = glm::vec3(-0.9245213270187378f, -1.4393192415695921e-08f, -0.3811303377151489f);

@@ -333,10 +333,7 @@ namespace bump
 	// base_color
 	// metallic
 	// roughness
-	// emissive
-
-	// r8, g8, b8, m8
-	// er8, eg8, eb8, s8 ???
+	// emissive ?
 
 	// material parameters:
 		// what parameters / lighting model to use?
@@ -345,8 +342,6 @@ namespace bump
 		// read + use
 	
 	// change lighting rt to rgb instead of rgba?
-
-	// test spherical normal conversion, vs storing normal directly, vs storing just x and y, and calculating z
 
 	// transparent rendering questions:
 		// where to do transparent rendering?

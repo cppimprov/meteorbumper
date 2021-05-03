@@ -4,9 +4,9 @@ layout(location = 0) out vec4 g_buffer_1;
 layout(location = 1) out vec4 g_buffer_2;
 layout(location = 2) out vec4 g_buffer_3;
 
-// buffer1: vec3 diffuse, float object_type_id
-// buffer2: 16 bit normal.x, 16 bit normal.y
-// buffer3: 24 bit depth, float undef
+// buffer1: diffuse.xyz, object_type_id
+// buffer2: normal.xyz, undef
+// buffer3: depth (float as vec3), undef
 
 
 // Packing technique based on a (now non-existent) gamedev.net topic that used to be here:
@@ -31,19 +31,8 @@ vec2 float_to_vec2(const in float value) {
 }
 
 
-// Spherical normal technique from here:
-// http://aras-p.info/texts/CompactNormalStorage.html#method03spherical
-
 const float g_TYPE_SKYBOX = 0.0;
 const float g_TYPE_OBJECT = 1.0 / 255.0;
-
-const float PI = 3.14159265358979323846f;
-
-vec2 normal_to_spherical_normal(const in vec3 n) {
-	vec2 ret = vec2(atan(n.y, n.x) / PI, n.z);
-	return (ret + 1.0) * 0.5;
-}
-
 
 void g_set_diffuse(const in vec3 diffuse) {
 	g_buffer_1.xyz = diffuse;
@@ -54,9 +43,6 @@ void g_set_object_type(const in float id) {
 }
 
 void g_set_normal(const in vec3 normal) {
-	// vec2 sn = normal_to_spherical_normal(normal);
-	// g_buffer_2.xy = float_to_vec2(sn.x);
-	// g_buffer_2.zw = float_to_vec2(sn.y);
 	g_buffer_2.xyz = normal.xyz * 0.5 + 0.5;
 }
 

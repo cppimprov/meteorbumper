@@ -2,9 +2,9 @@
 
 uniform sampler2D g_buffer_1, g_buffer_2, g_buffer_3;
 
-// buffer1: vec3 diffuse, float object_type_id
-// buffer2: 16 bit normal.x, 16 bit normal.y
-// buffer3: 24 bit depth, float undef
+// buffer1: diffuse.xyz, object_type_id
+// buffer2: normal.xyz, undef
+// buffer3: depth (float as vec3), undef
 
 
 // Packing technique based on a (now non-existent) gamedev.net topic that used to be here:
@@ -26,24 +26,8 @@ float vec2_to_float(const in vec2 value) {
 }
 
 
-// Spherical normal technique from here (and other sources mentioned within):
-// http://aras-p.info/texts/CompactNormalStorage.html#method03spherical
-
 const float g_TYPE_SKYBOX = 0.0;
 const float g_TYPE_OBJECT = 1.0 / 255.0;
-
-const float PI = 3.14159265358979323846f;
-
-vec3 spherical_normal_to_normal(const in vec2 sn) {
-	vec2 angles = (sn.xy * 2.0) - 1.0;
-	angles.x *= PI;
-	
-	vec2 sc_theta = vec2(sin(angles.x), cos(angles.x));
-	float sc_phi = sqrt(1.0 - angles.y * angles.y);
-	
-	return vec3(sc_theta.y * sc_phi, sc_theta.x * sc_phi, angles.y);
-}
-
 
 vec2 g_get_target_size() {
 	return vec2(textureSize(g_buffer_1, 0));
@@ -58,9 +42,6 @@ float g_get_object_type(const in vec2 tex_coords) {
 }
 
 vec3 g_get_normal(const in vec2 tex_coords) {
-	//vec4 packed_value = texture(g_buffer_2, tex_coords).rgba;
-	//vec2 sn = vec2(vec2_to_float(packed_value.xy), vec2_to_float(packed_value.zw));
-	//return spherical_normal_to_normal(sn);
 	return texture(g_buffer_2, tex_coords).xyz * 2.0 - 1.0;
 }
 
