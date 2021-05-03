@@ -21,9 +21,6 @@ void main()
 {
 	vec2 uv = gl_FragCoord.xy / g_get_target_size();
 
-	//if (g_get_object_type(uv) == g_TYPE_SKYBOX) // todo: check depth???
-	//	discard;
-
 	vec3 d = g_get_diffuse(uv);
 	vec3 n = g_get_normal(uv);
 	float depth = g_get_depth(uv);

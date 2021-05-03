@@ -316,38 +316,17 @@ namespace bump
 
 // todo:
 
-	// add cook torrance stuff.
+	// add cook torrance stuff:
+		// setup materials in blender + export (asteroids, powerups, player)
+		// add cook torrance to point lights.
+		// add attenuation to point lights.
 
-	// adjust asteroid / player / powerup materials
+	// make sure that directional lights ignore skybox pixels properly.
 
-	// what material parameters?
-		// albedo -> rgb // diffuse for insulators, reflectivity for metals?
-		// metallic -> 0.0 to 1.0
-		// roughness -> 0.0 to 1.0
-		// emissive -> multiplier for albedo color, needs to be rendered in separate pass (can't add it to every light!)
-			// so... if it has an emissive color, replace base_color with emissive color and set a flag.
-			// then we do a separate pass that adds emissive.
-
-			// so for blender, we want to write the emissive color.
-			// and for materials import, we do the replacement...
-
-
-	// albedo
-	// base_color
-	// metallic
-	// roughness
-	// emissive ?
-
-	// material parameters:
-		// what parameters / lighting model to use?
-		// add another gbuffer target?
-		// write
-		// read + use
-	
 	// change lighting rt to rgb instead of rgba?
 
 	// transparent rendering questions:
 		// where to do transparent rendering?
 		// should particles write to the depth buffer?
 	
-	// add gbuffers to start screen too!
+	// add deferred lighting to start screen too!

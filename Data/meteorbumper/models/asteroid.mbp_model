@@ -1,20 +1,20 @@
 [
     {
         "material": {
-            "name": "[missing]",
+            "name": "asteroid",
             "base_color": [
+                0.448,
+                0.448,
+                0.448
+            ],
+            "emissive_color": [
                 0.0,
                 0.0,
                 0.0
             ],
-            "emissive_color": [
-                1.0,
-                0.0,
-                1.0
-            ],
-            "metallic": 0.0,
+            "metallic": 0.1,
             "specular": 0.0,
-            "roughness": 0.0,
+            "roughness": 0.8,
             "alpha": 1.0,
             "ior": 1.0
         },
