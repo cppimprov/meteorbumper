@@ -84,7 +84,7 @@ namespace bump
 		{
 		public:
 
-			explicit lighting_system(entt::registry& registry, gl::shader_program const& directional_light_shader, gl::shader_program const& point_light_shader, mbp_model const& point_light_model);
+			explicit lighting_system(entt::registry& registry, gl::shader_program const& directional_light_shader, gl::shader_program const& point_light_shader, mbp_model const& point_light_model, gl::shader_program const& emissive_shader);
 
 			void render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf);
 
@@ -161,9 +161,34 @@ namespace bump
 			};
 
 			// ... spot lights
+
+			struct emissive_renderable
+			{
+			public:
+
+				explicit emissive_renderable(entt::registry& registry, gl::shader_program const& shader);
+
+				void render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& ui_matrices, gbuffers const& gbuf);
+
+			private:
+
+				entt::registry& m_registry;
+
+				gl::shader_program const& m_shader;
+				GLint m_in_VertexPosition;
+				GLint m_u_MVP;
+				GLint m_u_Size;
+				GLint m_g_buffer_1;
+				GLint m_g_buffer_2;
+				GLint m_g_buffer_3;
+
+				gl::buffer m_buffer_vertices;
+				gl::vertex_array m_vertex_array;
+			};
 			
 			directional_light_renderable m_renderable_directional;
 			point_light_renderable m_renderable_point;
+			emissive_renderable m_renderable_emissive;
 		};
 
 		} // lighting

@@ -40,6 +40,7 @@ namespace bump
 				{ "temp_blit_renderpass", { "textured_quad.vert", "textured_quad.frag" } },
 				{ "light_directional", { "light_directional.vert", "g_buffers_read.frag", "lighting.frag", "light_directional.frag" } },
 				{ "light_point", { "light_point.vert", "g_buffers_read.frag", "lighting.frag", "light_point.frag" } },
+				{ "light_emissive", { "light_emissive.vert", "g_buffers_read.frag", "light_emissive.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>

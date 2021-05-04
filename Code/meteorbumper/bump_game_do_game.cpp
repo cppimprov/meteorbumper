@@ -39,7 +39,10 @@ namespace bump
 			auto gbuf = lighting::gbuffers(app.m_window.get_size());
 			auto blit_pass = lighting::textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
 			auto lighting_rt = lighting::lighting_rendertarget(app.m_window.get_size(), gbuf.m_depth_stencil);
-			auto lighting = lighting::lighting_system(registry, app.m_assets.m_shaders.at("light_directional"), app.m_assets.m_shaders.at("light_point"), app.m_assets.m_models.at("point_light"));
+			auto lighting = lighting::lighting_system(registry, 
+				app.m_assets.m_shaders.at("light_directional"), 
+				app.m_assets.m_shaders.at("light_point"), app.m_assets.m_models.at("point_light"),
+				app.m_assets.m_shaders.at("light_emissive"));
 
 			{
 				// light directions from blender:

@@ -124,10 +124,11 @@ namespace bump
 			renderer.set_depth_test(gl::renderer::depth_test::LESS);
 		}
 
-		lighting_system::lighting_system(entt::registry& registry, gl::shader_program const& directional_light_shader, gl::shader_program const& point_light_shader, mbp_model const& point_light_model):
+		lighting_system::lighting_system(entt::registry& registry, gl::shader_program const& directional_light_shader, gl::shader_program const& point_light_shader, mbp_model const& point_light_model, gl::shader_program const& emissive_shader):
 			m_registry(registry),
 			m_renderable_directional(registry, directional_light_shader),
-			m_renderable_point(registry, point_light_shader, point_light_model) { }
+			m_renderable_point(registry, point_light_shader, point_light_model),
+			m_renderable_emissive(registry, emissive_shader) { }
 		
 		void lighting_system::render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf)
 		{
@@ -145,6 +146,10 @@ namespace bump
 			m_renderable_point.render(renderer, scene_matrices, gbuf);
 
 			renderer.set_face_culling(gl::renderer::face_culling::CLOCKWISE);
+			renderer.set_depth_test(gl::renderer::depth_test::ALWAYS);
+
+			m_renderable_emissive.render(renderer, screen_size, ui_matrices, gbuf);
+
 			renderer.set_blending(gl::renderer::blending::NONE);
 			renderer.set_depth_write(gl::renderer::depth_write::ENABLED);
 			renderer.set_depth_test(gl::renderer::depth_test::LESS);
@@ -312,6 +317,45 @@ namespace bump
 			}
 		}
 
+		lighting_system::emissive_renderable::emissive_renderable(entt::registry& registry, gl::shader_program const& shader):
+			m_registry(registry),
+			m_shader(shader),
+			m_in_VertexPosition(m_shader.get_attribute_location("in_VertexPosition")),
+			m_u_MVP(m_shader.get_uniform_location("u_MVP")),
+			m_u_Size(m_shader.get_uniform_location("u_Size")),
+			m_g_buffer_1(m_shader.get_uniform_location("g_buffer_1")),
+			m_g_buffer_2(m_shader.get_uniform_location("g_buffer_2")),
+			m_g_buffer_3(m_shader.get_uniform_location("g_buffer_3"))
+		{
+			auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
+			m_buffer_vertices.set_data(GL_ARRAY_BUFFER, vertices.begin(), 2, 6, GL_STATIC_DRAW);
+			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_buffer_vertices);
+		}
+		
+		void lighting_system::emissive_renderable::render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& ui_matrices, gbuffers const& gbuf)
+		{
+			auto mvp = ui_matrices.model_view_projection_matrix(glm::mat4(1.f));
+
+			renderer.set_program(m_shader);
+			renderer.set_uniform_4x4f(m_u_MVP, mvp);
+			renderer.set_uniform_2f(m_u_Size, screen_size);
+			renderer.set_uniform_1i(m_g_buffer_1, 0);
+			renderer.set_uniform_1i(m_g_buffer_2, 1);
+			renderer.set_uniform_1i(m_g_buffer_3, 2);
+			renderer.set_texture_2d(0, gbuf.m_buffer_1);
+			renderer.set_texture_2d(1, gbuf.m_buffer_2);
+			renderer.set_texture_2d(2, gbuf.m_buffer_3);
+			renderer.set_vertex_array(m_vertex_array);
+
+			renderer.draw_arrays(GL_TRIANGLES, m_buffer_vertices.get_element_count());
+
+			renderer.clear_vertex_array();
+			renderer.clear_texture_2d(2);
+			renderer.clear_texture_2d(1);
+			renderer.clear_texture_2d(0);
+			renderer.clear_program();
+		}
+
 	} // lighting
 
 } // bump
@@ -319,7 +363,7 @@ namespace bump
 
 // todo:
 
-	// add emissive pass
+	// add player spot light(s)
 
 	// make sure that directional lights ignore skybox pixels properly...?
 	

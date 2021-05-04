@@ -27,15 +27,18 @@ namespace bump
 			{
 				auto s = submesh_data();
 
-				s.m_color = submesh.m_material.m_base_color;
 				s.m_metallic = submesh.m_material.m_metallic;
 				s.m_roughness = submesh.m_material.m_roughness;
 				
-				// emissive material: replace base color with emissive
 				if (submesh.m_material.m_emissive_color != glm::vec3(0.0))
 				{
-					s.m_color = submesh.m_material.m_emissive_color;
-					s.m_emissive = 1.0;
+					s.m_color = submesh.m_material.m_emissive_color; // replace base color with emissive
+					s.m_emissive = 1.f; // set flag
+				}
+				else
+				{
+					s.m_color = submesh.m_material.m_base_color; // use standard base color
+					s.m_emissive = 0.f; // clear flag
 				}
 
 				die_if(submesh.m_mesh.m_vertices.empty());
