@@ -9,7 +9,7 @@ vec3 g_get_vs_position(const in vec2 tex_coords, const in float depth, const in 
 void g_get_material(const in vec2 tex_coords, out float metallic, out float roughness, out float emissive);
 
 // lighting.frag:
-vec3 cook_torrance(vec3 n, vec3 v, vec3 l, vec3 light_color, vec3 albedo, float metallic, float roughness, float emissive);
+vec3 cook_torrance(vec3 n, vec3 v, vec3 l, vec3 l_color, vec3 albedo, float metallic, float roughness, float emissive);
 
 in vec3 vert_LightDirection;
 in vec3 vert_LightColor;

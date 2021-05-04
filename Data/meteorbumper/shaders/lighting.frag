@@ -36,9 +36,9 @@ vec3 fresnel(vec3 f0, float vdoth)
     return F;
 }
 
-vec3 cook_torrance(vec3 n, vec3 v, vec3 l, vec3 light_color, vec3 albedo, float metallic, float roughness, float emissive)
+vec3 cook_torrance(vec3 n, vec3 v, vec3 l, vec3 l_color, vec3 albedo, float metallic, float roughness, float emissive)
 {
-	vec3 c = light_color;
+	vec3 c = l_color;
 
 	float m = metallic;
 	float r = roughness;
@@ -66,4 +66,12 @@ vec3 cook_torrance(vec3 n, vec3 v, vec3 l, vec3 light_color, vec3 albedo, float 
 	vec3 color = (((kD * albedo) / PI) + CT) * c * ndotl;
 
 	return color;
+}
+
+float attenuation_inv_sqr(float l_distance)
+{
+	float d = l_distance;
+	float a = clamp(1.0 / (d * d), 0.0, 1.0);
+	
+	return a;
 }

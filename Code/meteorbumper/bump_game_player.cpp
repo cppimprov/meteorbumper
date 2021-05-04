@@ -417,8 +417,8 @@ namespace bump
 
 					auto& light = m_registry.emplace<lighting::point_light>(beam_entity);
 					light.m_position = beam_physics.get_position();
-					light.m_color = segment.m_color;
-					light.m_radius = 10.f;
+					light.m_color = segment.m_color * 10.5f;
+					light.m_radius = 15.f;
 
 					emitter.m_beams.push_back(beam_entity);
 				}
