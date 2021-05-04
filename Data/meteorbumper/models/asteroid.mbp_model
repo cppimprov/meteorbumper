@@ -1,22 +1,22 @@
 [
     {
         "material": {
-            "name": "asteroid",
+            "name": "Asteroid",
             "base_color": [
-                0.448,
-                0.448,
-                0.448
+                0.3800477385520935,
+                0.3800477385520935,
+                0.3800477385520935
             ],
             "emissive_color": [
                 0.0,
                 0.0,
                 0.0
             ],
-            "metallic": 0.1,
+            "metallic": 0.10000000149011612,
             "specular": 0.0,
-            "roughness": 0.8,
+            "roughness": 0.800000011920929,
             "alpha": 1.0,
-            "ior": 1.0
+            "ior": 1.4500000476837158
         },
         "mesh": {
             "vertices": [

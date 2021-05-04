@@ -35,7 +35,7 @@ vec3 g_get_diffuse(const in vec2 tex_coords) {
 }
 
 vec3 g_get_normal(const in vec2 tex_coords) {
-	return texture(g_buffer_2, tex_coords).xyz * 2.0 - 1.0;
+	return normalize(texture(g_buffer_2, tex_coords).xyz * 2.0 - 1.0);
 }
 
 float g_get_depth(const in vec2 tex_coords) {

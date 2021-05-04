@@ -20,12 +20,14 @@ namespace bump
 		{
 		public:
 
-			explicit gbuffers(std::size_t buffer_count, glm::ivec2 screen_size);
+			explicit gbuffers(glm::ivec2 screen_size);
 
-			void recreate(std::size_t buffer_count, glm::ivec2 screen_size);
+			void recreate(glm::ivec2 screen_size);
 
 			gl::framebuffer m_framebuffer;
-			std::vector<gl::texture_2d> m_buffers;
+			gl::texture_2d m_buffer_1; // diffuse.xyz, metallic
+			gl::texture_2d m_buffer_2; // normal.xyz, roughness (note: 16 bit floats)
+			gl::texture_2d m_buffer_3; // depth (24 bit float as vec3), emissive
 			gl::renderbuffer m_depth_stencil;
 		};
 

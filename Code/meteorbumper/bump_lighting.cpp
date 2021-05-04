@@ -12,45 +12,48 @@ namespace bump
 	namespace lighting
 	{
 	
-		gbuffers::gbuffers(std::size_t buffer_count, glm::ivec2 screen_size)
+		gbuffers::gbuffers(glm::ivec2 screen_size)
 		{
-			recreate(buffer_count, screen_size);
+			recreate(screen_size);
 		}
 
-		void gbuffers::recreate(std::size_t buffer_count, glm::ivec2 screen_size)
+		void gbuffers::recreate(glm::ivec2 screen_size)
 		{
 			die_if(glm::any(glm::lessThan(screen_size, glm::ivec2(0))));
 
-			m_buffers.clear();
+			m_buffer_1.destroy();
+			m_buffer_2.destroy();
+			m_buffer_3.destroy();
+
 			m_depth_stencil.destroy();
 			m_framebuffer.destroy();
 			
 			m_framebuffer = gl::framebuffer();
 
-			auto draw_buffers = std::vector<GLenum>();
-			draw_buffers.reserve(buffer_count);
+			m_buffer_1 = gl::texture_2d();
+			m_buffer_1.set_data(screen_size, GL_RGBA8, gl::make_texture_data_source(GL_RGBA, GL_UNSIGNED_BYTE));
+			m_buffer_1.set_min_filter(GL_NEAREST);
+			m_buffer_1.set_mag_filter(GL_NEAREST);
+			m_framebuffer.attach_texture(GL_COLOR_ATTACHMENT0, m_buffer_1);
 
-			for (auto i = std::size_t{ 0 }; i != buffer_count; ++i)
-			{
-				auto const buffer_id = GL_COLOR_ATTACHMENT0 + narrow_cast<GLenum>(i);
+			m_buffer_2 = gl::texture_2d();
+			m_buffer_2.set_data(screen_size, GL_RGBA16F, gl::make_texture_data_source(GL_RGBA, GL_FLOAT));
+			m_buffer_2.set_min_filter(GL_NEAREST);
+			m_buffer_2.set_mag_filter(GL_NEAREST);
+			m_framebuffer.attach_texture(GL_COLOR_ATTACHMENT1, m_buffer_2);
 
-				auto texture = gl::texture_2d();
-				texture.set_data(screen_size, GL_RGBA8, gl::make_texture_data_source(GL_RGBA, GL_UNSIGNED_BYTE));
-				texture.set_min_filter(GL_NEAREST);
-				texture.set_mag_filter(GL_NEAREST);
-
-				m_framebuffer.attach_texture(buffer_id, texture);
-
-				draw_buffers.push_back(buffer_id);
-				m_buffers.push_back(std::move(texture));
-			}
+			m_buffer_3 = gl::texture_2d();
+			m_buffer_3.set_data(screen_size, GL_RGBA8, gl::make_texture_data_source(GL_RGBA, GL_UNSIGNED_BYTE));
+			m_buffer_3.set_min_filter(GL_NEAREST);
+			m_buffer_3.set_mag_filter(GL_NEAREST);
+			m_framebuffer.attach_texture(GL_COLOR_ATTACHMENT2, m_buffer_3);
 
 			m_depth_stencil = gl::renderbuffer();
 			m_depth_stencil.set_data(screen_size, GL_DEPTH24_STENCIL8);
 
 			m_framebuffer.attach_renderbuffer(GL_DEPTH_STENCIL_ATTACHMENT, m_depth_stencil);
 
-			m_framebuffer.set_draw_buffers(draw_buffers);
+			m_framebuffer.set_draw_buffers({ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 });
 
 			die_if(!m_framebuffer.is_complete());
 		}
@@ -204,9 +207,9 @@ namespace bump
 				renderer.set_uniform_1i(m_g_buffer_1, 0);
 				renderer.set_uniform_1i(m_g_buffer_2, 1);
 				renderer.set_uniform_1i(m_g_buffer_3, 2);
-				renderer.set_texture_2d(0, gbuf.m_buffers[0]);
-				renderer.set_texture_2d(1, gbuf.m_buffers[1]);
-				renderer.set_texture_2d(2, gbuf.m_buffers[2]);
+				renderer.set_texture_2d(0, gbuf.m_buffer_1);
+				renderer.set_texture_2d(1, gbuf.m_buffer_2);
+				renderer.set_texture_2d(2, gbuf.m_buffer_3);
 				renderer.set_uniform_4x4f(m_u_InvProjMatrix, scene_matrices.m_inv_projection);
 				renderer.set_vertex_array(m_vertex_array);
 
@@ -296,9 +299,9 @@ namespace bump
 				renderer.set_uniform_1i(m_g_buffer_1, 0);
 				renderer.set_uniform_1i(m_g_buffer_2, 1);
 				renderer.set_uniform_1i(m_g_buffer_3, 2);
-				renderer.set_texture_2d(0, gbuf.m_buffers[0]);
-				renderer.set_texture_2d(1, gbuf.m_buffers[1]);
-				renderer.set_texture_2d(2, gbuf.m_buffers[2]);
+				renderer.set_texture_2d(0, gbuf.m_buffer_1);
+				renderer.set_texture_2d(1, gbuf.m_buffer_2);
+				renderer.set_texture_2d(2, gbuf.m_buffer_3);
 				renderer.set_uniform_4x4f(m_u_InvProjMatrix, scene_matrices.m_inv_projection);
 				renderer.set_vertex_array(m_vertex_array);
 
@@ -316,14 +319,13 @@ namespace bump
 
 // todo:
 
-	// add cook torrance stuff:
-		// setup materials in blender + export (asteroids, powerups, player)
-		// add cook torrance to point lights.
-		// add attenuation to point lights.
+	// add emissive pass
 
-	// make sure that directional lights ignore skybox pixels properly.
-
+	// make sure that directional lights ignore skybox pixels properly...?
+	
 	// change lighting rt to rgb instead of rgba?
+
+	// make it simpler to use the lighting stuff (put everything in lighting_system class?)
 
 	// transparent rendering questions:
 		// where to do transparent rendering?

@@ -9,7 +9,7 @@ vec3 g_get_vs_position(const in vec2 tex_coords, const in float depth, const in 
 void g_get_material(const in vec2 tex_coords, out float metallic, out float roughness, out float emissive);
 
 // lighting.frag:
-float attenuation_inv_sqr(float l_distance, float l_radius);
+float attenuation_inv_sqr(float l_distance);
 vec3 cook_torrance(vec3 n, vec3 v, vec3 l, vec3 l_color, vec3 albedo, float metallic, float roughness, float emissive);
 
 in vec3 vert_LightPosition; // vs
@@ -37,7 +37,7 @@ void main()
 	float metallic, roughness, emissive;
 	g_get_material(uv, metallic, roughness, emissive);
 	
-	float a = attenuation_inv_sqr(length(o - p), r);
+	float a = attenuation_inv_sqr(length(o - p));
 	vec3 color = cook_torrance(n, v, l, c * a, d, metallic, roughness, emissive);
 
 	out_Color = vec4(color, 1.0);

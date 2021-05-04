@@ -22,9 +22,6 @@ void main()
 {
 	vec2 uv = gl_FragCoord.xy / g_get_target_size();
 
-	//if (g_get_object_type(uv) == g_TYPE_SKYBOX) // todo: check depth?
-	//	discard;
-
 	vec3 d = g_get_diffuse(uv);
 	vec3 n = g_get_normal(uv);
 	vec3 p = g_get_vs_position(uv, g_get_depth(uv), u_InvProjMatrix);
@@ -36,6 +33,6 @@ void main()
 	g_get_material(uv, metallic, roughness, emissive);
 
 	vec3 color = cook_torrance(n, v, l, c, d, metallic, roughness, emissive);
-
+	
 	out_Color = vec4(color, 1.0);
 }
