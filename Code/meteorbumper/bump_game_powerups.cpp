@@ -81,7 +81,7 @@ namespace bump
 			collider.set_callback(std::move(callback));
 
 			auto& light = m_registry.emplace<lighting::point_light>(id);
-			light.m_color = m_light_colors.at(type) * 750.f;
+			light.m_color = m_light_colors.at(type) * 500.f;
 			light.m_position = position + position_offset;
 			light.m_radius = 35.f;
 

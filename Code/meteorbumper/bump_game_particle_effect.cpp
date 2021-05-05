@@ -13,49 +13,6 @@ namespace bump
 	namespace game
 	{
 		
-		namespace
-		{
-
-			glm::vec4 catmull_rom(glm::vec4 p0, glm::vec4 p1, glm::vec4 p2, glm::vec4 p3, float t)
-			{
-				return 0.5f * (
-					(2.0f * p1) +
-					(-p0 + p2) * t +
-					(2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t * t +
-					(-p0 + 3.0f * p1 - 3.0f * p2 + p3) * t * t * t);
-			}
-			
-			glm::vec4 get_color_from_map(std::map<float, glm::vec4> const& color_map, float a)
-			{
-				if (color_map.empty())
-					return glm::vec4(1.f);
-				
-				if (color_map.size() == 1)
-					return color_map.begin()->second;
-				
-				auto upper = color_map.upper_bound(a);
-				
-				if (upper == color_map.end())
-					return std::prev(color_map.end())->second;
-				
-				auto p2 = upper;
-				auto p3 = (std::next(p2) == color_map.end() ? p2 : std::next(p2));
-				
-				if (upper == color_map.begin())
-					return upper->second;
-				
-				auto p1 = std::prev(upper);
-				auto p0 = (p1 == color_map.begin() ? p1 : std::prev(p1));
-				
-				die_if(a < p1->first || a >= p2->first);
-				auto t = (a - p1->first) / (p2->first - p1->first);
-				
-				return catmull_rom(p0->second, p1->second, p2->second, p3->second, t);
-			}
-
-
-		} // unnamed
-
 		particle_effect::particle_effect(entt::registry& registry, gl::shader_program const& shader):
 			m_registry(registry),
 			m_shader(shader),
@@ -66,7 +23,6 @@ namespace bump
 			m_origin(glm::mat4(1.f)),
 			m_max_lifetime(high_res_duration_from_seconds(2.f)),
 			m_max_lifetime_random(high_res_duration_from_seconds(0.f)),
-			m_color_map(),
 			m_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS | physics::collision_layers::PLAYER),
 			m_base_velocity{ 0.f, 0.f, 0.f },
 			m_random_velocity{ 5.f, 5.f, 5.f },
@@ -74,6 +30,8 @@ namespace bump
 			m_spawning_enabled(false),
 			m_spawn_period(high_res_duration_from_seconds(1.f / 100.f)),
 			m_spawn_accumulator(0),
+			m_color_update_fn(),
+			m_size_update_fn(),
 			m_max_particle_count(500u),
 			m_rng(std::random_device()())
 		{
@@ -112,10 +70,8 @@ namespace bump
 				{
 					auto& p = view.get<particle_data>(id);
 					p.m_lifetime += dt;
-
-					auto const lf = std::clamp(high_res_duration_to_seconds(p.m_lifetime) / high_res_duration_to_seconds(m_max_lifetime), 0.f, 1.f);
-					p.m_color = get_color_from_map(m_color_map, lf);
-					p.m_size = 1.f + lf; // temp!!! get from function!
+					p.m_color = m_color_update_fn ? m_color_update_fn(id, p) : p.m_color;
+					p.m_size = m_size_update_fn ? m_size_update_fn(id, p) : p.m_size;
 				}
 
 				// destroy expired particles:
@@ -213,11 +169,6 @@ namespace bump
 			auto const dl = std::uniform_real_distribution<float>(0.f, 1.f);
 			auto const l = high_res_duration_from_seconds(high_res_duration_to_seconds(m_max_lifetime_random) * dl(m_rng));
 
-			auto& particle = m_registry.emplace<particle_data>(id);
-			particle.m_lifetime = l;
-			particle.m_color = get_color_from_map(m_color_map, 0.f);
-			particle.m_size = 1.f;
-
 			auto const particle_mass_kg = 0.005f;
 			auto const particle_radius_m = 0.01f;
 
@@ -235,6 +186,11 @@ namespace bump
 			collider.set_shape({ physics::sphere_shape{ particle_radius_m } });
 			collider.set_collision_layer(physics::collision_layers::PARTICLES);
 			collider.set_collision_mask(m_collision_mask);
+
+			auto& particle = m_registry.emplace<particle_data>(id);
+			particle.m_lifetime = l;
+			particle.m_color = m_color_update_fn ? m_color_update_fn(id, particle) : glm::vec4(1.f);
+			particle.m_size = m_size_update_fn ? m_size_update_fn(id, particle) : 1.f;
 
 			m_particles.push_back(id);
 		}

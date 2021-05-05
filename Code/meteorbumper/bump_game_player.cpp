@@ -214,7 +214,7 @@ namespace bump
 				m_low_damage_hit_effects.set_random_velocity({ 10.f, 10.f, 10.f });
 				m_low_damage_hit_effects.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_low_damage_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(0.05f));
-				m_low_damage_hit_effects.set_color_map(low_damage_color_map);
+				m_low_damage_hit_effects.set_color_update_fn(make_color_update_fn(m_low_damage_hit_effects, low_damage_color_map));
 				m_low_damage_hit_effects.set_max_particle_count(100);
 				
 				auto const medium_damage_color_map = std::map<float, glm::vec4>
@@ -228,7 +228,7 @@ namespace bump
 				m_medium_damage_hit_effects.set_random_velocity({ 10.f, 10.f, 10.f });
 				m_medium_damage_hit_effects.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_medium_damage_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(0.05f));
-				m_medium_damage_hit_effects.set_color_map(medium_damage_color_map);
+				m_medium_damage_hit_effects.set_color_update_fn(make_color_update_fn(m_medium_damage_hit_effects, medium_damage_color_map));
 				m_medium_damage_hit_effects.set_max_particle_count(100);
 				
 				auto const high_damage_color_map = std::map<float, glm::vec4>
@@ -242,7 +242,7 @@ namespace bump
 				m_high_damage_hit_effects.set_random_velocity({ 10.f, 10.f, 10.f });
 				m_high_damage_hit_effects.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_high_damage_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(0.05f));
-				m_high_damage_hit_effects.set_color_map(high_damage_color_map);
+				m_high_damage_hit_effects.set_color_update_fn(make_color_update_fn(m_high_damage_hit_effects, high_damage_color_map));
 				m_high_damage_hit_effects.set_max_particle_count(100);
 			}
 		}
@@ -700,7 +700,14 @@ namespace bump
 					{ 0.0f, { 1.f, 0.85f, 0.42f, 1.f } },
 					{ 0.4f, { 0.75f, 0.20f, 0.09f, 0.95f } },
 					{ 0.7f, { 0.32f, 0.20f, 0.12f, 0.80f } },
-					{ 1.0f, { 0.19f, 0.12f, 0.07f, 0.25f } },
+					{ 1.0f, { 0.0f, 0.0f, 0.0f, 0.25f } },
+				};
+
+				auto const size_map = std::map<float, float>
+				{
+					{ 0.0f, 4.5f },
+					{ 0.4f, 1.0f },
+					{ 1.0f, 0.f },
 				};
 
 				auto const l_pos = glm::vec3{ -0.8f, 0.1f, 2.2f };
@@ -713,7 +720,8 @@ namespace bump
 				m_left_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_left_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
 				m_left_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 500.f));
-				m_left_engine_boost_effect.set_color_map(color_map);
+				m_left_engine_boost_effect.set_color_update_fn(make_color_update_fn(m_left_engine_boost_effect, color_map));
+				m_left_engine_boost_effect.set_size_update_fn(make_size_update_fn(m_left_engine_boost_effect, size_map));
 				m_left_engine_boost_effect.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS); // not player!
 
 				auto const r_pos = glm::vec3{ 0.8f, 0.1f, 2.2f };
@@ -726,7 +734,8 @@ namespace bump
 				m_right_engine_boost_effect.set_max_lifetime(high_res_duration_from_seconds(0.75f));
 				m_right_engine_boost_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
 				m_right_engine_boost_effect.set_spawn_period(high_res_duration_from_seconds(1.f / 500.f));
-				m_right_engine_boost_effect.set_color_map(color_map);
+				m_right_engine_boost_effect.set_color_update_fn(make_color_update_fn(m_right_engine_boost_effect, color_map));
+				m_right_engine_boost_effect.set_size_update_fn(make_size_update_fn(m_right_engine_boost_effect, size_map));
 				m_right_engine_boost_effect.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS); // not player!
 			}
 
@@ -756,11 +765,19 @@ namespace bump
 					{ 1.0f, { 1.0f, 1.0f, 1.0f, 0.2f } },
 				};
 
+				auto const shield_size_map = std::map<float, float>
+				{
+					{ 0.0f, 0.8f },
+					{ 0.8f, 1.2f },
+					{ 1.0f, 3.0f },
+				};
+
 				m_shield_hit_effect.set_spawn_radius(0.1f);
 				m_shield_hit_effect.set_random_velocity({ 10.f, 10.f, 10.f });
 				m_shield_hit_effect.set_max_lifetime(high_res_duration_from_seconds(1.0f));
 				m_shield_hit_effect.set_max_lifetime_random(high_res_duration_from_seconds(0.25f));
-				m_shield_hit_effect.set_color_map(shield_color_map);
+				m_shield_hit_effect.set_color_update_fn(make_color_update_fn(m_shield_hit_effect, shield_color_map));
+				m_shield_hit_effect.set_size_update_fn(make_size_update_fn(m_shield_hit_effect, shield_size_map));
 
 				auto const armor_color_map = std::map<float, glm::vec4>
 				{
@@ -773,7 +790,7 @@ namespace bump
 				m_armor_hit_effect.set_random_velocity({ 5.f, 5.f, 5.f });
 				m_armor_hit_effect.set_max_lifetime(high_res_duration_from_seconds(5.0f));
 				m_armor_hit_effect.set_max_lifetime_random(high_res_duration_from_seconds(1.0f));
-				m_armor_hit_effect.set_color_map(armor_color_map);
+				m_armor_hit_effect.set_color_update_fn(make_color_update_fn(m_armor_hit_effect, armor_color_map));
 			}
 		}
 

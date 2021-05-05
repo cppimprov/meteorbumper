@@ -24,14 +24,6 @@ int main(int , char* [])
 
 // todo next:
 
-	// particle sizes:
-		// add particle size map, as for colors (also randomized sizing?)
-		// engine particles should start medium sized, then shrink (?), then expand as smoke.
-		// asteroid collision particles should be large and constant size (?)
-		// player shield particles should be small, grow larger rapidly at end of life(?)
-		// player armor particles should be small, and constant size.
-		// ... see what it looks like :)
-
 	// player shield visual:
 		// draw shield as semi-transparent -> need one draw call for bottom half, one for top?
 		// shield down / recharge particle effects

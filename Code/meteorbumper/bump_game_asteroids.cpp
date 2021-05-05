@@ -14,7 +14,7 @@
 
 #include <Tracy.hpp>
 
-#include <iostream>
+#include <algorithm>
 #include <random>
 
 namespace bump
@@ -73,17 +73,25 @@ namespace bump
 			{
 				auto const color_map = std::map<float, glm::vec4>
 				{
-					{ 0.0f, { 0.6f, 0.6f, 0.6f, 1.f } },
-					{ 0.7f, { 0.3f, 0.3f, 0.3f, 0.8f } },
-					{ 0.9f, { 0.3f, 0.3f, 0.3f, 0.7f } },
-					{ 1.0f, { 0.3f, 0.3f, 0.3f, 0.2f } },
+					{ 0.0f, { 0.2f, 0.2f, 0.2f, 1.f } },
+					{ 0.7f, { 0.1f, 0.1f, 0.1f, 0.8f } },
+					{ 0.9f, { 0.05f, 0.05f, 0.05f, 0.5f } },
+					{ 1.0f, { 0.01f, 0.01f, 0.01f, 0.2f } },
+				};
+
+				auto const size_map = std::map<float, float>
+				{
+					{ 0.0f, 3.0f },
+					{ 0.9f, 3.0f },
+					{ 1.0f, 5.0f },
 				};
 
 				m_hit_effects.set_spawn_radius(0.25f);
 				m_hit_effects.set_random_velocity({ 10.f, 10.f, 10.f });
 				m_hit_effects.set_max_lifetime(high_res_duration_from_seconds(4.0f));
 				m_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(1.f));
-				m_hit_effects.set_color_map(color_map);
+				m_hit_effects.set_color_update_fn(make_color_update_fn(m_hit_effects, color_map));
+				m_hit_effects.set_size_update_fn(make_size_update_fn(m_hit_effects, size_map));
 			}
 
 			spawn_wave();

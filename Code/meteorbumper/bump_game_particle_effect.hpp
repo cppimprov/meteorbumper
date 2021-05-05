@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bump_color_map.hpp"
 #include "bump_gl.hpp"
 #include "bump_time.hpp"
 
@@ -18,34 +19,15 @@ namespace bump
 	namespace game
 	{
 
-		// todo:
-			// 2.
-				// remove color map from class itself.
-				// add color / size update functions instead.
-
-			// 3.
-				// spawn stuff...
-
-		// update functions:
-			// color
-			// size
-		
-		// spawn functions:
-			// position
-			// velocity
-			// color
-			// size
-			// lifetime
-		
 		class particle_effect
 		{
 		public:
 
 			struct particle_data
 			{
-				high_res_duration_t m_lifetime;
-				glm::vec4 m_color;
-				float m_size;
+				high_res_duration_t m_lifetime = high_res_duration_from_seconds(2.f);
+				glm::vec4 m_color = glm::vec4(1.f);
+				float m_size = 1.f;
 			};
 
 			explicit particle_effect(entt::registry& registry, gl::shader_program const& shader);
@@ -60,8 +42,10 @@ namespace bump
 			void set_max_lifetime_random(high_res_duration_t time) { m_max_lifetime_random = time; }
 			high_res_duration_t get_max_lifetime_random() const { return m_max_lifetime_random; }
 
-			void set_color_map(std::map<float, glm::vec4> colors) { m_color_map = colors; }
-			std::map<float, glm::vec4> get_color_map() const { return m_color_map; }
+			using color_update_fn_t = std::function<glm::vec4(entt::entity, particle_data const&)>;
+			void set_color_update_fn(color_update_fn_t fn) { m_color_update_fn = fn; }
+			using size_update_fn_t = std::function<float(entt::entity, particle_data const&)>;
+			void set_size_update_fn(size_update_fn_t fn) { m_size_update_fn = fn; }
 
 			void set_collision_mask(std::uint32_t mask) { m_collision_mask = mask; }
 			std::uint32_t get_collision_mask() const { return m_collision_mask; }
@@ -112,7 +96,6 @@ namespace bump
 			glm::mat4 m_origin;
 			high_res_duration_t m_max_lifetime;
 			high_res_duration_t m_max_lifetime_random;
-			std::map<float, glm::vec4> m_color_map;
 			std::uint32_t m_collision_mask;
 
 			glm::vec3 m_base_velocity; // in local space
@@ -121,6 +104,9 @@ namespace bump
 			bool m_spawning_enabled;
 			high_res_duration_t m_spawn_period;
 			high_res_duration_t m_spawn_accumulator;
+			
+			color_update_fn_t m_color_update_fn;
+			size_update_fn_t m_size_update_fn;
 
 			std::size_t m_max_particle_count;
 			std::vector<entt::entity> m_particles;
@@ -131,6 +117,24 @@ namespace bump
 
 			std::mt19937 m_rng;
 		};
+
+		inline particle_effect::color_update_fn_t make_color_update_fn(particle_effect const& effect, std::map<float, glm::vec4> color_map)
+		{
+			return [&, color_map] (entt::entity, particle_effect::particle_data const& p)
+			{
+				auto a = std::clamp(high_res_duration_to_seconds(p.m_lifetime) / high_res_duration_to_seconds(effect.get_max_lifetime()), 0.f, 1.f);
+				return get_color_from_map(color_map, a);
+			};
+		}
+
+		inline particle_effect::size_update_fn_t make_size_update_fn(particle_effect const& effect, std::map<float, float> size_map)
+		{
+			return [&, size_map] (entt::entity, particle_effect::particle_data const& p)
+			{
+				auto a = std::clamp(high_res_duration_to_seconds(p.m_lifetime) / high_res_duration_to_seconds(effect.get_max_lifetime()), 0.f, 1.f);
+				return get_size_from_map(size_map, a);
+			};
+		}
 		
 	} // game
 	
