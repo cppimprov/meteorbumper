@@ -245,7 +245,10 @@ namespace bump
 						space_dust.render_particles(renderer, scene_matrices);
 					}
 
-					// todo: transparent object pass
+					// render transparent objects
+					{
+						player.render_transparent(renderer, scene_matrices);
+					}
 
 					renderer.clear_framebuffer();
 					

@@ -366,7 +366,7 @@ namespace bump
 	// add player shield (needs transparent rendering pass... -> render w/ forward lighting after deferred lighting passes?)
 		// what about particles? (sort, render to depth buffer?)
 
-	// add spot lights
+	// add spotlights
 		// use for engine lights
 		// use for player searchlight(s)
 		// add a fake volumetric effect by rendering a cone?

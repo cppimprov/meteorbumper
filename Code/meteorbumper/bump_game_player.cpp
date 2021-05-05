@@ -622,7 +622,8 @@ namespace bump
 			m_registry(registry),
 			m_entity(entt::null),
 			m_ship_renderable(assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship")),
-			m_shield_renderable(assets.m_shaders.at("player_shield"), assets.m_models.at("player_shield")),
+			m_shield_renderable_lower(assets.m_shaders.at("player_shield"), assets.m_models.at("player_shield_lower")),
+			m_shield_renderable_upper(assets.m_shaders.at("player_shield"), assets.m_models.at("player_shield_upper")),
 			m_controls(),
 			m_weapons(registry, assets.m_shaders.at("player_laser"), assets.m_shaders.at("particle_effect")),
 			m_left_engine_boost_effect(registry, assets.m_shaders.at("particle_effect")),
@@ -807,7 +808,8 @@ namespace bump
 			auto const player_velocity = m_registry.get<physics::rigidbody>(m_entity).get_velocity();
 
 			m_ship_renderable.set_transform(player_transform);
-			m_shield_renderable.set_transform(player_transform);
+			m_shield_renderable_lower.set_transform(player_transform);
+			m_shield_renderable_upper.set_transform(player_transform);
 
 			m_weapons.update(m_controls.m_firing, player_transform, player_velocity, dt);
 
@@ -883,9 +885,6 @@ namespace bump
 			ZoneScopedN("player::render_scene()");
 
 			m_ship_renderable.render(renderer, matrices);
-
-			// if (m_health.has_shield())
-			// 	m_shield_renderable.render(renderer, matrices);
 		}
 
 		void player::render_particles(gl::renderer& renderer, camera_matrices const& matrices)
@@ -906,6 +905,17 @@ namespace bump
 				
 				m_shield_hit_effect.render(renderer, matrices);
 				m_armor_hit_effect.render(renderer, matrices);
+			}
+		}
+
+		void player::render_transparent(gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			ZoneScopedN("player::render_transparent()");
+
+			if (m_health.has_shield())
+			{
+				m_shield_renderable_lower.render(renderer, matrices);
+				m_shield_renderable_upper.render(renderer, matrices);
 			}
 		}
 

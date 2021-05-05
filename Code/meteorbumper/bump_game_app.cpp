@@ -28,7 +28,7 @@ namespace bump
 				{ "press_start", { "press_start_text.vert", "press_start_text.frag" } },
 				{ "skybox", { "skybox.vert", "g_buffers_write.frag", "skybox.frag" } },
 				{ "player_ship", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
-				{ "player_shield", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
+				{ "player_shield", { "default_material_alpha.vert", "default_material_alpha.frag" } },
 				{ "asteroid", { "asteroid.vert", "g_buffers_write.frag", "asteroid.frag" } },
 				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
 				{ "particle_effect", { "particle_effect.vert", "particle_effect.frag" } },
@@ -47,7 +47,8 @@ namespace bump
 			{
 				{ "skybox", "skybox.mbp_model" },
 				{ "player_ship", "player_ship.mbp_model" },
-				{ "player_shield", "player_shield.mbp_model" },
+				{ "player_shield_lower", "player_shield_lower.mbp_model" },
+				{ "player_shield_upper", "player_shield_upper.mbp_model" },
 				{ "asteroid", "asteroid.mbp_model" },
 				{ "powerup_shield", "powerup_shield.mbp_model" },
 				{ "powerup_armor", "powerup_armor.mbp_model" },

@@ -176,20 +176,19 @@ namespace bump
 			explicit player(entt::registry& registry, assets& assets);
 			~player();
 			
-			player(player const&) = delete;
-			player& operator=(player const&) = delete;
-			player(player&&) = delete;
-			player& operator=(player&&) = delete;
-
 			void update(high_res_duration_t dt);
 			void render_scene(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_particles(gl::renderer& renderer, camera_matrices const& matrices);
+			void render_transparent(gl::renderer& renderer, camera_matrices const& matrices);
+
+			// todo: render_transparent
 
 			entt::registry& m_registry;
 
 			entt::entity m_entity;
 			basic_renderable m_ship_renderable;
-			basic_renderable m_shield_renderable;
+			basic_renderable_alpha m_shield_renderable_lower;
+			basic_renderable_alpha m_shield_renderable_upper;
 			player_controls m_controls;
 			player_weapons m_weapons;
 			player_health m_health;

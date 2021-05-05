@@ -24,13 +24,19 @@ int main(int , char* [])
 
 // todo next:
 
+	// player shield:
+		// add static lighting (get 3 directional lights)
+		// add point lights (get closest / brightest n point lights?)
+
 	// player shield visual:
-		// draw shield as semi-transparent -> need one draw call for bottom half, one for top?
+		// draw shield as semi-transparent -> need one draw call for bottom half, one for top? is there much point drawing the bottom?
 		// shield down / recharge particle effects
 
 	// player searchlight?
 
 	// shadows?
+
+	// add ecs_ to front of all the entt component type names?
 
 	// effects:
 		// add light bouys along bounds
@@ -60,10 +66,13 @@ int main(int , char* [])
 		// space station... moves away at the same speed as the main asteroid (!) so it never gets closer
 	
 // todo sometime:
+
+	// volumetric clouds
+		// simple fluid sim?
+		// volumetric lighting?
 	
 	// particle field:
 		// make more shader variables uniforms for better control (e.g. point size)
-		// [stretch: movement - slow, brownian motion style?]
 		// [stretch: lighting?]
 
 	// player controls:
