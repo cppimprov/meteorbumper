@@ -71,7 +71,7 @@ vec3 cook_torrance(vec3 n, vec3 v, vec3 l, vec3 l_color, vec3 albedo, float meta
 float attenuation_inv_sqr(float l_distance)
 {
 	float d = l_distance;
-	float a = clamp(1.0 / (d * d), 0.0, 1.0);
+	float a = clamp(1.0 / (d * d), 0.0, 1.0); // todo: should we be clamping this????
 	
 	return a;
 }

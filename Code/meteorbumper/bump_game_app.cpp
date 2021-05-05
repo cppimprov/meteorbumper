@@ -28,7 +28,7 @@ namespace bump
 				{ "press_start", { "press_start_text.vert", "press_start_text.frag" } },
 				{ "skybox", { "skybox.vert", "g_buffers_write.frag", "skybox.frag" } },
 				{ "player_ship", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
-				{ "player_shield", { "default_material_alpha.vert", "default_material_alpha.frag" } },
+				{ "player_shield", { "default_material_alpha.vert", "lighting.frag", "default_material_alpha.frag" } },
 				{ "asteroid", { "asteroid.vert", "g_buffers_write.frag", "asteroid.frag" } },
 				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
 				{ "particle_effect", { "particle_effect.vert", "particle_effect.frag" } },

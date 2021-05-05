@@ -24,26 +24,29 @@ int main(int , char* [])
 
 // todo next:
 
-	// player shield:
-		// add static lighting (get 3 directional lights)
-		// add point lights (get closest / brightest n point lights?)
+	// light bouys around bounds!
+		// create model in blender
+		// add to bounds (instanced?)
+		// add flashing lights (randomize so not in sync?)
 
-	// player shield visual:
-		// draw shield as semi-transparent -> need one draw call for bottom half, one for top? is there much point drawing the bottom?
-		// shield down / recharge particle effects
-
-	// player searchlight?
+	// player searchlight
+	// player side lights
 
 	// shadows?
 
 	// add ecs_ to front of all the entt component type names?
 
 	// effects:
-		// add light bouys along bounds
+
+		// player side-lights
+
+		// fake lighting effects:
+			// light flare (for bouys, engines, player side lights, player search light)
+
+		// shield down / recharge particle effects
 		// asteroid explode / split effects (rock chunks?)
 		// player searchlight
 		// *subtle* bloom effect?
-		// make player shield particles not collide with player when shield is up, and collide with player when shield is down?
 
 	// misc fixes:
 		// player collision with powerup slows down player :(

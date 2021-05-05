@@ -914,6 +914,66 @@ namespace bump
 
 			if (m_health.has_shield())
 			{
+				// get directional lights:
+				{
+					auto view = m_registry.view<lighting::directional_light>();
+
+					auto lights = std::vector<lighting::directional_light>();
+					lights.reserve(view.size());
+
+					for (auto id : view)
+						lights.push_back(view.get<lighting::directional_light>(id));
+
+					if (lights.size() > 3) lights.resize(3); // ick
+
+					m_shield_renderable_lower.set_directional_lights(lights);
+					m_shield_renderable_upper.set_directional_lights(lights);
+				}
+
+				// get brightest point lights:
+				{
+					auto view = m_registry.view<lighting::point_light>();
+					
+					struct id_brightness
+					{
+						entt::entity m_id;
+						float m_brightness;
+					};
+
+					auto ranking = std::vector<id_brightness>();
+					ranking.reserve(view.size());
+
+					auto const player_position = m_registry.get<physics::rigidbody>(m_entity).get_position();
+
+					// calculate a "brightness" value from distance from the player and light color
+					for (auto id : view)
+					{
+						auto const& l = view.get<lighting::point_light>(id);
+						auto const distance = std::max(glm::distance(l.m_position, player_position), 0.0001f);
+						auto const intensity = glm::length(l.m_color);
+						auto const brightness = glm::clamp(1.f / (distance * distance), 0.f, 1.f) * intensity;
+						// todo: don't clamp brightness??
+						ranking.push_back({ id, brightness });
+					}
+
+					// find the "brightest" 5 (or so) lights
+					auto const num = std::min(ranking.size(), std::size_t{ 5 });
+					std::partial_sort(ranking.begin(), ranking.begin() + num, ranking.end(),
+						[] (id_brightness const& a, id_brightness const& b) { return a.m_brightness > b.m_brightness; });
+					
+					ranking.resize(num);
+
+					// copy those lights to a vector and pass to the renderables!
+					auto lights = std::vector<lighting::point_light>();
+					lights.reserve(num);
+
+					for (auto const& b : ranking)
+						lights.push_back(view.get<lighting::point_light>(b.m_id));
+					
+					m_shield_renderable_lower.set_point_lights(lights);
+					m_shield_renderable_upper.set_point_lights(lights);
+				}
+
 				m_shield_renderable_lower.render(renderer, matrices);
 				m_shield_renderable_upper.render(renderer, matrices);
 			}

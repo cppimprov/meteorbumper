@@ -2,6 +2,7 @@
 
 #include "bump_camera.hpp"
 #include "bump_game_basic_renderable.hpp"
+#include "bump_game_basic_renderable_alpha.hpp"
 #include "bump_game_particle_effect.hpp"
 #include "bump_gl.hpp"
 #include "bump_physics.hpp"
@@ -180,8 +181,6 @@ namespace bump
 			void render_scene(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_particles(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_transparent(gl::renderer& renderer, camera_matrices const& matrices);
-
-			// todo: render_transparent
 
 			entt::registry& m_registry;
 
