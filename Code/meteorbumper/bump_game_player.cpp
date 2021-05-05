@@ -620,22 +620,24 @@ namespace bump
 
 		player::player(entt::registry& registry, assets& assets):
 			m_registry(registry),
-			m_entity(entt::null_t()),
+			m_entity(entt::null),
 			m_ship_renderable(assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship")),
 			m_shield_renderable(assets.m_shaders.at("player_shield"), assets.m_models.at("player_shield")),
 			m_controls(),
 			m_weapons(registry, assets.m_shaders.at("player_laser"), assets.m_shaders.at("particle_effect")),
 			m_left_engine_boost_effect(registry, assets.m_shaders.at("particle_effect")),
 			m_right_engine_boost_effect(registry, assets.m_shaders.at("particle_effect")),
+			m_engine_light_l(entt::null),
+			m_engine_light_r(entt::null),
 			m_shield_hit_effect(registry, assets.m_shaders.at("particle_effect")),
 			m_armor_hit_effect(registry, assets.m_shaders.at("particle_effect"))
 		{
+
+			m_entity = registry.create();
+			registry.emplace<player_tag>(m_entity);
+
 			// setup player physics
 			{
-				m_entity = registry.create();
-
-				registry.emplace<player_tag>(m_entity);
-
 				auto const mass_kg = 20.f;
 
 				auto& rigidbody = registry.emplace<physics::rigidbody>(m_entity);
@@ -728,6 +730,23 @@ namespace bump
 				m_right_engine_boost_effect.set_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS); // not player!
 			}
 
+			// set up engine lights
+			{
+				auto transform = m_registry.get<physics::rigidbody>(m_entity).get_transform();
+
+				m_engine_light_l = m_registry.create();
+				auto& light_l = m_registry.emplace<lighting::point_light>(m_engine_light_l);
+				light_l.m_color = glm::vec3{ 1.0f, 0.577093f, 0.33323f } * 100.f;
+				light_l.m_position = transform_point_to_world(transform, glm::vec3{ 0.8f, 0.1f, 2.5f });
+				light_l.m_radius = 0.f;
+
+				m_engine_light_r = m_registry.create();
+				auto& light_r = m_registry.emplace<lighting::point_light>(m_engine_light_r);
+				light_r.m_color = glm::vec3{ 1.0f, 0.577093f, 0.33323f } * 100.f;
+				light_r.m_position = transform_point_to_world(transform, glm::vec3{ -0.8f, 0.1f, 2.5f });
+				light_r.m_radius = 0.f;
+			}
+
 			// setup shield / armor hit effects
 			{
 				auto const shield_color_map = std::map<float, glm::vec4>
@@ -760,6 +779,8 @@ namespace bump
 
 		player::~player()
 		{
+			m_registry.destroy(m_engine_light_l);
+			m_registry.destroy(m_engine_light_r);
 			m_registry.destroy(m_entity);
 		}
 
@@ -819,6 +840,19 @@ namespace bump
 
 				m_shield_hit_effect.update(dt);
 				m_armor_hit_effect.update(dt);
+			}
+
+			// update engine lights
+			{
+				auto const enabled = (m_controls.m_boost_axis == 1.f);
+
+				auto& light_l = m_registry.get<lighting::point_light>(m_engine_light_l);
+				light_l.m_position = transform_point_to_world(player_transform, glm::vec3{ 0.8f, 0.1f, 2.5f });
+				light_l.m_radius = enabled ? 10.f : 0.f;
+				
+				auto& light_r = m_registry.get<lighting::point_light>(m_engine_light_r);
+				light_r.m_position = transform_point_to_world(player_transform, glm::vec3{ -0.8f, 0.1f, 2.5f });
+				light_r.m_radius = enabled ? 10.f : 0.f;
 			}
 
 			// if we have shields, make collisions "bouncier" by increasing restitution

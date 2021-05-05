@@ -363,12 +363,18 @@ namespace bump
 
 // todo:
 
-	// add player spot light(s)
+	// add player shield (needs transparent rendering pass... -> render w/ forward lighting after deferred lighting passes?)
+		// what about particles? (sort, render to depth buffer?)
+
+	// add spot lights
+		// use for engine lights
+		// use for player searchlight(s)
+		// add a fake volumetric effect by rendering a cone?
+	
+	// add shadows?
 
 	// make sure that directional lights ignore skybox pixels properly...?
 	
-	// change lighting rt to rgb instead of rgba?
-
 	// make it simpler to use the lighting stuff (put everything in lighting_system class?)
 
 	// transparent rendering questions:

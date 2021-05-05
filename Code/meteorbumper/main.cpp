@@ -24,23 +24,26 @@ int main(int , char* [])
 
 // todo next:
 
-	// shadows?
+	// particle sizes:
+		// add particle size map, as for colors (also randomized sizing?)
+		// engine particles should start medium sized, then shrink (?), then expand as smoke.
+		// asteroid collision particles should be large and constant size (?)
+		// player shield particles should be small, grow larger rapidly at end of life(?)
+		// player armor particles should be small, and constant size.
+		// ... see what it looks like :)
 
-	// materials:
-		// what parameters to use?
-	
 	// player shield visual:
-		// draw shield as semi-transparent (second pass!)
+		// draw shield as semi-transparent -> need one draw call for bottom half, one for top?
 		// shield down / recharge particle effects
 
+	// player searchlight?
+
+	// shadows?
+
 	// effects:
-		// dont' collide player engine particles with player!
-		// don't produce particles when asteroids hit bounds!
-		
-		// experiment with different particle sizes?
+		// add light bouys along bounds
 		// asteroid explode / split effects (rock chunks?)
-		// lights for:
-			// (sun) lasers, engine boost, powerups, player searchlight
+		// player searchlight
 		// *subtle* bloom effect?
 		// make player shield particles not collide with player when shield is up, and collide with player when shield is down?
 

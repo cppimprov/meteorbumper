@@ -196,6 +196,8 @@ namespace bump
 
 			particle_effect m_left_engine_boost_effect;
 			particle_effect m_right_engine_boost_effect;
+			entt::entity m_engine_light_l;
+			entt::entity m_engine_light_r;
 
 			particle_effect m_shield_hit_effect;
 			std::vector<std::tuple<glm::vec3, glm::vec3>> m_frame_shield_hits;

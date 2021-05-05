@@ -7,6 +7,8 @@
 #include <entt.hpp>
 #include <glm/glm.hpp>
 
+#include <map>
+
 namespace bump
 {
 	
@@ -53,6 +55,8 @@ namespace bump
 
 			high_res_duration_t m_max_lifetime;
 			std::vector<entt::entity> m_entities;
+
+			std::map<powerup_type, glm::vec3> m_light_colors;
 		};
 		
 	} // game

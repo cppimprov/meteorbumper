@@ -17,6 +17,25 @@ namespace bump
 	
 	namespace game
 	{
+
+		// todo:
+			// 2.
+				// remove color map from class itself.
+				// add color / size update functions instead.
+
+			// 3.
+				// spawn stuff...
+
+		// update functions:
+			// color
+			// size
+		
+		// spawn functions:
+			// position
+			// velocity
+			// color
+			// size
+			// lifetime
 		
 		class particle_effect
 		{
@@ -25,7 +44,8 @@ namespace bump
 			struct particle_data
 			{
 				high_res_duration_t m_lifetime;
-				high_res_duration_t m_max_lifetime;
+				glm::vec4 m_color;
+				float m_size;
 			};
 
 			explicit particle_effect(entt::registry& registry, gl::shader_program const& shader);
@@ -81,11 +101,12 @@ namespace bump
 			gl::shader_program const& m_shader;
 			GLint m_in_Position;
 			GLint m_in_Color;
+			GLint m_in_Size;
 			GLint m_u_MVP;
-			GLint m_u_Size;
 
 			gl::buffer m_instance_positions;
 			gl::buffer m_instance_colors;
+			gl::buffer m_instance_sizes;
 			gl::vertex_array m_vertex_array;
 
 			glm::mat4 m_origin;
@@ -106,6 +127,7 @@ namespace bump
 			
 			std::vector<glm::vec3> m_frame_positions;
 			std::vector<glm::vec4> m_frame_colors;
+			std::vector<float> m_frame_sizes;
 
 			std::mt19937 m_rng;
 		};

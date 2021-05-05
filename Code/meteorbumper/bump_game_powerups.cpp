@@ -2,6 +2,7 @@
 
 #include "bump_camera.hpp"
 #include "bump_game_player.hpp"
+#include "bump_lighting.hpp"
 #include "bump_log.hpp"
 #include "bump_physics.hpp"
 #include "bump_mbp_model.hpp"
@@ -13,6 +14,17 @@ namespace bump
 	
 	namespace game
 	{
+
+		namespace
+		{
+
+			auto const shield_color = glm::vec3{ 0.08022f, 0.637597f, 0.672443f };
+			auto const armor_color = glm::vec3{ 0.83077f, 0.799103f, 0.043735f };
+			auto const laser_color = glm::vec3{ 0.05448f, 0.814847f, 0.090842f };
+
+			auto const position_offset = glm::vec3{ 0.f, -01.5f, 0.f };
+
+		} // unnamed
 		
 		powerups::powerups(entt::registry& registry,
 				gl::shader_program const& shader,
@@ -23,7 +35,11 @@ namespace bump
 			m_shield_renderable(shader, shield_model),
 			m_armor_renderable(shader, armor_model),
 			m_lasers_renderable(shader, lasers_model),
-			m_max_lifetime(high_res_duration_from_seconds(5.f))
+			m_max_lifetime(high_res_duration_from_seconds(5.f)),
+			m_light_colors{ 
+				{ powerup_type::RESET_SHIELDS, shield_color }, 
+				{ powerup_type::RESET_ARMOR, armor_color }, 
+				{ powerup_type::UPGRADE_LASERS, laser_color } }
 		{
 			
 		}
@@ -64,15 +80,23 @@ namespace bump
 
 			collider.set_callback(std::move(callback));
 
+			auto& light = m_registry.emplace<lighting::point_light>(id);
+			light.m_color = m_light_colors.at(type) * 750.f;
+			light.m_position = position + position_offset;
+			light.m_radius = 35.f;
+
 			m_entities.push_back(id);
 		}
 
 		void powerups::update(high_res_duration_t dt)
 		{
-			auto view = m_registry.view<powerup_data>();
+			auto view = m_registry.view<powerup_data, physics::rigidbody, lighting::point_light>();
 
 			for (auto id : view)
+			{
 				view.get<powerup_data>(id).m_lifetime += dt;
+				view.get<lighting::point_light>(id).m_position = view.get<physics::rigidbody>(id).get_position() + position_offset;
+			}
 			
 			auto first_dead_entity = std::remove_if(m_entities.begin(), m_entities.end(),
 				[&] (entt::entity id)
