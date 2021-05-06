@@ -24,24 +24,17 @@ int main(int , char* [])
 
 // todo next:
 
-	// light bouys around bounds!
-		// create model in blender
-		// add to bounds (instanced?)
-		// add flashing lights (randomize so not in sync?)
-
 	// player searchlight
 	// player side lights
 
 	// shadows?
 
-	// add ecs_ to front of all the entt component type names?
-
 	// effects:
 
 		// player side-lights
 
-		// fake lighting effects:
-			// light flare (for bouys, engines, player side lights, player search light)
+		// fake volumetric effects:
+			// light "flare" (for bouys, engines, player side lights, player search light)
 
 		// shield down / recharge particle effects
 		// asteroid explode / split effects (rock chunks?)

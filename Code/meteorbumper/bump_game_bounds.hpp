@@ -1,9 +1,18 @@
 #pragma once
 
+#include "bump_gl.hpp"
+#include "bump_game_basic_renderable.hpp"
+
 #include <entt.hpp>
+#include <glm/glm.hpp>
+
+#include <vector>
 
 namespace bump
 {
+
+	struct mbp_model;
+	class camera_matrices;
 	
 	namespace game
 	{
@@ -14,12 +23,9 @@ namespace bump
 		{
 		public:
 
-			explicit bounds(entt::registry& registry, float radius);
+			explicit bounds(entt::registry& registry, float radius, gl::shader_program const& bouy_shader, mbp_model const& bouy_model);
 
-			bounds(bounds const&) = delete;
-			bounds& operator=(bounds const&) = delete;
-			bounds(bounds&&) = delete;
-			bounds& operator=(bounds&&) = delete;
+			void render_scene(gl::renderer& renderer, camera_matrices const& matrices);
 
 			~bounds();
 
@@ -27,6 +33,11 @@ namespace bump
 
 			entt::registry& m_registry;
 			entt::entity m_id;
+
+			struct bouy_light_tag {}; // tag type for bouy light entites
+			
+			basic_renderable_instanced m_bouy;
+			std::vector<glm::mat4> m_bouy_transforms;
 		};
 		
 	} // game

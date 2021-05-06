@@ -91,7 +91,7 @@ namespace bump
 
 			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"), app.m_assets.m_shaders.at("particle_effect"));
 
-			auto bounds = game::bounds(registry, 300.f);
+			auto bounds = game::bounds(registry, 300.f, app.m_assets.m_shaders.at("bouy"), app.m_assets.m_models.at("bouy"));
 
 			auto space_dust = particle_field(app.m_assets.m_shaders.at("particle_field"), 25.f, 20);
 			space_dust.set_base_color_rgb({ 0.25, 0.20, 0.15 });
@@ -223,6 +223,7 @@ namespace bump
 					{
 						ZoneScopedN("MainLoop - Render Scene");
 
+						bounds.render_scene(renderer, scene_matrices);
 						asteroids.render_scene(renderer, scene_matrices);
 						player.render_scene(renderer, scene_matrices);
 						powerups.render_scene(renderer, scene_matrices);

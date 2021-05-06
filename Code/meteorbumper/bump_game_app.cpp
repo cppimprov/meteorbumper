@@ -27,6 +27,7 @@ namespace bump
 				{ "text_quad", { "text_quad.vert", "text_quad.frag" } },
 				{ "press_start", { "press_start_text.vert", "press_start_text.frag" } },
 				{ "skybox", { "skybox.vert", "g_buffers_write.frag", "skybox.frag" } },
+				{ "bouy", { "default_material_instanced.vert", "g_buffers_write.frag", "default_material.frag" } },
 				{ "player_ship", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
 				{ "player_shield", { "default_material_alpha.vert", "lighting.frag", "default_material_alpha.frag" } },
 				{ "asteroid", { "asteroid.vert", "g_buffers_write.frag", "asteroid.frag" } },
@@ -46,6 +47,7 @@ namespace bump
 			auto const models = std::vector<model_metadata>
 			{
 				{ "skybox", "skybox.mbp_model" },
+				{ "bouy", "bouy.mbp_model" },
 				{ "player_ship", "player_ship.mbp_model" },
 				{ "player_shield_lower", "player_shield_lower.mbp_model" },
 				{ "player_shield_upper", "player_shield_upper.mbp_model" },

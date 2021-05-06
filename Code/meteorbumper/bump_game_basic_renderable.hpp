@@ -60,6 +60,54 @@ namespace bump
 
 			glm::mat4 m_transform;
 		};
+		
+		class basic_renderable_instanced
+		{
+		public:
+
+			explicit basic_renderable_instanced(gl::shader_program const& shader, mbp_model const& model);
+
+			basic_renderable_instanced(basic_renderable_instanced const&) = delete;
+			basic_renderable_instanced& operator=(basic_renderable_instanced const&) = delete;
+			
+			basic_renderable_instanced(basic_renderable_instanced&&) = default;
+			basic_renderable_instanced& operator=(basic_renderable_instanced&&) = default;
+
+			void render(gl::renderer& renderer, camera_matrices const& matrices, std::vector<glm::mat4> const& transforms);
+
+		private:
+
+			gl::shader_program const* m_shader;
+			GLint m_in_VertexPosition;
+			GLint m_in_VertexNormal;
+			GLint m_in_MVP;
+			GLint m_in_NormalMatrix;
+			GLint m_u_Color;
+			GLint m_u_Metallic;
+			GLint m_u_Roughness;
+			GLint m_u_Emissive;
+
+			gl::buffer m_buffer_mvp_matrices;
+			gl::buffer m_buffer_normal_matrices;
+
+			struct submesh_data
+			{
+				glm::vec3 m_color;
+				float m_metallic;
+				float m_roughness;
+				float m_emissive;
+
+				gl::buffer m_vertices;
+				gl::buffer m_normals;
+				gl::buffer m_indices;
+				gl::vertex_array m_vertex_array;
+			};
+
+			std::vector<submesh_data> m_submeshes;
+
+			std::vector<glm::mat4> m_frame_mvp_matrices;
+			std::vector<glm::mat3> m_frame_normal_matrices;
+		};
 
 	} // game
 	

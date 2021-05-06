@@ -34,7 +34,7 @@ namespace bump
 			m_in_Color(shader.get_attribute_location("in_Color")),
 			m_in_Scale(shader.get_attribute_location("in_Scale")),
 			m_rng(std::random_device()()),
-			m_wave_number(1),
+			m_wave_number(0),
 			m_asteroid_type_probability{
 				{ 0.40f, asteroid_type::SMALL },
 				{ 0.70f, asteroid_type::MEDIUM },
