@@ -13,6 +13,7 @@ vec3 cook_torrance(vec3 n, vec3 v, vec3 l, vec3 l_color, vec3 albedo, float meta
 
 in vec3 vert_LightDirection;
 in vec3 vert_LightColor;
+in float vert_LightShadows;
 
 uniform mat4 u_LightViewMatrix;
 uniform mat4 u_InvViewMatrix;
@@ -41,11 +42,12 @@ void main()
 	// shadow! todo: put in lighting.frag
 	vec4 p_ws = u_InvViewMatrix * vec4(p, 1.0);
 	vec4 p_ls = u_LightViewMatrix * p_ws;
-	p_ls.xyz /= p_ls.w;
-	float shadow_depth = texture(u_Shadows, p_ls.xy * 0.5 + 0.5).x * 2.0 - 1.0;
-	color = vec3(shadow_depth > p_ls.z ? 1.0 : 0.0);
-
-	// TODO: only do this for the first light!!!!!!
+	p_ls.xyz = (p_ls.xyz / p_ls.w) * 0.5 + 0.5;
+	float shadow_depth = texture(u_Shadows, p_ls.xy).x;
+	float shadow = (shadow_depth > p_ls.z ? 0.0 : 1.0);
+	color = (vert_LightShadows == 1.0) ? shadow : color;
 	
+	// todo: not quite like this!
+
 	out_Color = vec4(color, 1.0);
 }

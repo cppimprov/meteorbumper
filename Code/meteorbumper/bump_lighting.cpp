@@ -173,6 +173,7 @@ namespace bump
 			m_in_VertexPosition(m_shader.get_attribute_location("in_VertexPosition")),
 			m_in_LightDirection(m_shader.get_attribute_location("in_LightDirection")),
 			m_in_LightColor(m_shader.get_attribute_location("in_LightColor")),
+			m_in_LightShadows(m_shader.get_attribute_location("in_LightShadows")),
 			m_u_MVP(m_shader.get_uniform_location("u_MVP")),
 			m_u_Size(m_shader.get_uniform_location("u_Size")),
 			m_g_buffer_1(m_shader.get_uniform_location("g_buffer_1")),
@@ -191,6 +192,9 @@ namespace bump
 			m_vertex_array.set_array_buffer(m_in_LightDirection, m_buffer_light_directions, 1);
 			m_buffer_light_colors.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
 			m_vertex_array.set_array_buffer(m_in_LightColor, m_buffer_light_colors, 1);
+			m_buffer_light_shadows.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 1, 0, GL_STREAM_DRAW);
+			m_vertex_array.set_array_buffer(m_in_LightShadows, m_buffer_light_shadows, 1);
+			
 		}
 
 		void lighting_system::directional_light_renderable::render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& light_matrices, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf, gl::texture_2d const& shadow_map)
@@ -202,19 +206,23 @@ namespace bump
 
 				m_frame_light_directions.reserve(view.size());
 				m_frame_light_colors.reserve(view.size());
+				m_frame_light_shadows.reserve(view.size());
 
 				for (auto id : view)
 				{
 					auto const& l = view.get<directional_light>(id);
 					m_frame_light_directions.push_back(glm::vec3(scene_matrices.m_view * glm::vec4(l.m_direction, 0.f)));
 					m_frame_light_colors.push_back(l.m_color);
+					m_frame_light_shadows.push_back(m_registry.has<main_light_tag>(id) ? 1.f : 0.f);
 				}
 
 				m_buffer_light_directions.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_light_directions.front()), 3, m_frame_light_directions.size(), GL_STREAM_DRAW);
 				m_buffer_light_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_light_colors.front()), 3, m_frame_light_colors.size(), GL_STREAM_DRAW);
+				m_buffer_light_shadows.set_data(GL_ARRAY_BUFFER, m_frame_light_shadows.data(), 1, m_frame_light_shadows.size(), GL_STREAM_DRAW);
 
 				m_frame_light_directions.clear();
 				m_frame_light_colors.clear();
+				m_frame_light_shadows.clear();
 			}
 
 			// render
@@ -384,13 +392,8 @@ namespace bump
 // todo:
 
 	// shadows
-
-		// render scene depth
-			// player
-			// bouys
-			// powerups
-		
-		// don't render color output! render depth instead...
+		// add tag component to main light
+		// add shader in thing and then do that!
 
 	// add spotlights
 		// use for engine lights

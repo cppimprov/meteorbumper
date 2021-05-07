@@ -49,6 +49,7 @@ namespace bump
 			// light directions from blender:
 			// C.selected_objects[0].matrix_world.to_3x3() @ Vector((0.0, 0.0, -1.0)) # (and with y = z, z = -y)
 			auto dir_light_1 = registry.create();
+			registry.emplace<lighting::main_light_tag>(dir_light_1);
 			auto& l1 = registry.emplace<lighting::directional_light>(dir_light_1);
 			l1.m_direction = glm::vec3(-0.9245213270187378f, -1.4393192415695921e-08f, -0.3811303377151489f);
 			l1.m_color = glm::vec3(1.00f, 0.998f, 0.629f) * 2.5f;

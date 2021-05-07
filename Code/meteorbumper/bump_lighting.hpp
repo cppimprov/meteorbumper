@@ -90,6 +90,8 @@ namespace bump
 			float m_radius = 1.f;
 		};
 
+		struct main_light_tag {};
+
 		class lighting_system
 		{
 		public:
@@ -116,6 +118,7 @@ namespace bump
 				GLint m_in_VertexPosition;
 				GLint m_in_LightDirection;
 				GLint m_in_LightColor;
+				GLint m_in_LightShadows;
 				GLint m_u_MVP;
 				GLint m_u_Size;
 				GLint m_g_buffer_1;
@@ -129,10 +132,12 @@ namespace bump
 				gl::buffer m_buffer_vertices;
 				gl::buffer m_buffer_light_directions;
 				gl::buffer m_buffer_light_colors;
+				gl::buffer m_buffer_light_shadows;
 				gl::vertex_array m_vertex_array;
 
 				std::vector<glm::vec3> m_frame_light_directions;
 				std::vector<glm::vec3> m_frame_light_colors;
+				std::vector<float> m_frame_light_shadows;
 			};
 
 			struct point_light_renderable
