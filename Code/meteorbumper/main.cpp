@@ -24,6 +24,8 @@ int main(int , char* [])
 
 // todo next:
 
+	// use blending for particles? (or premultiplied alpha?)
+
 	// player searchlight
 	// player side lights
 

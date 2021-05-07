@@ -31,6 +31,16 @@ namespace bump
 			gl::renderbuffer m_depth_stencil;
 		};
 
+		class shadow_rendertarget
+		{
+		public:
+
+			explicit shadow_rendertarget(glm::ivec2 size);
+			
+			gl::framebuffer m_framebuffer;
+			gl::texture_2d m_texture;
+		};
+
 		class lighting_rendertarget
 		{
 		public:
@@ -43,11 +53,11 @@ namespace bump
 			gl::texture_2d m_texture;
 		};
 
-		class textured_quad
+		class tone_map_quad
 		{
 		public:
 
-			explicit textured_quad(gl::shader_program const& shader);
+			explicit tone_map_quad(gl::shader_program const& shader);
 
 			glm::vec2 m_position;
 			glm::vec2 m_size;

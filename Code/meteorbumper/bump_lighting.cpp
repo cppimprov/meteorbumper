@@ -58,6 +58,18 @@ namespace bump
 			die_if(!m_framebuffer.is_complete());
 		}
 
+		shadow_rendertarget::shadow_rendertarget(glm::ivec2 size)
+		{
+			m_texture.set_data(size, GL_RGBA8, gl::make_texture_data_source(GL_RGBA, GL_UNSIGNED_BYTE));
+			m_texture.set_min_filter(GL_NEAREST);
+			m_texture.set_mag_filter(GL_NEAREST);
+			
+			m_framebuffer.attach_texture(GL_COLOR_ATTACHMENT0, m_texture);
+			m_framebuffer.set_draw_buffers({ GL_COLOR_ATTACHMENT0 });
+
+			die_if(!m_framebuffer.is_complete());
+		}
+
 		lighting_rendertarget::lighting_rendertarget(glm::ivec2 screen_size, gl::renderbuffer const& depth_stencil_rt)
 		{
 			recreate(screen_size, depth_stencil_rt);
@@ -83,7 +95,7 @@ namespace bump
 			die_if(!m_framebuffer.is_complete());
 		}
 
-		textured_quad::textured_quad(gl::shader_program const& shader):
+		tone_map_quad::tone_map_quad(gl::shader_program const& shader):
 			m_shader(shader),
 			m_position(0.f),
 			m_size(1.f),
@@ -98,7 +110,7 @@ namespace bump
 			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertex_buffer);
 		}
 		
-		void textured_quad::render(gl::texture_2d const& texture, gl::renderer& renderer, camera_matrices const& matrices)
+		void tone_map_quad::render(gl::texture_2d const& texture, gl::renderer& renderer, camera_matrices const& matrices)
 		{
 			ZoneScopedN("textured_quad::render()");
 
@@ -363,22 +375,23 @@ namespace bump
 
 // todo:
 
-	// add player shield (needs transparent rendering pass... -> render w/ forward lighting after deferred lighting passes?)
-		// what about particles? (sort, render to depth buffer?)
+	// shadows
+
+		// render scene depth
+			// asteroids
+			// player
+			// bouys
+			// powerups
 
 	// add spotlights
 		// use for engine lights
 		// use for player searchlight(s)
 		// add a fake volumetric effect by rendering a cone?
 	
-	// add shadows?
+	// add shadows? (from main light only?)
 
 	// make sure that directional lights ignore skybox pixels properly...?
 	
 	// make it simpler to use the lighting stuff (put everything in lighting_system class?)
 
-	// transparent rendering questions:
-		// where to do transparent rendering?
-		// should particles write to the depth buffer?
-	
 	// add deferred lighting to start screen too!

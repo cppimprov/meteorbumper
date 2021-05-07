@@ -10,5 +10,8 @@ void main()
 {
 	vec3 color = texture(u_Texture, vert_UV).rgb;
 
-	out_Color = vec4(color, 1.0);
+	float exposure = 2.0; // todo: make this configurable?
+	vec3 mapped = vec3(1.0) - exp(-color * exposure);
+
+	out_Color = vec4(mapped, 1.0);
 }

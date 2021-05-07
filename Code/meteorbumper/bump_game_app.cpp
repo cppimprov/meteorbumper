@@ -38,10 +38,11 @@ namespace bump
 				{ "player_laser", { "player_laser.vert", "player_laser.geom", "g_buffers_write.frag", "player_laser.frag" } },
 				{ "fps_counter", { "fps_counter.vert", "fps_counter.frag" } },
 				{ "powerup", { "default_material.vert", "g_buffers_write.frag", "default_material.frag" } },
-				{ "temp_blit_renderpass", { "textured_quad.vert", "textured_quad.frag" } },
+				{ "tone_mapping", { "tone_mapping.vert", "tone_mapping.frag" } },
 				{ "light_directional", { "light_directional.vert", "g_buffers_read.frag", "lighting.frag", "light_directional.frag" } },
 				{ "light_point", { "light_point.vert", "g_buffers_read.frag", "lighting.frag", "light_point.frag" } },
 				{ "light_emissive", { "light_emissive.vert", "g_buffers_read.frag", "light_emissive.frag" } },
+				{ "asteroid_depth", { "asteroid_depth.vert", "g_buffers_write.frag", "asteroid_depth.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>

@@ -37,32 +37,29 @@ namespace bump
 			auto physics_system = physics::physics_system(registry);
 			
 			auto gbuf = lighting::gbuffers(app.m_window.get_size());
-			auto blit_pass = lighting::textured_quad(app.m_assets.m_shaders.at("temp_blit_renderpass"));
+			auto shadow_rt = lighting::shadow_rendertarget(glm::ivec2{ 960, 540 });
 			auto lighting_rt = lighting::lighting_rendertarget(app.m_window.get_size(), gbuf.m_depth_stencil);
 			auto lighting = lighting::lighting_system(registry, 
 				app.m_assets.m_shaders.at("light_directional"), 
 				app.m_assets.m_shaders.at("light_point"), app.m_assets.m_models.at("point_light"),
 				app.m_assets.m_shaders.at("light_emissive"));
+			auto tone_map_blit = lighting::tone_map_quad(app.m_assets.m_shaders.at("tone_mapping"));
 
-			{
-				// light directions from blender:
-				// C.selected_objects[0].matrix_world.to_3x3() @ Vector((0.0, 0.0, -1.0)) # (and with y = z, z = -y)
 
-				auto dir_light_1 = registry.create();
-				auto& l1 = registry.emplace<lighting::directional_light>(dir_light_1);
-				l1.m_direction = glm::vec3(-0.9245213270187378f, -1.4393192415695921e-08f, -0.3811303377151489f);
-				l1.m_color = glm::vec3(1.00f, 0.998f, 0.629f) * 2.5f;
-
-				auto dir_light_2 = registry.create();
-				auto& l2 = registry.emplace<lighting::directional_light>(dir_light_2);
-				l2.m_direction = glm::vec3(0.3472469449043274f, -0.9376746416091919f, 0.013631058856844902f);
-				l2.m_color = glm::vec3(0.047f, 0.326f, 0.638f) * 0.15f;
-
-				auto dir_light_3 = registry.create();
-				auto& l3 = registry.emplace<lighting::directional_light>(dir_light_3);
-				l3.m_direction = glm::vec3(0.5147935748100281f, 0.8573000431060791f, -0.004921185318380594f);
-				l3.m_color = glm::vec3(0.638f, 0.359f, 0.584f) * 0.20f;
-			}
+			// light directions from blender:
+			// C.selected_objects[0].matrix_world.to_3x3() @ Vector((0.0, 0.0, -1.0)) # (and with y = z, z = -y)
+			auto dir_light_1 = registry.create();
+			auto& l1 = registry.emplace<lighting::directional_light>(dir_light_1);
+			l1.m_direction = glm::vec3(-0.9245213270187378f, -1.4393192415695921e-08f, -0.3811303377151489f);
+			l1.m_color = glm::vec3(1.00f, 0.998f, 0.629f) * 2.5f;
+			auto dir_light_2 = registry.create();
+			auto& l2 = registry.emplace<lighting::directional_light>(dir_light_2);
+			l2.m_direction = glm::vec3(0.3472469449043274f, -0.9376746416091919f, 0.013631058856844902f);
+			l2.m_color = glm::vec3(0.047f, 0.326f, 0.638f) * 0.15f;
+			auto dir_light_3 = registry.create();
+			auto& l3 = registry.emplace<lighting::directional_light>(dir_light_3);
+			l3.m_direction = glm::vec3(0.5147935748100281f, 0.8573000431060791f, -0.004921185318380594f);
+			l3.m_color = glm::vec3(0.638f, 0.359f, 0.584f) * 0.20f;
 
 			auto const camera_height = 150.f;
 			auto scene_camera = perspective_camera();
@@ -89,9 +86,10 @@ namespace bump
 
 			auto powerups = game::powerups(registry, app.m_assets.m_shaders.at("powerup"), app.m_assets.m_models.at("powerup_shield"), app.m_assets.m_models.at("powerup_armor"), app.m_assets.m_models.at("powerup_lasers"));
 
-			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid"), app.m_assets.m_shaders.at("particle_effect"));
+			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid_depth"), app.m_assets.m_shaders.at("asteroid"), app.m_assets.m_shaders.at("particle_effect"));
 
-			auto bounds = game::bounds(registry, 300.f, app.m_assets.m_shaders.at("bouy"), app.m_assets.m_models.at("bouy"));
+			auto const bounds_radius = 300.f;
+			auto bounds = game::bounds(registry, bounds_radius, app.m_assets.m_shaders.at("bouy"), app.m_assets.m_models.at("bouy"));
 
 			auto space_dust = particle_field(app.m_assets.m_shaders.at("particle_field"), 25.f, 20);
 			space_dust.set_base_color_rgb({ 0.25, 0.20, 0.15 });
@@ -229,8 +227,67 @@ namespace bump
 						powerups.render_scene(renderer, scene_matrices);
 					}
 
-					renderer.set_framebuffer(lighting_rt.m_framebuffer);
+					renderer.set_framebuffer(shadow_rt.m_framebuffer);
+					renderer.set_viewport({ 0, 0 }, glm::uvec2(shadow_rt.m_texture.get_size()));
+					renderer.clear_color_buffers(); // TEMP!
+					renderer.clear_depth_buffers();
 
+					// render depth for shadows
+					{
+						ZoneScopedN("MainLoop - Render Shadow Depth");
+
+						// unproject screen corner to world space
+						auto corner_screen = glm::vec4{ 0.f, 0.f, 1.f, 1.f };
+						auto corner_clip = scene_matrices.m_inv_viewport * corner_screen;
+						auto corner_world = scene_matrices.m_inv_view_projection * corner_clip;
+						corner_world.x /= corner_world.w;
+						corner_world.y /= corner_world.w;
+						corner_world.z /= corner_world.w;
+						corner_world.w = 1.f;
+
+						// project ray from camera position through near-plane point
+						auto ray_origin = get_position(scene_matrices.m_inv_view);
+						auto ray_dir = glm::normalize(glm::vec3(corner_world) - ray_origin);
+
+						// intersect ray with y = 0 plane
+						auto plane_point = glm::vec3(0.f);
+						auto plane_normal = glm::vec3{ 0.f, 1.f, 0.f };
+						auto p1 = glm::dot(ray_origin - plane_point, plane_normal);
+						auto p2 = glm::dot(ray_dir, plane_normal);
+						auto corner_pos = ray_origin - (ray_dir * (p1 / p2));
+
+						// get distance from center of screen to corner
+						auto center_pos = get_position(scene_camera.m_transform);
+						center_pos.y = 0;
+						auto screen_radius = glm::length(corner_pos - center_pos);
+						
+						// set up light camera
+						auto light_dir = registry.get<lighting::directional_light>(dir_light_1).m_direction;
+						auto light_camera = orthographic_camera();
+						auto const up = glm::vec3{ 0.f, 1.f, 0.f };
+						light_camera.m_transform[0] = glm::vec4(glm::normalize(glm::cross(light_dir, up)), 0.f);
+						light_camera.m_transform[1] = glm::vec4(up, 0.f);
+						light_camera.m_transform[2] = -glm::vec4(light_dir, 0.f);
+						translate_in_local(light_camera.m_transform, glm::vec3{ 0.f, 0.f, bounds_radius + 1.f });
+						light_camera.m_projection.m_near = 0.f;
+						light_camera.m_projection.m_far = 2.f * (bounds_radius + 1.f);
+						auto scene_height = ((2.f * screen_radius) / (float)shadow_rt.m_texture.get_size().x) * (float)shadow_rt.m_texture.get_size().y;
+						light_camera.m_projection.m_position = glm::vec2{ -screen_radius, -scene_height * 0.5 };
+						light_camera.m_projection.m_size = glm::vec2{ 2.f * screen_radius, scene_height };
+						light_camera.m_viewport.m_position = glm::vec2(0.f);
+						light_camera.m_viewport.m_size = glm::vec2(shadow_rt.m_texture.get_size());
+
+						auto light_camera_matrices = camera_matrices(light_camera);
+
+						// render scene
+						// bounds.render_depth(renderer, light_camera_matrices);
+						asteroids.render_depth(renderer, light_camera_matrices);
+						// player.render_depth(renderer, light_camera_matrices);
+						// powerups.render_depth(renderer, light_camera_matrices);
+					}
+
+					renderer.set_framebuffer(lighting_rt.m_framebuffer);
+					renderer.set_viewport({ 0, 0 }, glm::uvec2(app.m_window.get_size()));
 					renderer.clear_color_buffers({ 0.f, 0.f, 0.f, 1.f });
 
 					// lighting
@@ -254,14 +311,13 @@ namespace bump
 					renderer.clear_framebuffer();
 					
 					renderer.set_framebuffer_color_encoding(gl::renderer::framebuffer_color_encoding::SRGB);
-
 					renderer.clear_color_buffers({ 0.93f, 0.58f, 0.39f, 1.f });
 					renderer.clear_depth_buffers();
 
 					// blit pass (temp)
 					{
-						blit_pass.m_size = glm::vec2(app.m_window.get_size());
-						blit_pass.render(lighting_rt.m_texture, renderer, ui_matrices);
+						tone_map_blit.m_size = glm::vec2(app.m_window.get_size());
+						tone_map_blit.render(shadow_rt.m_texture, renderer, ui_matrices);
 					}
 					
 					// render ui
