@@ -125,7 +125,7 @@ namespace bump
 				GLint m_g_buffer_2;
 				GLint m_g_buffer_3;
 				GLint m_u_Shadows;
-				GLint m_u_LightViewMatrix;
+				GLint m_u_LightViewProjMatrix;
 				GLint m_u_InvViewMatrix;
 				GLint m_u_InvProjMatrix;
 

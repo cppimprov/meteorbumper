@@ -61,8 +61,8 @@ namespace bump
 		shadow_rendertarget::shadow_rendertarget(glm::ivec2 size)
 		{
 			m_texture.set_data(size, GL_DEPTH_COMPONENT24, gl::make_texture_data_source(GL_DEPTH_COMPONENT, GL_FLOAT));
-			m_texture.set_min_filter(GL_NEAREST);
-			m_texture.set_mag_filter(GL_NEAREST);
+			m_texture.set_min_filter(GL_LINEAR);
+			m_texture.set_mag_filter(GL_LINEAR);
 			
 			m_framebuffer.attach_texture(GL_DEPTH_ATTACHMENT, m_texture);
 			m_framebuffer.set_draw_buffers({ GL_NONE });
@@ -180,7 +180,7 @@ namespace bump
 			m_g_buffer_2(m_shader.get_uniform_location("g_buffer_2")),
 			m_g_buffer_3(m_shader.get_uniform_location("g_buffer_3")),
 			m_u_Shadows(m_shader.get_uniform_location("u_Shadows")),
-			m_u_LightViewMatrix(m_shader.get_uniform_location("u_LightViewMatrix")),
+			m_u_LightViewProjMatrix(m_shader.get_uniform_location("u_LightViewProjMatrix")),
 			m_u_InvViewMatrix(m_shader.get_uniform_location("u_InvViewMatrix")),
 			m_u_InvProjMatrix(m_shader.get_uniform_location("u_InvProjMatrix"))
 		{
@@ -240,7 +240,7 @@ namespace bump
 				renderer.set_texture_2d(1, gbuf.m_buffer_2);
 				renderer.set_texture_2d(2, gbuf.m_buffer_3);
 				renderer.set_texture_2d(3, shadow_map);
-				renderer.set_uniform_4x4f(m_u_LightViewMatrix, light_matrices.m_view_projection);
+				renderer.set_uniform_4x4f(m_u_LightViewProjMatrix, light_matrices.m_view_projection);
 				renderer.set_uniform_4x4f(m_u_InvViewMatrix, scene_matrices.m_inv_view);
 				renderer.set_uniform_4x4f(m_u_InvProjMatrix, scene_matrices.m_inv_projection);
 				renderer.set_vertex_array(m_vertex_array);
@@ -391,19 +391,23 @@ namespace bump
 
 // todo:
 
-	// shadows
-		// add tag component to main light
-		// add shader in thing and then do that!
+	// shadows:
+		// affect player shield
+		// affect particles
 
 	// add spotlights
 		// use for engine lights
 		// use for player searchlight(s)
 		// add a fake volumetric effect by rendering a cone?
 	
-	// add shadows? (from main light only?)
-
 	// make sure that directional lights ignore skybox pixels properly...?
 	
 	// make it simpler to use the lighting stuff (put everything in lighting_system class?)
 
 	// add deferred lighting to start screen too!
+
+
+// todo sometime:
+
+	// make the main light tag actually a shadow component
+		// make depth texture (pointer) and light matrix members

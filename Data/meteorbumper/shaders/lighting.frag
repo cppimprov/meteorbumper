@@ -75,3 +75,27 @@ float attenuation_inv_sqr(float l_distance)
 	
 	return a;
 }
+
+float shadow(vec3 p_ws, vec3 n, vec3 l, mat4 light_matrix, sampler2D shadow_map)
+{
+	vec4 p_ls = light_matrix * vec4(p_ws, 1.0);
+	p_ls.xyz = (p_ls.xyz / p_ls.w) * 0.5 + 0.5;
+
+	float d = texture(shadow_map, p_ls.xy).x;
+	float s = (d > p_ls.z) ? 0.0 : 1.0;
+
+	// simple pcf:
+	// float s = 0.0;
+	// vec2 ts = 1.0 / textureSize(shadow_map, 0);
+
+	// for (int y = -1; y != 2; ++y)
+	// {
+	// 	for (int x = -1; x != 2; ++x)
+	// 	{
+	// 		float d = texture(shadow_map, p_ls.xy + vec2(x, y) * ts).x;
+	// 		s += (d > p_ls.z) ? 0.0 : 1.0;
+	// 	}
+	// }
+
+	return s;
+}

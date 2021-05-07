@@ -37,7 +37,7 @@ namespace bump
 			auto physics_system = physics::physics_system(registry);
 			
 			auto gbuf = lighting::gbuffers(app.m_window.get_size());
-			auto shadow_rt = lighting::shadow_rendertarget(glm::ivec2{ 960, 540 });
+			auto shadow_rt = lighting::shadow_rendertarget(glm::ivec2{ 1920, 1080 });
 			auto lighting_rt = lighting::lighting_rendertarget(app.m_window.get_size(), gbuf.m_depth_stencil);
 			auto lighting = lighting::lighting_system(registry, 
 				app.m_assets.m_shaders.at("light_directional"), 
@@ -56,11 +56,11 @@ namespace bump
 			auto dir_light_2 = registry.create();
 			auto& l2 = registry.emplace<lighting::directional_light>(dir_light_2);
 			l2.m_direction = glm::vec3(0.3472469449043274f, -0.9376746416091919f, 0.013631058856844902f);
-			l2.m_color = glm::vec3(0.047f, 0.326f, 0.638f) * 0.15f;
+			l2.m_color = glm::vec3(0.047f, 0.326f, 0.638f) * 0.05f;
 			auto dir_light_3 = registry.create();
 			auto& l3 = registry.emplace<lighting::directional_light>(dir_light_3);
 			l3.m_direction = glm::vec3(0.5147935748100281f, 0.8573000431060791f, -0.004921185318380594f);
-			l3.m_color = glm::vec3(0.638f, 0.359f, 0.584f) * 0.20f;
+			l3.m_color = glm::vec3(0.638f, 0.359f, 0.584f) * 0.10f;
 
 			auto const camera_height = 150.f;
 			auto scene_camera = perspective_camera();
@@ -285,10 +285,14 @@ namespace bump
 						light_matrices = camera_matrices(light_camera);
 
 						// render scene
-						bounds.render_depth(renderer, light_matrices);
+						renderer.set_face_culling(gl::renderer::face_culling::COUNTER_CLOCKWISE);
+
+						//bounds.render_depth(renderer, light_matrices);
 						asteroids.render_depth(renderer, light_matrices);
 						player.render_depth(renderer, light_matrices);
 						powerups.render_depth(renderer, light_matrices);
+
+						renderer.set_face_culling(gl::renderer::face_culling::CLOCKWISE);
 					}
 
 					renderer.set_framebuffer(lighting_rt.m_framebuffer);
