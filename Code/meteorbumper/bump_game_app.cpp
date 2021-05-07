@@ -42,7 +42,7 @@ namespace bump
 				{ "light_directional", { "light_directional.vert", "g_buffers_read.frag", "lighting.frag", "light_directional.frag" } },
 				{ "light_point", { "light_point.vert", "g_buffers_read.frag", "lighting.frag", "light_point.frag" } },
 				{ "light_emissive", { "light_emissive.vert", "g_buffers_read.frag", "light_emissive.frag" } },
-				{ "asteroid_depth", { "asteroid_depth.vert", "g_buffers_write.frag", "asteroid_depth.frag" } },
+				{ "asteroid_depth", { "asteroid_depth.vert", "asteroid_depth.frag" } },
 			};
 
 			auto const models = std::vector<model_metadata>

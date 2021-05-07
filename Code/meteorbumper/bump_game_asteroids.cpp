@@ -28,12 +28,9 @@ namespace bump
 			m_powerups(powerups),
 
 			m_depth_shader(depth_shader),
-			m_depth_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
-			m_depth_in_VertexNormal(shader.get_attribute_location("in_VertexNormal")),
-			m_depth_in_MVP(shader.get_attribute_location("in_MVP")),
-			m_depth_in_NormalMatrix(shader.get_attribute_location("in_NormalMatrix")),
-			m_depth_in_Color(shader.get_attribute_location("in_Color")),
-			m_depth_in_Scale(shader.get_attribute_location("in_Scale")),
+			m_depth_in_VertexPosition(depth_shader.get_attribute_location("in_VertexPosition")),
+			m_depth_in_MVP(depth_shader.get_attribute_location("in_MVP")),
+			m_depth_in_Scale(depth_shader.get_attribute_location("in_Scale")),
 
 			m_shader(shader),
 			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
@@ -42,6 +39,7 @@ namespace bump
 			m_in_NormalMatrix(shader.get_attribute_location("in_NormalMatrix")),
 			m_in_Color(shader.get_attribute_location("in_Color")),
 			m_in_Scale(shader.get_attribute_location("in_Scale")),
+
 			m_rng(std::random_device()()),
 			m_wave_number(0),
 			m_asteroid_type_probability{
@@ -58,41 +56,27 @@ namespace bump
 			die_if(model.m_submeshes.size() != 1);
 
 			auto const& mesh = model.m_submeshes.front();
-			
-			// set up depth vertex buffers
-			m_depth_vertices.set_data(GL_ARRAY_BUFFER, mesh.m_mesh.m_vertices.data(), 3, mesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
-			m_depth_vertex_array.set_array_buffer(m_depth_in_VertexPosition, m_depth_vertices);
-			m_depth_normals.set_data(GL_ARRAY_BUFFER, mesh.m_mesh.m_normals.data(), 3, mesh.m_mesh.m_normals.size() / 3, GL_STATIC_DRAW);
-			m_depth_vertex_array.set_array_buffer(m_depth_in_VertexNormal, m_depth_normals);
-			m_depth_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, mesh.m_mesh.m_indices.data(), 1, mesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
-			m_depth_vertex_array.set_index_buffer(m_depth_indices);
-
-			// set up depth instance buffers
-			m_depth_transforms.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 16, 0, GL_STREAM_DRAW);
-			m_depth_vertex_array.set_array_buffer(m_depth_in_MVP, m_depth_transforms, 4, 4, 1);
-			m_depth_normal_matrices.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 9, 0, GL_STREAM_DRAW);
-			m_depth_vertex_array.set_array_buffer(m_depth_in_NormalMatrix, m_depth_normal_matrices, 3, 3, 1);
-			m_depth_colors.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
-			m_depth_vertex_array.set_array_buffer(m_depth_in_Color, m_depth_colors, 1);
-			m_depth_scales.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 1, 0, GL_STREAM_DRAW);
-			m_depth_vertex_array.set_array_buffer(m_depth_in_Scale, m_depth_scales, 1);
 
 			// set up vertex buffers
 			m_vertices.set_data(GL_ARRAY_BUFFER, mesh.m_mesh.m_vertices.data(), 3, mesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
+			m_depth_vertex_array.set_array_buffer(m_depth_in_VertexPosition, m_vertices);
 			m_vertex_array.set_array_buffer(m_in_VertexPosition, m_vertices);
 			m_normals.set_data(GL_ARRAY_BUFFER, mesh.m_mesh.m_normals.data(), 3, mesh.m_mesh.m_normals.size() / 3, GL_STATIC_DRAW);
 			m_vertex_array.set_array_buffer(m_in_VertexNormal, m_normals);
 			m_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, mesh.m_mesh.m_indices.data(), 1, mesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
+			m_depth_vertex_array.set_index_buffer(m_indices);
 			m_vertex_array.set_index_buffer(m_indices);
 
 			// set up instance buffers
 			m_transforms.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 16, 0, GL_STREAM_DRAW);
+			m_depth_vertex_array.set_array_buffer(m_depth_in_MVP, m_transforms, 4, 4, 1);
 			m_vertex_array.set_array_buffer(m_in_MVP, m_transforms, 4, 4, 1);
 			m_normal_matrices.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 9, 0, GL_STREAM_DRAW);
 			m_vertex_array.set_array_buffer(m_in_NormalMatrix, m_normal_matrices, 3, 3, 1);
 			m_colors.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 3, 0, GL_STREAM_DRAW);
 			m_vertex_array.set_array_buffer(m_in_Color, m_colors, 1);
 			m_scales.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 1, 0, GL_STREAM_DRAW);
+			m_depth_vertex_array.set_array_buffer(m_depth_in_Scale, m_scales, 1);
 			m_vertex_array.set_array_buffer(m_in_Scale, m_scales, 1);
 
 			// set up collision effects
@@ -255,32 +239,26 @@ namespace bump
 			{
 				auto [data, physics] = view.get<asteroid_data, physics::rigidbody>(id);
 				auto const transform = physics.get_transform();
-				m_depth_instance_transforms.push_back(matrices.model_view_projection_matrix(transform));
-				m_depth_instance_normal_matrices.push_back(matrices.normal_matrix(transform));
-				m_depth_instance_colors.push_back(data.m_color);
-				m_depth_instance_scales.push_back(data.m_model_scale);
+				m_instance_transforms.push_back(matrices.model_view_projection_matrix(transform));
+				m_instance_scales.push_back(data.m_model_scale);
 			}
 
 			// upload instance data to buffers
-			m_depth_transforms.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_depth_instance_transforms.front()), 16, m_depth_instance_transforms.size(), GL_STREAM_DRAW);
-			m_depth_normal_matrices.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_depth_instance_normal_matrices.front()), 9, m_depth_instance_normal_matrices.size(), GL_STREAM_DRAW);
-			m_depth_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_depth_instance_colors.front()), 3, m_depth_instance_colors.size(), GL_STREAM_DRAW);
-			m_depth_scales.set_data(GL_ARRAY_BUFFER, m_depth_instance_scales.data(), 1, m_depth_instance_scales.size(), GL_STREAM_DRAW);
+			m_transforms.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_transforms.front()), 16, m_instance_transforms.size(), GL_STREAM_DRAW);
+			m_scales.set_data(GL_ARRAY_BUFFER, m_instance_scales.data(), 1, m_instance_scales.size(), GL_STREAM_DRAW);
 
 			// render
 			renderer.set_program(m_depth_shader);
 			renderer.set_vertex_array(m_depth_vertex_array);
 
-			renderer.draw_indexed(GL_TRIANGLES, m_depth_indices.get_element_count(), m_depth_indices.get_component_type(), view.size());
+			renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type(), view.size());
 
 			renderer.clear_vertex_array();
 			renderer.clear_program();
 
 			// clear instance data
-			m_depth_instance_transforms.clear();
-			m_depth_instance_normal_matrices.clear();
-			m_depth_instance_colors.clear();
-			m_depth_instance_scales.clear();
+			m_instance_transforms.clear();
+			m_instance_scales.clear();
 		}
 		
 		void asteroid_field::render_scene(gl::renderer& renderer, camera_matrices const& matrices)

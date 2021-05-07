@@ -64,31 +64,16 @@ namespace bump
 			entt::registry& m_registry;
 			powerups& m_powerups;
 
-			// depth stuff!
+			// depth rendering stuff:
 			gl::shader_program const& m_depth_shader;
 
 			GLint m_depth_in_VertexPosition;
-			GLint m_depth_in_VertexNormal;
 			GLint m_depth_in_MVP;
-			GLint m_depth_in_NormalMatrix;
-			GLint m_depth_in_Color;
 			GLint m_depth_in_Scale;
 			
-			gl::buffer m_depth_vertices;
-			gl::buffer m_depth_normals;
-			gl::buffer m_depth_indices;
-			gl::buffer m_depth_transforms;
-			gl::buffer m_depth_normal_matrices;
-			gl::buffer m_depth_colors;
-			gl::buffer m_depth_scales;
 			gl::vertex_array m_depth_vertex_array;
 
-			std::vector<glm::mat4> m_depth_instance_transforms;
-			std::vector<glm::mat3> m_depth_instance_normal_matrices;
-			std::vector<glm::vec3> m_depth_instance_colors;
-			std::vector<float> m_depth_instance_scales;
-
-			// non-depth stuff!
+			// scene rendering stuff:
 			gl::shader_program const& m_shader;
 
 			GLint m_in_VertexPosition;
