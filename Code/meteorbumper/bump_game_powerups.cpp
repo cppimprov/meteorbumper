@@ -27,14 +27,15 @@ namespace bump
 		} // unnamed
 		
 		powerups::powerups(entt::registry& registry,
+				gl::shader_program const& depth_shader,
 				gl::shader_program const& shader,
 				mbp_model const& shield_model,
 				mbp_model const& armor_model,
 				mbp_model const& lasers_model):
 			m_registry(registry),
-			m_shield_renderable(shader, shield_model),
-			m_armor_renderable(shader, armor_model),
-			m_lasers_renderable(shader, lasers_model),
+			m_shield_renderable(depth_shader, shader, shield_model),
+			m_armor_renderable(depth_shader, shader, armor_model),
+			m_lasers_renderable(depth_shader, shader, lasers_model),
 			m_max_lifetime(high_res_duration_from_seconds(5.f)),
 			m_light_colors{ 
 				{ powerup_type::RESET_SHIELDS, shield_color }, 
@@ -111,6 +112,34 @@ namespace bump
 				});
 
 			m_entities.erase(first_dead_entity, m_entities.end());
+		}
+
+		void powerups::render_depth(gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			ZoneScopedN("powerups::render_depth()");
+
+			auto view = m_registry.view<powerup_data, physics::rigidbody>();
+
+			for (auto id : view)
+			{
+				auto [data, rb] = view.get<powerup_data, physics::rigidbody>(id);
+
+				if (data.m_type == powerup_type::RESET_SHIELDS)
+				{
+					m_shield_renderable.set_transform(rb.get_transform());
+					m_shield_renderable.render_depth(renderer, matrices);
+				}
+				else if (data.m_type == powerup_type::RESET_ARMOR)
+				{
+					m_armor_renderable.set_transform(rb.get_transform());
+					m_armor_renderable.render_depth(renderer, matrices);
+				}
+				else if (data.m_type == powerup_type::UPGRADE_LASERS)
+				{
+					m_lasers_renderable.set_transform(rb.get_transform());
+					m_lasers_renderable.render_depth(renderer, matrices);
+				}
+			}
 		}
 
 		void powerups::render_scene(gl::renderer& renderer, camera_matrices const& matrices)

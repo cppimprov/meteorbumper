@@ -23,8 +23,9 @@ namespace bump
 		{
 		public:
 
-			explicit bounds(entt::registry& registry, float radius, gl::shader_program const& bouy_shader, mbp_model const& bouy_model);
+			explicit bounds(entt::registry& registry, float radius, gl::shader_program const& bouy_depth_shader, gl::shader_program const& bouy_shader, mbp_model const& bouy_model);
 
+			void render_depth(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_scene(gl::renderer& renderer, camera_matrices const& matrices);
 
 			~bounds();

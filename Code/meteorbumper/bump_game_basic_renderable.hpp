@@ -18,7 +18,7 @@ namespace bump
 		{
 		public:
 
-			explicit basic_renderable(gl::shader_program const& shader, mbp_model const& model);
+			explicit basic_renderable(gl::shader_program const& depth_shader, gl::shader_program const& shader, mbp_model const& model);
 
 			basic_renderable(basic_renderable const&) = delete;
 			basic_renderable& operator=(basic_renderable const&) = delete;
@@ -26,12 +26,19 @@ namespace bump
 			basic_renderable(basic_renderable&&) = default;
 			basic_renderable& operator=(basic_renderable&&) = default;
 
+			void render_depth(gl::renderer& renderer, camera_matrices const& matrices);
 			void render(gl::renderer& renderer, camera_matrices const& matrices);
 
 			void set_transform(glm::mat4 const& transform) { m_transform = transform; }
 			glm::mat4 get_transform() const { return m_transform; }
 
 		private:
+
+			gl::shader_program const* m_depth_shader;
+
+			GLint m_depth_in_VertexPosition;
+			GLint m_depth_u_MVP;
+			std::vector<gl::vertex_array> m_depth_vertex_arrays;
 
 			gl::shader_program const* m_shader;
 			GLint m_in_VertexPosition;
@@ -65,7 +72,7 @@ namespace bump
 		{
 		public:
 
-			explicit basic_renderable_instanced(gl::shader_program const& shader, mbp_model const& model);
+			explicit basic_renderable_instanced(gl::shader_program const& depth_shader, gl::shader_program const& shader, mbp_model const& model);
 
 			basic_renderable_instanced(basic_renderable_instanced const&) = delete;
 			basic_renderable_instanced& operator=(basic_renderable_instanced const&) = delete;
@@ -73,9 +80,16 @@ namespace bump
 			basic_renderable_instanced(basic_renderable_instanced&&) = default;
 			basic_renderable_instanced& operator=(basic_renderable_instanced&&) = default;
 
+			void render_depth(gl::renderer& renderer, camera_matrices const& matrices, std::vector<glm::mat4> const& transforms);
 			void render(gl::renderer& renderer, camera_matrices const& matrices, std::vector<glm::mat4> const& transforms);
 
 		private:
+
+			gl::shader_program const* m_depth_shader;
+
+			GLint m_depth_in_VertexPosition;
+			GLint m_depth_in_MVP;
+			std::vector<gl::vertex_array> m_depth_vertex_arrays;
 
 			gl::shader_program const* m_shader;
 			GLint m_in_VertexPosition;

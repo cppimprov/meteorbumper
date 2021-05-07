@@ -621,7 +621,7 @@ namespace bump
 		player::player(entt::registry& registry, assets& assets):
 			m_registry(registry),
 			m_entity(entt::null),
-			m_ship_renderable(assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship")),
+			m_ship_renderable(assets.m_shaders.at("player_ship_depth"), assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship")),
 			m_shield_renderable_lower(assets.m_shaders.at("player_shield"), assets.m_models.at("player_shield_lower")),
 			m_shield_renderable_upper(assets.m_shaders.at("player_shield"), assets.m_models.at("player_shield_upper")),
 			m_controls(),
@@ -878,6 +878,13 @@ namespace bump
 			auto& collider = m_registry.get<physics::collider>(m_entity);
 			collider.set_restitution(m_health.has_shield() ? m_player_shield_restitution : m_player_armor_restitution);
 			collider.set_shape({ physics::sphere_shape{ m_health.has_shield() ? m_player_shield_radius_m : m_player_ship_radius_m } });
+		}
+
+		void player::render_depth(gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			ZoneScopedN("player::render_depth()");
+
+			m_ship_renderable.render_depth(renderer, matrices);
 		}
 
 		void player::render_scene(gl::renderer& renderer, camera_matrices const& matrices)

@@ -11,7 +11,10 @@ namespace bump
 	namespace game
 	{
 		
-		basic_renderable::basic_renderable(gl::shader_program const& shader, mbp_model const& model):
+		basic_renderable::basic_renderable(gl::shader_program const& depth_shader, gl::shader_program const& shader, mbp_model const& model):
+			m_depth_shader(&depth_shader),
+			m_depth_in_VertexPosition(depth_shader.get_attribute_location("in_VertexPosition")),
+			m_depth_u_MVP(depth_shader.get_uniform_location("u_MVP")),
 			m_shader(&shader),
 			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
 			m_in_VertexNormal(shader.get_attribute_location("in_VertexNormal")),
@@ -25,6 +28,7 @@ namespace bump
 		{
 			for (auto const& submesh : model.m_submeshes)
 			{
+				auto depth_vertex_array = gl::vertex_array();
 				auto s = submesh_data();
 
 				s.m_metallic = submesh.m_material.m_metallic;
@@ -43,6 +47,7 @@ namespace bump
 
 				die_if(submesh.m_mesh.m_vertices.empty());
 				s.m_vertices.set_data(GL_ARRAY_BUFFER, submesh.m_mesh.m_vertices.data(), 3, submesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
+				depth_vertex_array.set_array_buffer(m_depth_in_VertexPosition, s.m_vertices);
 				s.m_vertex_array.set_array_buffer(m_in_VertexPosition, s.m_vertices);
 
 				die_if(submesh.m_mesh.m_normals.empty());
@@ -51,12 +56,35 @@ namespace bump
 
 				die_if(submesh.m_mesh.m_indices.empty());
 				s.m_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, submesh.m_mesh.m_indices.data(), 1, submesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
+				depth_vertex_array.set_index_buffer(s.m_indices);
 				s.m_vertex_array.set_index_buffer(s.m_indices);
 
+				m_depth_vertex_arrays.push_back(std::move(depth_vertex_array));
 				m_submeshes.push_back(std::move(s));
 			}
 		}
 
+		void basic_renderable::render_depth(gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			ZoneScopedN("basic_renderable::render_depth()");
+
+			auto mvp = matrices.model_view_projection_matrix(m_transform);
+
+			renderer.set_program(*m_depth_shader);
+
+			for (auto i = std::size_t{ 0 }; i != m_depth_vertex_arrays.size(); ++i)
+			{
+				renderer.set_uniform_4x4f(m_depth_u_MVP, mvp);
+				renderer.set_vertex_array(m_depth_vertex_arrays[i]);
+
+				renderer.draw_indexed(GL_TRIANGLES, m_submeshes[i].m_indices.get_element_count(), m_submeshes[i].m_indices.get_component_type());
+
+				renderer.clear_vertex_array();
+			}
+
+			renderer.clear_program();
+		}
+		
 		void basic_renderable::render(gl::renderer& renderer, camera_matrices const& matrices)
 		{
 			ZoneScopedN("basic_renderable::render()");
@@ -85,7 +113,10 @@ namespace bump
 			renderer.clear_program();
 		}
 		
-		basic_renderable_instanced::basic_renderable_instanced(gl::shader_program const& shader, mbp_model const& model):
+		basic_renderable_instanced::basic_renderable_instanced(gl::shader_program const& depth_shader, gl::shader_program const& shader, mbp_model const& model):
+			m_depth_shader(&depth_shader),
+			m_depth_in_VertexPosition(depth_shader.get_attribute_location("in_VertexPosition")),
+			m_depth_in_MVP(depth_shader.get_attribute_location("in_MVP")),
 			m_shader(&shader),
 			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
 			m_in_VertexNormal(shader.get_attribute_location("in_VertexNormal")),
@@ -101,6 +132,7 @@ namespace bump
 
 			for (auto const& submesh : model.m_submeshes)
 			{
+				auto depth_vertex_array = gl::vertex_array();
 				auto s = submesh_data();
 
 				s.m_metallic = submesh.m_material.m_metallic;
@@ -119,6 +151,7 @@ namespace bump
 
 				die_if(submesh.m_mesh.m_vertices.empty());
 				s.m_vertices.set_data(GL_ARRAY_BUFFER, submesh.m_mesh.m_vertices.data(), 3, submesh.m_mesh.m_vertices.size() / 3, GL_STATIC_DRAW);
+				depth_vertex_array.set_array_buffer(m_depth_in_VertexPosition, s.m_vertices);
 				s.m_vertex_array.set_array_buffer(m_in_VertexPosition, s.m_vertices);
 
 				die_if(submesh.m_mesh.m_normals.empty());
@@ -127,13 +160,45 @@ namespace bump
 
 				die_if(submesh.m_mesh.m_indices.empty());
 				s.m_indices.set_data(GL_ELEMENT_ARRAY_BUFFER, submesh.m_mesh.m_indices.data(), 1, submesh.m_mesh.m_indices.size(), GL_STATIC_DRAW);
+				depth_vertex_array.set_index_buffer(s.m_indices);
 				s.m_vertex_array.set_index_buffer(s.m_indices);
 
+				depth_vertex_array.set_array_buffer(m_depth_in_MVP, m_buffer_mvp_matrices, 4, 4, 1);
 				s.m_vertex_array.set_array_buffer(m_in_MVP, m_buffer_mvp_matrices, 4, 4, 1);
 				s.m_vertex_array.set_array_buffer(m_in_NormalMatrix, m_buffer_normal_matrices, 3, 3, 1);
 
+				m_depth_vertex_arrays.push_back(std::move(depth_vertex_array));
 				m_submeshes.push_back(std::move(s));
 			}
+		}
+
+		void basic_renderable_instanced::render_depth(gl::renderer& renderer, camera_matrices const& matrices, std::vector<glm::mat4> const& transforms)
+		{
+			ZoneScopedN("basic_renderable_instanced::render_depth()");
+
+			auto const instance_count = transforms.size();
+			if (instance_count == 0) return;
+
+			m_frame_mvp_matrices.reserve(instance_count);
+
+			for (auto const& t : transforms)
+				m_frame_mvp_matrices.push_back(matrices.model_view_projection_matrix(t));
+			
+			m_buffer_mvp_matrices.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_frame_mvp_matrices.front()), 16, instance_count, GL_STREAM_DRAW);
+			m_frame_mvp_matrices.clear();
+
+			renderer.set_program(*m_depth_shader);
+
+			for (auto i = std::size_t{ 0 }; i != m_depth_vertex_arrays.size(); ++i)
+			{
+				renderer.set_vertex_array(m_depth_vertex_arrays[i]);
+
+				renderer.draw_indexed(GL_TRIANGLES, m_submeshes[i].m_indices.get_element_count(), m_submeshes[i].m_indices.get_component_type(), instance_count);
+
+				renderer.clear_vertex_array();
+			}
+
+			renderer.clear_program();
 		}
 
 		void basic_renderable_instanced::render(gl::renderer& renderer, camera_matrices const& matrices, std::vector<glm::mat4> const& transforms)

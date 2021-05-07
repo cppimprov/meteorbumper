@@ -9,10 +9,10 @@ namespace bump
 	namespace game
 	{
 		
-		bounds::bounds(entt::registry& registry, float radius, gl::shader_program const& bouy_shader, mbp_model const& bouy_model):
+		bounds::bounds(entt::registry& registry, float radius, gl::shader_program const& bouy_depth_shader, gl::shader_program const& bouy_shader, mbp_model const& bouy_model):
 			m_registry(registry),
 			m_id(entt::null),
-			m_bouy(bouy_shader, bouy_model)
+			m_bouy(bouy_depth_shader, bouy_shader, bouy_model)
 		{
 			m_id = registry.create();
 			m_registry.emplace<bounds_tag>(m_id);
@@ -50,6 +50,11 @@ namespace bump
 				light.m_color = glm::vec3{ 1.f, 0.f, 0.f } * 20.f;
 				light.m_radius = 15.f;
 			}
+		}
+
+		void bounds::render_depth(gl::renderer& renderer, camera_matrices const& matrices)
+		{
+			m_bouy.render_depth(renderer, matrices, m_bouy_transforms);
 		}
 
 		void bounds::render_scene(gl::renderer& renderer, camera_matrices const& matrices)

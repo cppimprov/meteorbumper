@@ -84,12 +84,12 @@ namespace bump
 
 			auto player = game::player(registry, app.m_assets);
 
-			auto powerups = game::powerups(registry, app.m_assets.m_shaders.at("powerup"), app.m_assets.m_models.at("powerup_shield"), app.m_assets.m_models.at("powerup_armor"), app.m_assets.m_models.at("powerup_lasers"));
+			auto powerups = game::powerups(registry, app.m_assets.m_shaders.at("powerup_depth"), app.m_assets.m_shaders.at("powerup"), app.m_assets.m_models.at("powerup_shield"), app.m_assets.m_models.at("powerup_armor"), app.m_assets.m_models.at("powerup_lasers"));
 
 			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid_depth"), app.m_assets.m_shaders.at("asteroid"), app.m_assets.m_shaders.at("particle_effect"));
 
 			auto const bounds_radius = 300.f;
-			auto bounds = game::bounds(registry, bounds_radius, app.m_assets.m_shaders.at("bouy"), app.m_assets.m_models.at("bouy"));
+			auto bounds = game::bounds(registry, bounds_radius, app.m_assets.m_shaders.at("bouy_depth"),app.m_assets.m_shaders.at("bouy"), app.m_assets.m_models.at("bouy"));
 
 			auto space_dust = particle_field(app.m_assets.m_shaders.at("particle_field"), 25.f, 20);
 			space_dust.set_base_color_rgb({ 0.25, 0.20, 0.15 });
@@ -229,7 +229,6 @@ namespace bump
 
 					renderer.set_framebuffer(shadow_rt.m_framebuffer);
 					renderer.set_viewport({ 0, 0 }, glm::uvec2(shadow_rt.m_texture.get_size()));
-					renderer.clear_color_buffers(); // TEMP!
 					renderer.clear_depth_buffers();
 
 					// render depth for shadows
@@ -261,16 +260,19 @@ namespace bump
 						center_pos.y = 0;
 						auto screen_radius = glm::length(corner_pos - center_pos);
 						
-						// set up light camera
+						// set up light camera:
+						// set rotation from light dir (-z), up (y) and cross product (x)
+						// set position on a tangent (along the camera x axis) to the world bounds
 						auto light_dir = registry.get<lighting::directional_light>(dir_light_1).m_direction;
 						auto light_camera = orthographic_camera();
 						auto const up = glm::vec3{ 0.f, 1.f, 0.f };
 						light_camera.m_transform[0] = glm::vec4(glm::normalize(glm::cross(light_dir, up)), 0.f);
 						light_camera.m_transform[1] = glm::vec4(up, 0.f);
 						light_camera.m_transform[2] = -glm::vec4(light_dir, 0.f);
-						translate_in_local(light_camera.m_transform, glm::vec3{ 0.f, 0.f, bounds_radius + 1.f });
+						translate_in_local(light_camera.m_transform, glm::vec3{ 0.f, 0.f, bounds_radius + 5.f });
+						translate_in_local(light_camera.m_transform, glm::vec3{ 1.f, 0.f, 0.f} * glm::dot(glm::vec3(light_camera.m_transform[0]), center_pos));
 						light_camera.m_projection.m_near = 0.f;
-						light_camera.m_projection.m_far = 2.f * (bounds_radius + 1.f);
+						light_camera.m_projection.m_far = 2.f * (bounds_radius + 5.f);
 						auto scene_height = ((2.f * screen_radius) / (float)shadow_rt.m_texture.get_size().x) * (float)shadow_rt.m_texture.get_size().y;
 						light_camera.m_projection.m_position = glm::vec2{ -screen_radius, -scene_height * 0.5 };
 						light_camera.m_projection.m_size = glm::vec2{ 2.f * screen_radius, scene_height };
@@ -280,10 +282,10 @@ namespace bump
 						auto light_camera_matrices = camera_matrices(light_camera);
 
 						// render scene
-						// bounds.render_depth(renderer, light_camera_matrices);
+						bounds.render_depth(renderer, light_camera_matrices);
 						asteroids.render_depth(renderer, light_camera_matrices);
-						// player.render_depth(renderer, light_camera_matrices);
-						// powerups.render_depth(renderer, light_camera_matrices);
+						player.render_depth(renderer, light_camera_matrices);
+						powerups.render_depth(renderer, light_camera_matrices);
 					}
 
 					renderer.set_framebuffer(lighting_rt.m_framebuffer);

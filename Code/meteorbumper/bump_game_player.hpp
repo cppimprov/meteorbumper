@@ -178,6 +178,7 @@ namespace bump
 			~player();
 			
 			void update(high_res_duration_t dt);
+			void render_depth(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_scene(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_particles(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_transparent(gl::renderer& renderer, camera_matrices const& matrices);

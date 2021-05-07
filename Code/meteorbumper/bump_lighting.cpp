@@ -60,12 +60,12 @@ namespace bump
 
 		shadow_rendertarget::shadow_rendertarget(glm::ivec2 size)
 		{
-			m_texture.set_data(size, GL_RGBA8, gl::make_texture_data_source(GL_RGBA, GL_UNSIGNED_BYTE));
+			m_texture.set_data(size, GL_DEPTH_COMPONENT24, gl::make_texture_data_source(GL_DEPTH_COMPONENT, GL_FLOAT));
 			m_texture.set_min_filter(GL_NEAREST);
 			m_texture.set_mag_filter(GL_NEAREST);
 			
-			m_framebuffer.attach_texture(GL_COLOR_ATTACHMENT0, m_texture);
-			m_framebuffer.set_draw_buffers({ GL_COLOR_ATTACHMENT0 });
+			m_framebuffer.attach_texture(GL_DEPTH_ATTACHMENT, m_texture);
+			m_framebuffer.set_draw_buffers({ GL_NONE });
 
 			die_if(!m_framebuffer.is_complete());
 		}
@@ -378,10 +378,11 @@ namespace bump
 	// shadows
 
 		// render scene depth
-			// asteroids
 			// player
 			// bouys
 			// powerups
+		
+		// don't render color output! render depth instead...
 
 	// add spotlights
 		// use for engine lights
