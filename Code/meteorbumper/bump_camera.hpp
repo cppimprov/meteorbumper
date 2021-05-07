@@ -70,6 +70,8 @@ namespace bump
 	class camera_matrices
 	{
 	public:
+
+		camera_matrices() = default;
 		
 		template<class CameraT>
 		camera_matrices(CameraT const& camera);

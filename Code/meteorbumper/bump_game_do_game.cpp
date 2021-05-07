@@ -231,6 +231,8 @@ namespace bump
 					renderer.set_viewport({ 0, 0 }, glm::uvec2(shadow_rt.m_texture.get_size()));
 					renderer.clear_depth_buffers();
 
+					auto light_matrices = camera_matrices();
+
 					// render depth for shadows
 					{
 						ZoneScopedN("MainLoop - Render Shadow Depth");
@@ -279,13 +281,13 @@ namespace bump
 						light_camera.m_viewport.m_position = glm::vec2(0.f);
 						light_camera.m_viewport.m_size = glm::vec2(shadow_rt.m_texture.get_size());
 
-						auto light_camera_matrices = camera_matrices(light_camera);
+						light_matrices = camera_matrices(light_camera);
 
 						// render scene
-						bounds.render_depth(renderer, light_camera_matrices);
-						asteroids.render_depth(renderer, light_camera_matrices);
-						player.render_depth(renderer, light_camera_matrices);
-						powerups.render_depth(renderer, light_camera_matrices);
+						bounds.render_depth(renderer, light_matrices);
+						asteroids.render_depth(renderer, light_matrices);
+						player.render_depth(renderer, light_matrices);
+						powerups.render_depth(renderer, light_matrices);
 					}
 
 					renderer.set_framebuffer(lighting_rt.m_framebuffer);
@@ -294,7 +296,7 @@ namespace bump
 
 					// lighting
 					{
-						lighting.render(renderer, glm::vec2(app.m_window.get_size()), scene_matrices, ui_matrices, gbuf);
+						lighting.render(renderer, glm::vec2(app.m_window.get_size()), light_matrices, scene_matrices, ui_matrices, gbuf, shadow_rt.m_texture);
 						skybox.render_scene(renderer, scene_camera, scene_matrices);
 					}
 					
@@ -319,7 +321,7 @@ namespace bump
 					// blit pass (temp)
 					{
 						tone_map_blit.m_size = glm::vec2(app.m_window.get_size());
-						tone_map_blit.render(shadow_rt.m_texture, renderer, ui_matrices);
+						tone_map_blit.render(lighting_rt.m_texture, renderer, ui_matrices);
 					}
 					
 					// render ui

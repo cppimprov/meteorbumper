@@ -142,7 +142,7 @@ namespace bump
 			m_renderable_point(registry, point_light_shader, point_light_model),
 			m_renderable_emissive(registry, emissive_shader) { }
 		
-		void lighting_system::render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf)
+		void lighting_system::render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& light_matrices, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf, gl::texture_2d const& shadow_map)
 		{
 			ZoneScopedN("lighting_system::render()");
 
@@ -150,7 +150,7 @@ namespace bump
 			renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
 			renderer.set_blending(gl::renderer::blending::ADD);
 
-			m_renderable_directional.render(renderer, screen_size, scene_matrices, ui_matrices, gbuf);
+			m_renderable_directional.render(renderer, screen_size, light_matrices, scene_matrices, ui_matrices, gbuf, shadow_map);
 
 			renderer.set_depth_test(gl::renderer::depth_test::GREATER_EQUAL);
 			renderer.set_face_culling(gl::renderer::face_culling::COUNTER_CLOCKWISE);
@@ -178,6 +178,9 @@ namespace bump
 			m_g_buffer_1(m_shader.get_uniform_location("g_buffer_1")),
 			m_g_buffer_2(m_shader.get_uniform_location("g_buffer_2")),
 			m_g_buffer_3(m_shader.get_uniform_location("g_buffer_3")),
+			m_u_Shadows(m_shader.get_uniform_location("u_Shadows")),
+			m_u_LightViewMatrix(m_shader.get_uniform_location("u_LightViewMatrix")),
+			m_u_InvViewMatrix(m_shader.get_uniform_location("u_InvViewMatrix")),
 			m_u_InvProjMatrix(m_shader.get_uniform_location("u_InvProjMatrix"))
 		{
 			auto vertices = { 0.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 0.f,  1.f, 1.f,  0.f, 1.f, };
@@ -190,7 +193,7 @@ namespace bump
 			m_vertex_array.set_array_buffer(m_in_LightColor, m_buffer_light_colors, 1);
 		}
 
-		void lighting_system::directional_light_renderable::render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf)
+		void lighting_system::directional_light_renderable::render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& light_matrices, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf, gl::texture_2d const& shadow_map)
 		{
 			// get instance data
 			{
@@ -224,15 +227,20 @@ namespace bump
 				renderer.set_uniform_1i(m_g_buffer_1, 0);
 				renderer.set_uniform_1i(m_g_buffer_2, 1);
 				renderer.set_uniform_1i(m_g_buffer_3, 2);
+				renderer.set_uniform_1i(m_u_Shadows, 3);
 				renderer.set_texture_2d(0, gbuf.m_buffer_1);
 				renderer.set_texture_2d(1, gbuf.m_buffer_2);
 				renderer.set_texture_2d(2, gbuf.m_buffer_3);
+				renderer.set_texture_2d(3, shadow_map);
+				renderer.set_uniform_4x4f(m_u_LightViewMatrix, light_matrices.m_view_projection);
+				renderer.set_uniform_4x4f(m_u_InvViewMatrix, scene_matrices.m_inv_view);
 				renderer.set_uniform_4x4f(m_u_InvProjMatrix, scene_matrices.m_inv_projection);
 				renderer.set_vertex_array(m_vertex_array);
 
 				renderer.draw_arrays(GL_TRIANGLES, m_buffer_vertices.get_element_count(), m_buffer_light_directions.get_element_count());
 
 				renderer.clear_vertex_array();
+				renderer.clear_texture_2d(3);
 				renderer.clear_texture_2d(2);
 				renderer.clear_texture_2d(1);
 				renderer.clear_texture_2d(0);

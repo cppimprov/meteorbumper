@@ -96,7 +96,7 @@ namespace bump
 
 			explicit lighting_system(entt::registry& registry, gl::shader_program const& directional_light_shader, gl::shader_program const& point_light_shader, mbp_model const& point_light_model, gl::shader_program const& emissive_shader);
 
-			void render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf);
+			void render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& light_matrices, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf, gl::texture_2d const& shadow_map);
 
 		private:
 
@@ -106,7 +106,7 @@ namespace bump
 			{
 				explicit directional_light_renderable(entt::registry& registry, gl::shader_program const& shader);
 
-				void render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf);
+				void render(gl::renderer& renderer, glm::vec2 screen_size, camera_matrices const& light_matrices, camera_matrices const& scene_matrices, camera_matrices const& ui_matrices, gbuffers const& gbuf, gl::texture_2d const& shadow_map);
 
 			private:
 
@@ -121,6 +121,9 @@ namespace bump
 				GLint m_g_buffer_1;
 				GLint m_g_buffer_2;
 				GLint m_g_buffer_3;
+				GLint m_u_Shadows;
+				GLint m_u_LightViewMatrix;
+				GLint m_u_InvViewMatrix;
 				GLint m_u_InvProjMatrix;
 
 				gl::buffer m_buffer_vertices;
