@@ -181,7 +181,7 @@ namespace bump
 			void render_depth(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_scene(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_particles(gl::renderer& renderer, camera_matrices const& matrices);
-			void render_transparent(gl::renderer& renderer, camera_matrices const& matrices);
+			void render_transparent(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map);
 
 			entt::registry& m_registry;
 

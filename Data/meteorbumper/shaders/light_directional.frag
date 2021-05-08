@@ -10,7 +10,7 @@ void g_get_material(const in vec2 tex_coords, out float metallic, out float roug
 
 // lighting.frag:
 vec3 cook_torrance(vec3 n, vec3 v, vec3 l, vec3 l_color, vec3 albedo, float metallic, float roughness, float emissive);
-float shadow(vec3 p_ws, vec3 n, vec3 l, mat4 light_matrix, sampler2D shadow_map);
+float shadow(vec3 p_ws, mat4 light_matrix, sampler2D shadow_map);
 
 in vec3 vert_LightDirection;
 in vec3 vert_LightColor;
@@ -42,8 +42,8 @@ void main()
 
 	vec3 p_ws = vec3(u_InvViewMatrix * vec4(p, 1.0));
 
-	float s = shadow(p_ws, n, l, u_LightViewProjMatrix, u_Shadows);
-	color = mix(color, vec3(0.0), s * vert_LightColor);
+	float s = shadow(p_ws, u_LightViewProjMatrix, u_Shadows);
+	color = mix(color, vec3(0.0), s * vert_LightShadows);
 	
 	out_Color = vec4(color, 1.0);
 }

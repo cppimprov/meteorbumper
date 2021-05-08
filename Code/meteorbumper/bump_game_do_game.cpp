@@ -314,7 +314,7 @@ namespace bump
 
 					// render transparent objects
 					{
-						player.render_transparent(renderer, scene_matrices);
+						player.render_transparent(renderer, light_matrices, scene_matrices, shadow_rt.m_texture);
 					}
 
 					renderer.clear_framebuffer();

@@ -25,9 +25,13 @@ namespace bump
 			m_u_Opacity(shader.get_uniform_location("u_Opacity")),
 			m_u_DirLightDirection(shader.get_uniform_location("u_DirLightDirection")),
 			m_u_DirLightColor(shader.get_uniform_location("u_DirLightColor")),
+			m_u_DirLightShadows(shader.get_uniform_location("u_DirLightShadows")),
 			m_u_PointLightPosition(shader.get_uniform_location("u_PointLightPosition")),
 			m_u_PointLightColor(shader.get_uniform_location("u_PointLightColor")),
 			m_u_PointLightRadius(shader.get_uniform_location("u_PointLightRadius")),
+			m_u_InvViewMatrix(shader.get_uniform_location("u_InvViewMatrix")),
+			m_u_LightViewProjMatrix(shader.get_uniform_location("u_LightViewProjMatrix")),
+			m_u_Shadows(shader.get_uniform_location("u_Shadows")),
 			m_transform(1.f)
 		{
 			for (auto const& submesh : model.m_submeshes)
@@ -65,21 +69,22 @@ namespace bump
 			}
 		}
 
-		void basic_renderable_alpha::render(gl::renderer& renderer, camera_matrices const& matrices)
+		void basic_renderable_alpha::render(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map)
 		{
 			ZoneScopedN("basic_renderable_alpha::render()");
-
-			auto const mv = matrices.model_view_matrix(m_transform);
-			auto const mvp = matrices.model_view_projection_matrix(m_transform);
-			auto const n = matrices.normal_matrix(m_transform);
 
 			renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
 			renderer.set_blending(gl::renderer::blending::BLEND);
 			renderer.set_program(*m_shader);
+
+			renderer.set_texture_2d(0, shadow_map);
+			renderer.set_uniform_1i(m_u_Shadows, 0);
 			
-			renderer.set_uniform_4x4f(m_u_MV, mv);
-			renderer.set_uniform_4x4f(m_u_MVP, mvp);
-			renderer.set_uniform_3x3f(m_u_NormalMatrix, n);
+			renderer.set_uniform_4x4f(m_u_MV, matrices.model_view_matrix(m_transform));
+			renderer.set_uniform_4x4f(m_u_MVP, matrices.model_view_projection_matrix(m_transform));
+			renderer.set_uniform_3x3f(m_u_NormalMatrix, matrices.normal_matrix(m_transform));
+			renderer.set_uniform_4x4f(m_u_InvViewMatrix, matrices.m_inv_view);
+			renderer.set_uniform_4x4f(m_u_LightViewProjMatrix, light_matrices.m_view_projection);
 
 			// upload directional light info
 			{
@@ -96,8 +101,14 @@ namespace bump
 				std::transform(m_lights_dir.begin(), m_lights_dir.begin() + num, colors.begin(),
 					[] (lighting::directional_light const& l) { return l.m_color; });
 
+				auto shadows = std::array<float, max_lights>();
+				shadows.fill(0.f);
+				std::transform(m_shadows.begin(), m_shadows.begin() + num, shadows.begin(),
+					[] (bool b) { return b ? 1.f : 0.f; });
+
 				renderer.set_uniform_data_3f(m_u_DirLightDirection, glm::value_ptr(dirs.front()), max_lights);
 				renderer.set_uniform_data_3f(m_u_DirLightColor, glm::value_ptr(colors.front()), max_lights);
+				renderer.set_uniform_data_1f(m_u_DirLightShadows, shadows.data(), max_lights);
 			}
 
 			// upload point light info
@@ -140,6 +151,7 @@ namespace bump
 				renderer.clear_vertex_array();
 			}
 
+			renderer.clear_texture_2d(0);
 			renderer.clear_program();
 			renderer.set_blending(gl::renderer::blending::NONE);
 			renderer.set_depth_write(gl::renderer::depth_write::ENABLED);

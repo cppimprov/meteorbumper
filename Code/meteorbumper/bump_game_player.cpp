@@ -915,7 +915,7 @@ namespace bump
 			}
 		}
 
-		void player::render_transparent(gl::renderer& renderer, camera_matrices const& matrices)
+		void player::render_transparent(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map)
 		{
 			ZoneScopedN("player::render_transparent()");
 
@@ -928,13 +928,20 @@ namespace bump
 					auto lights = std::vector<lighting::directional_light>();
 					lights.reserve(view.size());
 
+					auto shadows = std::vector<bool>();
+					shadows.reserve(view.size());
+
 					for (auto id : view)
+					{
 						lights.push_back(view.get<lighting::directional_light>(id));
+						shadows.push_back(m_registry.has<lighting::main_light_tag>(id));
+					}
 
 					if (lights.size() > 3) lights.resize(3); // ick
+					if (shadows.size() > 3) shadows.resize(3);
 
-					m_shield_renderable_lower.set_directional_lights(lights);
-					m_shield_renderable_upper.set_directional_lights(lights);
+					m_shield_renderable_lower.set_directional_lights(lights, shadows);
+					m_shield_renderable_upper.set_directional_lights(lights, shadows);
 				}
 
 				// get brightest point lights:
@@ -981,8 +988,8 @@ namespace bump
 					m_shield_renderable_upper.set_point_lights(lights);
 				}
 
-				m_shield_renderable_lower.render(renderer, matrices);
-				m_shield_renderable_upper.render(renderer, matrices);
+				m_shield_renderable_lower.render(renderer, light_matrices, matrices, shadow_map);
+				m_shield_renderable_upper.render(renderer, light_matrices, matrices, shadow_map);
 			}
 		}
 

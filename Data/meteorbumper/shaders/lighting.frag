@@ -76,7 +76,7 @@ float attenuation_inv_sqr(float l_distance)
 	return a;
 }
 
-float shadow(vec3 p_ws, vec3 n, vec3 l, mat4 light_matrix, sampler2D shadow_map)
+float shadow(vec3 p_ws, mat4 light_matrix, sampler2D shadow_map)
 {
 	vec4 p_ls = light_matrix * vec4(p_ws, 1.0);
 	p_ls.xyz = (p_ls.xyz / p_ls.w) * 0.5 + 0.5;

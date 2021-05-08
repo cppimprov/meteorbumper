@@ -27,12 +27,12 @@ namespace bump
 			basic_renderable_alpha(basic_renderable_alpha&&) = default;
 			basic_renderable_alpha& operator=(basic_renderable_alpha&&) = default;
 
-			void render(gl::renderer& renderer, camera_matrices const& matrices);
+			void render(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map);
 
 			void set_transform(glm::mat4 const& transform) { m_transform = transform; }
 			glm::mat4 get_transform() const { return m_transform; }
 
-			void set_directional_lights(std::vector<lighting::directional_light> lights) { m_lights_dir = lights; }
+			void set_directional_lights(std::vector<lighting::directional_light> lights, std::vector<bool> shadows) { m_lights_dir = lights; m_shadows = shadows; }
 			void set_point_lights(std::vector<lighting::point_light> lights) { m_lights_point = lights; }
 
 		private:
@@ -50,9 +50,13 @@ namespace bump
 			GLint m_u_Opacity;
 			GLint m_u_DirLightDirection;
 			GLint m_u_DirLightColor;
+			GLint m_u_DirLightShadows;
 			GLint m_u_PointLightPosition;
 			GLint m_u_PointLightColor;
 			GLint m_u_PointLightRadius;
+			GLint m_u_InvViewMatrix;
+			GLint m_u_LightViewProjMatrix;
+			GLint m_u_Shadows;
 
 			struct submesh_data
 			{
@@ -71,6 +75,8 @@ namespace bump
 			std::vector<submesh_data> m_submeshes;
 			
 			std::vector<lighting::directional_light> m_lights_dir;
+			std::vector<bool> m_shadows;
+
 			std::vector<lighting::point_light> m_lights_point;
 
 			glm::mat4 m_transform;
