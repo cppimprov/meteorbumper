@@ -53,6 +53,9 @@ namespace bump
 			void set_blend_mode(gl::renderer::blending mode) { m_blend_mode = mode; }
 			gl::renderer::blending get_blend_mode() const { return m_blend_mode; }
 
+			void set_shadows_enabled(bool enabled) { m_shadows_enabled = enabled; }
+			bool get_shadows_enabled() const { return m_shadows_enabled; }
+
 			void set_base_velocity(glm::vec3 velocity) { m_base_velocity = velocity; }
 			glm::vec3 get_base_velocity() const { return m_base_velocity; }
 
@@ -77,7 +80,7 @@ namespace bump
 			void spawn_once(std::size_t particle_count);
 
 			void update(high_res_duration_t dt);
-			void render(gl::renderer& renderer, camera_matrices const& matrices);
+			void render(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map);
 			
 		private:
 
@@ -90,6 +93,9 @@ namespace bump
 			GLint m_in_Color;
 			GLint m_in_Size;
 			GLint m_u_MVP;
+			GLint m_u_LightViewProjMatrix;
+			GLint m_u_Shadows;
+			GLint m_u_EnableShadows;
 
 			gl::buffer m_instance_positions;
 			gl::buffer m_instance_colors;
@@ -101,6 +107,7 @@ namespace bump
 			high_res_duration_t m_max_lifetime_random;
 			std::uint32_t m_collision_mask;
 			gl::renderer::blending m_blend_mode;
+			bool m_shadows_enabled;
 
 			glm::vec3 m_base_velocity; // in local space
 			glm::vec3 m_random_velocity; // in local space

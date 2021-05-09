@@ -48,20 +48,22 @@ namespace bump
 
 		mbp_model parse_mbp_model_json(nlohmann::json j)
 		{
-			if (!j.is_array())
-				throw std::runtime_error("Root element must be an array.");
+			if (!j.is_object())
+				throw std::runtime_error("Root element must be an object.");
 			
-			auto out = mbp_model();
+			auto transform = j.at("transform").get<glm::mat4>();
 
-			for (auto j_submesh : j)
+			auto submeshes = std::vector<mbp_submesh>();
+			for (auto j_submesh : j.at("submeshes"))
 			{
 				auto material = parse_mbp_material_json(j_submesh.at("material"));
 				auto mesh = parse_mbp_mesh_json(j_submesh.at("mesh"));
 				auto submesh = mbp_submesh{ std::move(material), std::move(mesh) };
-				out.m_submeshes.push_back(std::move(submesh));
+
+				submeshes.push_back(std::move(submesh));
 			}
 
-			return out;
+			return { transform, std::move(submeshes) };
 		}
 
 	} // unnamed

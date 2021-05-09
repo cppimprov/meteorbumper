@@ -103,6 +103,7 @@ namespace bump
 				m_hit_effects.set_color_update_fn(make_color_update_fn(m_hit_effects, color_map));
 				m_hit_effects.set_size_update_fn(make_size_update_fn(m_hit_effects, size_map));
 				m_hit_effects.set_blend_mode(gl::renderer::blending::BLEND);
+				m_hit_effects.set_shadows_enabled(true);
 			}
 
 			spawn_wave();
@@ -304,11 +305,11 @@ namespace bump
 			m_instance_scales.clear();
 		}
 		
-		void asteroid_field::render_particles(gl::renderer& renderer, camera_matrices const& matrices)
+		void asteroid_field::render_particles(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map)
 		{
 			ZoneScopedN("asteroid_field::render_particles()");
 
-			m_hit_effects.render(renderer, matrices);
+			m_hit_effects.render(renderer, light_matrices, matrices, shadow_map);
 		}
 		
 		bool asteroid_field::is_wave_complete() const

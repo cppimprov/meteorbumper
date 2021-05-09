@@ -38,6 +38,7 @@ namespace bump
 	
 	struct mbp_model
 	{
+		glm::mat4 m_transform;
 		std::vector<mbp_submesh> m_submeshes;
 	};
 

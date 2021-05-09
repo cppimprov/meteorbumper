@@ -16,6 +16,7 @@ from bpy.props import (StringProperty)
 from bpy_extras import (node_shader_utils)
 from bpy_extras.io_utils import (ExportHelper, orientation_helper, axis_conversion)
 from mathutils import (Matrix, Vector, Color)
+import itertools
 
 def matrix_to_opengl(matrix):
 	m = matrix.copy()
@@ -33,9 +34,6 @@ def vector_to_opengl(vector):
 	v[1], v[2] = v[2], -v[1]
 	return v
 	
-def vector_to_array(vector):
-	return [x for x in vector]
-
 @dataclass
 class MaterialData:
 	name: str()
@@ -71,8 +69,9 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 	filename_ext = '.mbp_model'
 	filter_glob: StringProperty(default = '*.mbp_model', options = {'HIDDEN'})
 
-	def do_json_export(self, filepath, material_data, submesh_data, has_normals, has_tangents):
+	def do_json_export(self, filepath, material_data, transform_data, submesh_data, has_normals, has_tangents):
 		# arrange data for export
+
 		json_submeshes = []
 		for m, s in zip(material_data, submesh_data):
 
@@ -113,10 +112,12 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 			# add submesh to array
 			json_submesh = { 'material': json_material, 'mesh': json_mesh }
 			json_submeshes.append(json_submesh)
+		
+		json_mbp = { 'transform': transform_data, 'submeshes': json_submeshes }
 
 		# write!
 		out_file = open(filepath, 'w')
-		json.dump(json_submeshes, out_file, indent = 4)
+		json.dump(json_mbp, out_file, indent = 4)
 		out_file.close()
 
 	def do_export(self, context, filepath, *, global_matrix):
@@ -144,7 +145,9 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 		# apply modifiers
 		eval_obj = export_obj.evaluated_get(depsgraph)
 		eval_mesh = eval_obj.to_mesh()
+
 		#eval_mesh.transform(global_matrix @ export_obj.matrix_world)
+		transform_data = matrix_to_array(matrix_to_opengl(export_obj.matrix_world))
 
 		# negative scale: flip normals
 		if export_obj.matrix_world.determinant() < 0.0:
@@ -259,7 +262,7 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 		assert len(submesh_data) == len(material_data)
 
 		# export! (json for now)
-		self.do_json_export(filepath, material_data, submesh_data, has_normals, has_tangents)
+		self.do_json_export(filepath, material_data, transform_data, submesh_data, has_normals, has_tangents)
 
 		return {'FINISHED'}
 	

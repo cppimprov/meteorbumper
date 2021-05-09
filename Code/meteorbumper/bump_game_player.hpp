@@ -64,7 +64,7 @@ namespace bump
 			void upgrade();
 			
 			void update(bool fire, glm::mat4 const& player_transform, glm::vec3 player_velocity, high_res_duration_t dt);
-			void render(gl::renderer& renderer, camera_matrices const& matrices);
+			void render(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map);
 
 			struct beam_segment
 			{
@@ -131,7 +131,7 @@ namespace bump
 			explicit player_weapons(entt::registry& registry, gl::shader_program const& laser_shader, gl::shader_program const& laser_hit_shader);
 
 			void update(bool fire, glm::mat4 const& player_transform, glm::vec3 player_velocity, high_res_duration_t dt);
-			void render(gl::renderer& renderer, camera_matrices const& matrices);
+			void render(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map);
 
 			player_lasers m_lasers;
 		};
@@ -180,7 +180,7 @@ namespace bump
 			void update(high_res_duration_t dt);
 			void render_depth(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_scene(gl::renderer& renderer, camera_matrices const& matrices);
-			void render_particles(gl::renderer& renderer, camera_matrices const& matrices);
+			void render_particles(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map);
 			void render_transparent(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map);
 
 			entt::registry& m_registry;

@@ -34,7 +34,7 @@ namespace bump
 				{ "player_shield", { "default_material_alpha.vert", "lighting.frag", "default_material_alpha.frag" } },
 				{ "asteroid", { "asteroid.vert", "g_buffers_write.frag", "asteroid.frag" } },
 				{ "particle_field", { "particle_field.vert", "particle_field.frag" } },
-				{ "particle_effect", { "particle_effect.vert", "particle_effect.frag" } },
+				{ "particle_effect", { "particle_effect.vert", "lighting.frag", "particle_effect.frag" } },
 				{ "indicator", { "indicator.vert", "indicator.frag" } },
 				{ "crosshair", { "crosshair.vert", "crosshair.frag" } },
 				{ "player_laser", { "player_laser.vert", "player_laser.geom", "g_buffers_write.frag", "player_laser.frag" } },

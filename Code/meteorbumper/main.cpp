@@ -22,9 +22,44 @@ int main(int , char* [])
 	return EXIT_SUCCESS;
 }
 
-// todo next:
+// todo:
 
-	// use blending for particles? (or premultiplied alpha?)
+	// export split asteroid
+	// render to check it works...
+
+	// debris:
+
+		// asteroids
+			// split asteroid into lots of parts and export
+			// when an asteroid blows up, replace it with a one of these, add physics rigidbody for each
+			// render for a time, then dissolve?
+		
+		// player
+			// split player mesh into 3 or 4 parts and export
+
+	// player explosion:
+		// use debris to replace player on death
+		// add delay before returning to start screen
+		// clear input on entering start screen!
+		// add short delay before accepting input.
+
+	// sound:
+		// replace start music
+		// add gameplay music
+		// laser firing effects
+		// laser hit effects
+		// powerup sound effect
+		// shield collision effect
+		// armor collision effect
+		// asteroid explosion effect
+		// asteroid collision effect
+		// shield up / down effect
+	
+	// balancing:
+		// player should be more fragile
+		// asteroids should be less fragile
+
+// todo next:
 
 	// player searchlight
 	// player side lights
@@ -49,7 +84,6 @@ int main(int , char* [])
 
 	// player controls:
 		// remove strafing / thrusters (-> classic asteroids controls)
-		// reduce drag on player ship
 		// fix key presses:
 			// when both direction keys are pressed, release one -> 
 			// ship should move in the direction of the one still pressed
@@ -61,8 +95,6 @@ int main(int , char* [])
 			// other asteroids move with the first one
 			// (space dust shows movement)
 
-		// space station... moves away at the same speed as the main asteroid (!) so it never gets closer
-	
 // todo sometime:
 
 	// volumetric clouds
@@ -107,7 +139,6 @@ int main(int , char* [])
 		// add ray shape and collision
 		// add cylinder shape and collision
 		// add arbitrary mesh collision (for space station)
-		// [stretch: better broadphase - quadtree / octree?]
 
 	// level:
 		// space station

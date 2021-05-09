@@ -512,7 +512,7 @@ namespace bump
 			m_high_damage_hit_effects.update(dt);
 		}
 
-		void player_lasers::render(gl::renderer& renderer, camera_matrices const& matrices)
+		void player_lasers::render(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map)
 		{
 			ZoneScopedN("player_lasers::render()");
 
@@ -567,9 +567,9 @@ namespace bump
 				m_frame_instance_beam_lengths.clear();
 			}
 
-			m_low_damage_hit_effects.render(renderer, matrices);
-			m_medium_damage_hit_effects.render(renderer, matrices);
-			m_high_damage_hit_effects.render(renderer, matrices);
+			m_low_damage_hit_effects.render(renderer, light_matrices, matrices, shadow_map);
+			m_medium_damage_hit_effects.render(renderer, light_matrices, matrices, shadow_map);
+			m_high_damage_hit_effects.render(renderer, light_matrices, matrices, shadow_map);
 		}
 
 		player_weapons::player_weapons(entt::registry& registry, gl::shader_program const& laser_shader, gl::shader_program const& laser_hit_shader):
@@ -581,9 +581,9 @@ namespace bump
 			m_lasers.update(fire, player_transform, player_velocity, dt);
 		}
 
-		void player_weapons::render(gl::renderer& renderer, camera_matrices const& matrices)
+		void player_weapons::render(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map)
 		{
-			m_lasers.render(renderer, matrices);
+			m_lasers.render(renderer, light_matrices, matrices, shadow_map);
 		}
 
 		
@@ -894,24 +894,24 @@ namespace bump
 			m_ship_renderable.render(renderer, matrices);
 		}
 
-		void player::render_particles(gl::renderer& renderer, camera_matrices const& matrices)
+		void player::render_particles(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map)
 		{
 			ZoneScopedN("player::render_particles()");
 
-			m_weapons.render(renderer, matrices);
+			m_weapons.render(renderer, light_matrices, matrices, shadow_map);
 
 			{
 				ZoneScopedN("player::render_particles() - engine boost effects");
 
-				m_left_engine_boost_effect.render(renderer, matrices);
-				m_right_engine_boost_effect.render(renderer, matrices);
+				m_left_engine_boost_effect.render(renderer, light_matrices, matrices, shadow_map);
+				m_right_engine_boost_effect.render(renderer, light_matrices, matrices, shadow_map);
 			}
 
 			{
 				ZoneScopedN("player::render_particles() - shield / armor effects");
 				
-				m_shield_hit_effect.render(renderer, matrices);
-				m_armor_hit_effect.render(renderer, matrices);
+				m_shield_hit_effect.render(renderer, light_matrices, matrices, shadow_map);
+				m_armor_hit_effect.render(renderer, light_matrices, matrices, shadow_map);
 			}
 		}
 

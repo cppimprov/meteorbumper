@@ -391,9 +391,6 @@ namespace bump
 
 // todo:
 
-	// shadows:
-		// affect particles
-
 	// add spotlights
 		// use for engine lights
 		// use for player searchlight(s)

@@ -307,8 +307,8 @@ namespace bump
 					
 					// render particles
 					{
-						asteroids.render_particles(renderer, scene_matrices);
-						player.render_particles(renderer, scene_matrices);
+						asteroids.render_particles(renderer, light_matrices, scene_matrices, shadow_rt.m_texture);
+						player.render_particles(renderer, light_matrices, scene_matrices, shadow_rt.m_texture);
 						space_dust.render_particles(renderer, scene_matrices);
 					}
 

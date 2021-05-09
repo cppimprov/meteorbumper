@@ -20,11 +20,15 @@ namespace bump
 			m_in_Color(shader.get_attribute_location("in_Color")),
 			m_in_Size(shader.get_attribute_location("in_Size")),
 			m_u_MVP(shader.get_uniform_location("u_MVP")),
+			m_u_LightViewProjMatrix(shader.get_uniform_location("u_LightViewProjMatrix")),
+			m_u_Shadows(shader.get_uniform_location("u_Shadows")),
+			m_u_EnableShadows(shader.get_uniform_location("u_EnableShadows")),
 			m_origin(glm::mat4(1.f)),
 			m_max_lifetime(high_res_duration_from_seconds(2.f)),
 			m_max_lifetime_random(high_res_duration_from_seconds(0.f)),
 			m_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS | physics::collision_layers::PLAYER),
 			m_blend_mode(gl::renderer::blending::ADD),
+			m_shadows_enabled(false),
 			m_base_velocity{ 0.f, 0.f, 0.f },
 			m_random_velocity{ 5.f, 5.f, 5.f },
 			m_spawn_radius_m(0.5f),
@@ -105,7 +109,7 @@ namespace bump
 			}
 		}
 
-		void particle_effect::render(gl::renderer& renderer, camera_matrices const& matrices)
+		void particle_effect::render(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map)
 		{
 			ZoneScopedN("particle_effect::render()");
 
@@ -148,10 +152,15 @@ namespace bump
 
 				renderer.set_program(m_shader);
 				renderer.set_uniform_4x4f(m_u_MVP, matrices.model_view_projection_matrix(glm::mat4(1.f)));
+				renderer.set_uniform_4x4f(m_u_LightViewProjMatrix, light_matrices.m_view_projection);
+				renderer.set_uniform_1i(m_u_Shadows, 0);
+				renderer.set_texture_2d(0, shadow_map);
+				renderer.set_uniform_1f(m_u_EnableShadows, m_shadows_enabled ? 1.f : 0.f);
 				renderer.set_vertex_array(m_vertex_array);
 
 				renderer.draw_arrays(GL_POINTS, 1, instance_count);
 
+				renderer.clear_texture_2d(0);
 				renderer.clear_vertex_array();
 				renderer.clear_program();
 

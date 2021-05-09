@@ -30,7 +30,7 @@ namespace bump
 			void update(high_res_duration_t dt);
 			void render_depth(gl::renderer& renderer, camera_matrices const& matrices);
 			void render_scene(gl::renderer& renderer, camera_matrices const& matrices);
-			void render_particles(gl::renderer& renderer, camera_matrices const& matrices);
+			void render_particles(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map);
 
 			enum class asteroid_type { LARGE, MEDIUM, SMALL };
 
