@@ -152,6 +152,7 @@ namespace bump
 
 			std::vector<asteroid_renderable> m_fragment_renderables;
 			std::vector<renderable_instance_data> m_fragment_renderable_instance_data;
+			std::vector<glm::mat4> m_fragment_renderable_transforms;
 		};
 
 	} // game

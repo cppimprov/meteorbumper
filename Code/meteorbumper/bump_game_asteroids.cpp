@@ -115,12 +115,15 @@ namespace bump
 				{ asteroid_type::MEDIUM, { 1.f, 80.f, 750.f } },
 				{ asteroid_type::LARGE, { 2.f, 150.f, 2000.f } } },
 			m_hit_effects(registry, hit_shader),
-			m_explosion_max_lifetime(high_res_duration_from_seconds(1.5f))
+			m_explosion_max_lifetime(high_res_duration_from_seconds(3.5f))
 		{
 			for (auto const& m : fragment_models)
 				m_fragment_renderables.emplace_back(m, depth_shader, shader);
 			
 			m_fragment_renderable_instance_data.resize(m_fragment_renderables.size());
+
+			for (auto const& m : fragment_models)
+				m_fragment_renderable_transforms.push_back(m.get().m_transform);
 
 			// set up collision effects
 			{
@@ -200,6 +203,7 @@ namespace bump
 			struct destroyed_asteroid_data
 			{
 				asteroid_type m_type;
+				glm::mat4 m_transform;
 				glm::vec3 m_position;
 				glm::vec3 m_velocity;
 				glm::vec3 m_color;
@@ -214,7 +218,7 @@ namespace bump
 					if (data.m_hp < 0)
 					{
 						to_destroy.push_back(e);
-						destroyed_data.push_back({ data.m_type, rigidbody.get_position(), rigidbody.get_velocity(), data.m_color, data.m_model_scale });
+						destroyed_data.push_back({ data.m_type, rigidbody.get_transform(), rigidbody.get_position(), rigidbody.get_velocity(), data.m_color, data.m_model_scale });
 					}
 				});
 			
@@ -302,14 +306,31 @@ namespace bump
 						auto& data = m_registry.emplace<asteroid_fragment_data>(id);
 						data.m_model_index = i;
 						data.m_lifetime = high_res_duration_t{ 0 };
-						data.m_max_lifetime = m_explosion_max_lifetime; // todo: randomness!
+						data.m_max_lifetime = high_res_duration_from_seconds(random::scale(m_rng, high_res_duration_to_seconds(m_explosion_max_lifetime), high_res_duration_to_seconds(m_explosion_max_lifetime) * 0.5f));
+
+						auto const mass = random::scale(m_rng, 25.f, 5.f);
+						auto const size = glm::vec3(random::scale(m_rng, 10.f, 5.f), random::scale(m_rng, 10.f, 5.f), random::scale(m_rng, 10.f, 5.f));
+
+						auto transform = m_fragment_renderable_transforms[i];
+						set_position(transform, get_position(transform) * destroyed.m_scale);
+						transform = destroyed.m_transform * transform;
+						auto position = get_position(transform);
+						
+						auto const vel_direction = glm::normalize(get_position(m_fragment_renderable_transforms[i]));
+						auto const vel_magnitude = random::scale(m_rng, 15.f, 5.f);
+						auto const vel_random = random::point_in_ring_3d(m_rng, 0.f, 5.f);
+						auto const velocity = vel_direction * vel_magnitude + vel_random;
+
+						auto const ang_axis = random::point_in_ring_3d(m_rng, 0.f, 1.f);
+						auto const ang_magnitude = random::scale(m_rng, 2.5f, 1.f);
+						auto const ang_velocity = ang_axis * ang_magnitude;
 
 						auto& rigidbody = m_registry.emplace<physics::rigidbody>(id);
-						rigidbody.set_mass(25.f); // todo: randomness!
-						rigidbody.set_local_inertia_tensor(physics::make_cuboid_inertia_tensor(25.f, glm::vec3(5.f))); // todo: randomness!
-						rigidbody.set_position(destroyed.m_position); // todo: add transform and scale!
-						// todo: linear velocity away from center!
-						// todo: random angular velocity!
+						rigidbody.set_mass(mass);
+						rigidbody.set_local_inertia_tensor(physics::make_cuboid_inertia_tensor(mass, size));
+						rigidbody.set_position(position);
+						rigidbody.set_velocity(velocity);
+						rigidbody.set_angular_velocity(ang_velocity);
 
 						fragment_ids.push_back(id);
 					}

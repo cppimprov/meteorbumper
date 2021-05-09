@@ -25,12 +25,8 @@ int main(int , char* [])
 // todo:
 
 	// asteroid fragments:
-		// add asteroid renderable class to do instanced rendering
-		// create asteroid explosions class, to add an explosion with appropriate lifetime and manage entt stuff
-		// render fragments for each explosion.
-
-	// add vector of renderables to asteroid.
-	// do a test render to make sure the coordinates are correct.
+		// add mbp_model transforms to asteroid renderable (?) or save the transform somewhere...
+		// when creating fragments, use scale to adjust position.
 
 	// debris:
 
