@@ -15,6 +15,7 @@
 #include <Tracy.hpp>
 
 #include <algorithm>
+#include <iostream>
 #include <random>
 
 namespace bump
@@ -22,35 +23,19 @@ namespace bump
 	
 	namespace game
 	{
-		
-		asteroid_field::asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, gl::shader_program const& depth_shader, gl::shader_program const& shader, gl::shader_program const& hit_shader):
-			m_registry(registry),
-			m_powerups(powerups),
 
+		asteroid_renderable::asteroid_renderable(mbp_model const& model, gl::shader_program const& depth_shader, gl::shader_program const& shader):
 			m_depth_shader(depth_shader),
 			m_depth_in_VertexPosition(depth_shader.get_attribute_location("in_VertexPosition")),
 			m_depth_in_MVP(depth_shader.get_attribute_location("in_MVP")),
 			m_depth_in_Scale(depth_shader.get_attribute_location("in_Scale")),
-
 			m_shader(shader),
 			m_in_VertexPosition(shader.get_attribute_location("in_VertexPosition")),
 			m_in_VertexNormal(shader.get_attribute_location("in_VertexNormal")),
 			m_in_MVP(shader.get_attribute_location("in_MVP")),
 			m_in_NormalMatrix(shader.get_attribute_location("in_NormalMatrix")),
 			m_in_Color(shader.get_attribute_location("in_Color")),
-			m_in_Scale(shader.get_attribute_location("in_Scale")),
-
-			m_rng(std::random_device()()),
-			m_wave_number(0),
-			m_asteroid_type_probability{
-				{ 0.40f, asteroid_type::SMALL },
-				{ 0.70f, asteroid_type::MEDIUM },
-				{ 1.00f, asteroid_type::LARGE } },
-			m_asteroid_type_data{
-				{ asteroid_type::SMALL, { 0.5f, 30.f, 200.f } },
-				{ asteroid_type::MEDIUM, { 1.f, 80.f, 750.f } },
-				{ asteroid_type::LARGE, { 2.f, 150.f, 2000.f } } },
-			m_hit_effects(registry, hit_shader)
+			m_in_Scale(shader.get_attribute_location("in_Scale"))
 		{
 			// setup mesh buffers
 			die_if(model.m_submeshes.size() != 1);
@@ -78,6 +63,64 @@ namespace bump
 			m_scales.set_data(GL_ARRAY_BUFFER, (float*)nullptr, 1, 0, GL_STREAM_DRAW);
 			m_depth_vertex_array.set_array_buffer(m_depth_in_Scale, m_scales, 1);
 			m_vertex_array.set_array_buffer(m_in_Scale, m_scales, 1);
+		}
+
+		void asteroid_renderable::render_depth(gl::renderer& renderer, camera_matrices const&, std::vector<glm::mat4> const& transforms, std::vector<float> const& scales)
+		{
+			// upload instance data to buffers
+			m_transforms.set_data(GL_ARRAY_BUFFER, glm::value_ptr(transforms.front()), 16, transforms.size(), GL_STREAM_DRAW);
+			m_scales.set_data(GL_ARRAY_BUFFER, scales.data(), 1, scales.size(), GL_STREAM_DRAW);
+
+			// render
+			renderer.set_program(m_depth_shader);
+			renderer.set_vertex_array(m_depth_vertex_array);
+
+			renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type(), transforms.size());
+
+			renderer.clear_vertex_array();
+			renderer.clear_program();
+		}
+
+		void asteroid_renderable::render_scene(gl::renderer& renderer, camera_matrices const&, std::vector<glm::mat4> const& transforms, std::vector<glm::mat3> const& normal_matrices, std::vector<glm::vec3> const& colors, std::vector<float> const& scales)
+		{
+			// upload instance data to buffers
+			m_transforms.set_data(GL_ARRAY_BUFFER, glm::value_ptr(transforms.front()), 16, transforms.size(), GL_STREAM_DRAW);
+			m_normal_matrices.set_data(GL_ARRAY_BUFFER, glm::value_ptr(normal_matrices.front()), 9, normal_matrices.size(), GL_STREAM_DRAW);
+			m_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(colors.front()), 3, colors.size(), GL_STREAM_DRAW);
+			m_scales.set_data(GL_ARRAY_BUFFER, scales.data(), 1, scales.size(), GL_STREAM_DRAW);
+
+			// render
+			renderer.set_program(m_shader);
+			renderer.set_vertex_array(m_vertex_array);
+
+			renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type(), transforms.size());
+
+			renderer.clear_vertex_array();
+			renderer.clear_program();
+		}
+
+		
+		asteroid_field::asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, std::vector<std::reference_wrapper<const mbp_model>> const& fragment_models, gl::shader_program const& depth_shader, gl::shader_program const& shader, gl::shader_program const& hit_shader):
+			m_registry(registry),
+			m_powerups(powerups),
+			m_renderable(model, depth_shader, shader),
+			m_rng(std::random_device()()),
+			m_wave_number(0),
+			m_asteroid_type_probability{
+				{ 0.40f, asteroid_type::SMALL },
+				{ 0.70f, asteroid_type::MEDIUM },
+				{ 1.00f, asteroid_type::LARGE } },
+			m_asteroid_type_data{
+				{ asteroid_type::SMALL, { 0.5f, 30.f, 200.f } },
+				{ asteroid_type::MEDIUM, { 1.f, 80.f, 750.f } },
+				{ asteroid_type::LARGE, { 2.f, 150.f, 2000.f } } },
+			m_hit_effects(registry, hit_shader),
+			m_explosion_max_lifetime(high_res_duration_from_seconds(1.5f))
+		{
+			for (auto const& m : fragment_models)
+				m_fragment_renderables.emplace_back(m, depth_shader, shader);
+			
+			m_fragment_renderable_instance_data.resize(m_fragment_renderables.size());
 
 			// set up collision effects
 			{
@@ -115,10 +158,43 @@ namespace bump
 
 			for (auto id : view)
 				m_registry.destroy(id);
+
+			for (auto const& e : m_asteroid_explosions)
+				for (auto id : e.m_fragments)
+					m_registry.destroy(id);
 		}
 
 		void asteroid_field::update(high_res_duration_t dt)
 		{
+			// update fragment lifetimes and remove expired fragments
+			{
+				auto view = m_registry.view<asteroid_fragment_data>();
+
+				for (auto i = m_asteroid_explosions.begin(); i != m_asteroid_explosions.end(); )
+				{
+					auto last = std::remove_if(i->m_fragments.begin(), i->m_fragments.end(),
+						[&] (entt::entity id)
+						{
+							auto& data = view.get<asteroid_fragment_data>(id);
+							data.m_lifetime += dt;
+
+							auto destroy = (data.m_lifetime >= data.m_max_lifetime);
+							
+							if (destroy)
+								m_registry.destroy(id);
+							
+							return destroy;
+						});
+
+					i->m_fragments.erase(last, i->m_fragments.end());
+
+					if (i->m_fragments.empty())
+						i = m_asteroid_explosions.erase(i);
+					else
+						++i;
+				}
+			}
+
 			auto to_destroy = std::vector<entt::entity>();
 			
 			struct destroyed_asteroid_data
@@ -126,6 +202,8 @@ namespace bump
 				asteroid_type m_type;
 				glm::vec3 m_position;
 				glm::vec3 m_velocity;
+				glm::vec3 m_color;
+				float m_scale;
 			};
 
 			auto destroyed_data = std::vector<destroyed_asteroid_data>();
@@ -136,7 +214,7 @@ namespace bump
 					if (data.m_hp < 0)
 					{
 						to_destroy.push_back(e);
-						destroyed_data.push_back({ data.m_type, rigidbody.get_position(), rigidbody.get_velocity() });
+						destroyed_data.push_back({ data.m_type, rigidbody.get_position(), rigidbody.get_velocity(), data.m_color, data.m_model_scale });
 					}
 				});
 			
@@ -209,6 +287,35 @@ namespace bump
 					auto const type = random::type_from_probability_map(m_rng, powerup_type_probability);
 					m_powerups.spawn(destroyed.m_position, type);
 				}
+
+				// add explosion
+				{
+					auto const fragment_count = m_fragment_renderables.size();
+
+					auto fragment_ids = std::vector<entt::entity>();
+					fragment_ids.reserve(fragment_count);
+
+					for (auto i = std::size_t{ 0 }; i != fragment_count; ++i)
+					{
+						auto id = m_registry.create();
+
+						auto& data = m_registry.emplace<asteroid_fragment_data>(id);
+						data.m_model_index = i;
+						data.m_lifetime = high_res_duration_t{ 0 };
+						data.m_max_lifetime = m_explosion_max_lifetime; // todo: randomness!
+
+						auto& rigidbody = m_registry.emplace<physics::rigidbody>(id);
+						rigidbody.set_mass(25.f); // todo: randomness!
+						rigidbody.set_local_inertia_tensor(physics::make_cuboid_inertia_tensor(25.f, glm::vec3(5.f))); // todo: randomness!
+						rigidbody.set_position(destroyed.m_position); // todo: add transform and scale!
+						// todo: linear velocity away from center!
+						// todo: random angular velocity!
+
+						fragment_ids.push_back(id);
+					}
+
+					m_asteroid_explosions.push_back({ destroyed.m_color, destroyed.m_scale, std::move(fragment_ids) });
+				}
 			}
 			
 			for (auto p : m_frame_hit_positions)
@@ -231,78 +338,108 @@ namespace bump
 		{
 			ZoneScopedN("asteroid_field::render_depth()");
 
-			// get instance data from components
-			auto view = m_registry.view<asteroid_data, physics::rigidbody>();
-
-			if (view.empty())
-				return;
-
-			for (auto id : view)
+			// render asteroids
 			{
-				auto [data, physics] = view.get<asteroid_data, physics::rigidbody>(id);
-				auto const transform = physics.get_transform();
-				m_instance_transforms.push_back(matrices.model_view_projection_matrix(transform));
-				m_instance_scales.push_back(data.m_model_scale);
+				auto view = m_registry.view<asteroid_data, physics::rigidbody>();
+
+				if (!view.empty())
+				{
+					for (auto id : view)
+					{
+						auto [a, rb] = view.get<asteroid_data, physics::rigidbody>(id);
+						auto const transform = rb.get_transform();
+						m_renderable_instance_data.m_transforms.push_back(matrices.model_view_projection_matrix(transform));
+						m_renderable_instance_data.m_scales.push_back(a.m_model_scale);
+					}
+
+					m_renderable.render_depth(renderer, matrices, m_renderable_instance_data.m_transforms, m_renderable_instance_data.m_scales);
+
+					m_renderable_instance_data.clear();
+				}
 			}
 
-			// upload instance data to buffers
-			m_transforms.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_transforms.front()), 16, m_instance_transforms.size(), GL_STREAM_DRAW);
-			m_scales.set_data(GL_ARRAY_BUFFER, m_instance_scales.data(), 1, m_instance_scales.size(), GL_STREAM_DRAW);
+			// render fragments
+			{
+				auto view = m_registry.view<asteroid_fragment_data, physics::rigidbody>();
 
-			// render
-			renderer.set_program(m_depth_shader);
-			renderer.set_vertex_array(m_depth_vertex_array);
+				for (auto const& e : m_asteroid_explosions)
+				{
+					for (auto id : e.m_fragments)
+					{
+						auto [f, rb] = view.get<asteroid_fragment_data, physics::rigidbody>(id);
+						auto const transform = rb.get_transform();
 
-			renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type(), view.size());
+						auto& data = m_fragment_renderable_instance_data[f.m_model_index];
+						data.m_transforms.push_back(matrices.model_view_projection_matrix(transform));
+						data.m_scales.push_back(e.m_model_scale);
+					}
+				}
 
-			renderer.clear_vertex_array();
-			renderer.clear_program();
+				for (auto i = std::size_t{ 0 }; i != m_fragment_renderables.size(); ++i)
+				{
+					auto const& data = m_fragment_renderable_instance_data[i];
+					m_fragment_renderables[i].render_depth(renderer, matrices, data.m_transforms, data.m_scales);
+				}
 
-			// clear instance data
-			m_instance_transforms.clear();
-			m_instance_scales.clear();
+				for (auto& i : m_fragment_renderable_instance_data)
+					i.clear();
+			}
 		}
 		
 		void asteroid_field::render_scene(gl::renderer& renderer, camera_matrices const& matrices)
 		{
 			ZoneScopedN("asteroid_field::render_scene()");
 
-			// get instance data from components
-			auto view = m_registry.view<asteroid_data, physics::rigidbody>();
-
-			if (view.empty())
-				return;
-
-			for (auto id : view)
+			// render asteroids
 			{
-				auto [data, physics] = view.get<asteroid_data, physics::rigidbody>(id);
-				auto const transform = physics.get_transform();
-				m_instance_transforms.push_back(matrices.model_view_projection_matrix(transform));
-				m_instance_normal_matrices.push_back(matrices.normal_matrix(transform));
-				m_instance_colors.push_back(data.m_color);
-				m_instance_scales.push_back(data.m_model_scale);
+				auto view = m_registry.view<asteroid_data, physics::rigidbody>();
+
+				if (!view.empty())
+				{
+					for (auto id : view)
+					{
+						auto [a, rb] = view.get<asteroid_data, physics::rigidbody>(id);
+						auto const transform = rb.get_transform();
+						m_renderable_instance_data.m_transforms.push_back(matrices.model_view_projection_matrix(transform));
+						m_renderable_instance_data.m_normal_matrices.push_back(matrices.normal_matrix(transform));
+						m_renderable_instance_data.m_colors.push_back(a.m_color);
+						m_renderable_instance_data.m_scales.push_back(a.m_model_scale);
+					}
+
+					m_renderable.render_scene(renderer, matrices, m_renderable_instance_data.m_transforms, m_renderable_instance_data.m_normal_matrices, m_renderable_instance_data.m_colors, m_renderable_instance_data.m_scales);
+
+					m_renderable_instance_data.clear();
+				}
 			}
 
-			// upload instance data to buffers
-			m_transforms.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_transforms.front()), 16, m_instance_transforms.size(), GL_STREAM_DRAW);
-			m_normal_matrices.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_normal_matrices.front()), 9, m_instance_normal_matrices.size(), GL_STREAM_DRAW);
-			m_colors.set_data(GL_ARRAY_BUFFER, glm::value_ptr(m_instance_colors.front()), 3, m_instance_colors.size(), GL_STREAM_DRAW);
-			m_scales.set_data(GL_ARRAY_BUFFER, m_instance_scales.data(), 1, m_instance_scales.size(), GL_STREAM_DRAW);
+			// render fragments
+			{
+				auto view = m_registry.view<asteroid_fragment_data, physics::rigidbody>();
 
-			// render
-			renderer.set_program(m_shader);
-			renderer.set_vertex_array(m_vertex_array);
+				for (auto const& e : m_asteroid_explosions)
+				{
+					for (auto id : e.m_fragments)
+					{
+						auto [f, rb] = view.get<asteroid_fragment_data, physics::rigidbody>(id);
+						auto const transform = rb.get_transform();
 
-			renderer.draw_indexed(GL_TRIANGLES, m_indices.get_element_count(), m_indices.get_component_type(), view.size());
+						auto& data = m_fragment_renderable_instance_data[f.m_model_index];
+						data.m_transforms.push_back(matrices.model_view_projection_matrix(transform));
+						data.m_normal_matrices.push_back(matrices.normal_matrix(transform));
+						data.m_colors.push_back(e.m_color);
+						data.m_scales.push_back(e.m_model_scale);
+					}
+				}
 
-			renderer.clear_vertex_array();
-			renderer.clear_program();
+				for (auto i = std::size_t{ 0 }; i != m_fragment_renderables.size(); ++i)
+				{
+					auto const& data = m_fragment_renderable_instance_data[i];
+					m_fragment_renderables[i].render_scene(renderer, matrices, data.m_transforms, data.m_normal_matrices, data.m_colors, data.m_scales);
+				}
 
-			// clear instance data
-			m_instance_transforms.clear();
-			m_instance_normal_matrices.clear();
-			m_instance_colors.clear();
-			m_instance_scales.clear();
+				for (auto& i : m_fragment_renderable_instance_data)
+					i.clear();
+			}
 		}
 		
 		void asteroid_field::render_particles(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map)

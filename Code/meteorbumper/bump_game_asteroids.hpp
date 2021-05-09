@@ -19,12 +19,52 @@ namespace bump
 	{
 
 		class powerups;
+
+		class asteroid_renderable
+		{
+		public:
+
+			asteroid_renderable(mbp_model const& model, gl::shader_program const& depth_shader, gl::shader_program const& shader);
+
+			void render_depth(gl::renderer& renderer, camera_matrices const& matrices, std::vector<glm::mat4> const& transforms, std::vector<float> const& scales);
+			void render_scene(gl::renderer& renderer, camera_matrices const& matrices, std::vector<glm::mat4> const& transforms, std::vector<glm::mat3> const& normal_matrices, std::vector<glm::vec3> const& colors, std::vector<float> const& scales);
+
+		private:
+
+			// depth rendering stuff:
+			gl::shader_program const& m_depth_shader;
+
+			GLint m_depth_in_VertexPosition;
+			GLint m_depth_in_MVP;
+			GLint m_depth_in_Scale;
+			
+			gl::vertex_array m_depth_vertex_array;
+
+			// scene rendering stuff:
+			gl::shader_program const& m_shader;
+
+			GLint m_in_VertexPosition;
+			GLint m_in_VertexNormal;
+			GLint m_in_MVP;
+			GLint m_in_NormalMatrix;
+			GLint m_in_Color;
+			GLint m_in_Scale;
+			
+			gl::buffer m_vertices;
+			gl::buffer m_normals;
+			gl::buffer m_indices;
+			gl::buffer m_transforms;
+			gl::buffer m_normal_matrices;
+			gl::buffer m_colors;
+			gl::buffer m_scales;
+			gl::vertex_array m_vertex_array;
+		};
 		
 		class asteroid_field
 		{
 		public:
 
-			explicit asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, gl::shader_program const& depth_shader, gl::shader_program const& shader, gl::shader_program const& hit_shader);
+			explicit asteroid_field(entt::registry& registry, powerups& powerups, mbp_model const& model, std::vector<std::reference_wrapper<const mbp_model>> const& fragment_models, gl::shader_program const& depth_shader, gl::shader_program const& shader, gl::shader_program const& hit_shader);
 			~asteroid_field();
 
 			void update(high_res_duration_t dt);
@@ -64,38 +104,18 @@ namespace bump
 			entt::registry& m_registry;
 			powerups& m_powerups;
 
-			// depth rendering stuff:
-			gl::shader_program const& m_depth_shader;
+			struct renderable_instance_data
+			{
+				void clear() { m_transforms.clear(); m_normal_matrices.clear(); m_colors.clear(); m_scales.clear(); }
 
-			GLint m_depth_in_VertexPosition;
-			GLint m_depth_in_MVP;
-			GLint m_depth_in_Scale;
-			
-			gl::vertex_array m_depth_vertex_array;
+				std::vector<glm::mat4> m_transforms;
+				std::vector<glm::mat3> m_normal_matrices;
+				std::vector<glm::vec3> m_colors;
+				std::vector<float> m_scales;
+			};
 
-			// scene rendering stuff:
-			gl::shader_program const& m_shader;
-
-			GLint m_in_VertexPosition;
-			GLint m_in_VertexNormal;
-			GLint m_in_MVP;
-			GLint m_in_NormalMatrix;
-			GLint m_in_Color;
-			GLint m_in_Scale;
-			
-			gl::buffer m_vertices;
-			gl::buffer m_normals;
-			gl::buffer m_indices;
-			gl::buffer m_transforms;
-			gl::buffer m_normal_matrices;
-			gl::buffer m_colors;
-			gl::buffer m_scales;
-			gl::vertex_array m_vertex_array;
-
-			std::vector<glm::mat4> m_instance_transforms;
-			std::vector<glm::mat3> m_instance_normal_matrices;
-			std::vector<glm::vec3> m_instance_colors;
-			std::vector<float> m_instance_scales;
+			asteroid_renderable m_renderable;
+			renderable_instance_data m_renderable_instance_data;
 
 			struct asteroid_type_data
 			{
@@ -112,6 +132,26 @@ namespace bump
 
 			particle_effect m_hit_effects;
 			std::vector<glm::vec3> m_frame_hit_positions;
+
+			struct asteroid_fragment_data
+			{
+				std::size_t m_model_index;
+				high_res_duration_t m_lifetime;
+				high_res_duration_t m_max_lifetime;
+			};
+
+			struct asteroid_explosion_data
+			{
+				glm::vec3 m_color = glm::vec3(1.f);
+				float m_model_scale = 1.f;
+				std::vector<entt::entity> m_fragments;
+			};
+
+			std::vector<asteroid_explosion_data> m_asteroid_explosions;
+			high_res_duration_t m_explosion_max_lifetime;
+
+			std::vector<asteroid_renderable> m_fragment_renderables;
+			std::vector<renderable_instance_data> m_fragment_renderable_instance_data;
 		};
 
 	} // game

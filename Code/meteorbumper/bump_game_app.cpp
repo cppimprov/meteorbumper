@@ -60,6 +60,21 @@ namespace bump
 				{ "powerup_armor", "powerup_armor.mbp_model" },
 				{ "powerup_lasers", "powerup_lasers.mbp_model" },
 				{ "point_light", "point_light.mbp_model" },
+				{ "asteroid_fragment_0", "asteroid_fragment_0.mbp_model" },
+				{ "asteroid_fragment_1", "asteroid_fragment_1.mbp_model" },
+				{ "asteroid_fragment_2", "asteroid_fragment_2.mbp_model" },
+				{ "asteroid_fragment_3", "asteroid_fragment_3.mbp_model" },
+				{ "asteroid_fragment_4", "asteroid_fragment_4.mbp_model" },
+				{ "asteroid_fragment_5", "asteroid_fragment_5.mbp_model" },
+				{ "asteroid_fragment_6", "asteroid_fragment_6.mbp_model" },
+				{ "asteroid_fragment_7", "asteroid_fragment_7.mbp_model" },
+				{ "asteroid_fragment_8", "asteroid_fragment_8.mbp_model" },
+				{ "asteroid_fragment_9", "asteroid_fragment_9.mbp_model" },
+				{ "asteroid_fragment_10", "asteroid_fragment_10.mbp_model" },
+				{ "asteroid_fragment_11", "asteroid_fragment_11.mbp_model" },
+				{ "asteroid_fragment_12", "asteroid_fragment_12.mbp_model" },
+				{ "asteroid_fragment_13", "asteroid_fragment_13.mbp_model" },
+				{ "asteroid_fragment_14", "asteroid_fragment_14.mbp_model" },
 			};
 
 			auto const cubemaps = std::vector<cubemap_metadata>

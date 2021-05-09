@@ -24,8 +24,13 @@ int main(int , char* [])
 
 // todo:
 
-	// export split asteroid
-	// render to check it works...
+	// asteroid fragments:
+		// add asteroid renderable class to do instanced rendering
+		// create asteroid explosions class, to add an explosion with appropriate lifetime and manage entt stuff
+		// render fragments for each explosion.
+
+	// add vector of renderables to asteroid.
+	// do a test render to make sure the coordinates are correct.
 
 	// debris:
 

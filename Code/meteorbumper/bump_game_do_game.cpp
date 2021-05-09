@@ -87,7 +87,21 @@ namespace bump
 
 			auto powerups = game::powerups(registry, app.m_assets.m_shaders.at("powerup_depth"), app.m_assets.m_shaders.at("powerup"), app.m_assets.m_models.at("powerup_shield"), app.m_assets.m_models.at("powerup_armor"), app.m_assets.m_models.at("powerup_lasers"));
 
-			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), app.m_assets.m_shaders.at("asteroid_depth"), app.m_assets.m_shaders.at("asteroid"), app.m_assets.m_shaders.at("particle_effect"));
+			auto num_asteroid_fragment_models = 15;
+
+			auto asteroid_fragment_names = std::vector<std::string>();
+			asteroid_fragment_names.reserve(num_asteroid_fragment_models);
+
+			for (auto i = 0; i != num_asteroid_fragment_models; ++i)
+				asteroid_fragment_names.push_back("asteroid_fragment_" + std::to_string(i));
+
+			auto asteroid_fragment_models = std::vector<std::reference_wrapper<const mbp_model>>();
+			asteroid_fragment_models.reserve(num_asteroid_fragment_models);
+
+			for (auto const& n : asteroid_fragment_names)
+				asteroid_fragment_models.emplace_back(app.m_assets.m_models.at(n));
+			
+			auto asteroids = asteroid_field(registry, powerups, app.m_assets.m_models.at("asteroid"), asteroid_fragment_models, app.m_assets.m_shaders.at("asteroid_depth"), app.m_assets.m_shaders.at("asteroid"), app.m_assets.m_shaders.at("particle_effect"));
 
 			auto const bounds_radius = 300.f;
 			auto bounds = game::bounds(registry, bounds_radius, app.m_assets.m_shaders.at("bouy_depth"),app.m_assets.m_shaders.at("bouy"), app.m_assets.m_models.at("bouy"));
