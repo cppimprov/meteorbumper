@@ -24,6 +24,7 @@ namespace bump
 			m_max_lifetime(high_res_duration_from_seconds(2.f)),
 			m_max_lifetime_random(high_res_duration_from_seconds(0.f)),
 			m_collision_mask(physics::collision_layers::ASTEROIDS | physics::collision_layers::POWERUPS | physics::collision_layers::PLAYER),
+			m_blend_mode(gl::renderer::blending::ADD),
 			m_base_velocity{ 0.f, 0.f, 0.f },
 			m_random_velocity{ 5.f, 5.f, 5.f },
 			m_spawn_radius_m(0.5f),
@@ -143,7 +144,7 @@ namespace bump
 				ZoneScopedN("particle_effect::render() - render");
 
 				renderer.set_depth_write(gl::renderer::depth_write::DISABLED);
-				renderer.set_blending(gl::renderer::blending::ADD);
+				renderer.set_blending(m_blend_mode);
 
 				renderer.set_program(m_shader);
 				renderer.set_uniform_4x4f(m_u_MVP, matrices.model_view_projection_matrix(glm::mat4(1.f)));

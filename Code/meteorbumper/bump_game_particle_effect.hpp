@@ -50,6 +50,9 @@ namespace bump
 			void set_collision_mask(std::uint32_t mask) { m_collision_mask = mask; }
 			std::uint32_t get_collision_mask() const { return m_collision_mask; }
 
+			void set_blend_mode(gl::renderer::blending mode) { m_blend_mode = mode; }
+			gl::renderer::blending get_blend_mode() const { return m_blend_mode; }
+
 			void set_base_velocity(glm::vec3 velocity) { m_base_velocity = velocity; }
 			glm::vec3 get_base_velocity() const { return m_base_velocity; }
 
@@ -97,6 +100,7 @@ namespace bump
 			high_res_duration_t m_max_lifetime;
 			high_res_duration_t m_max_lifetime_random;
 			std::uint32_t m_collision_mask;
+			gl::renderer::blending m_blend_mode;
 
 			glm::vec3 m_base_velocity; // in local space
 			glm::vec3 m_random_velocity; // in local space

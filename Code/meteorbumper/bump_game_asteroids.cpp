@@ -102,6 +102,7 @@ namespace bump
 				m_hit_effects.set_max_lifetime_random(high_res_duration_from_seconds(1.f));
 				m_hit_effects.set_color_update_fn(make_color_update_fn(m_hit_effects, color_map));
 				m_hit_effects.set_size_update_fn(make_size_update_fn(m_hit_effects, size_map));
+				m_hit_effects.set_blend_mode(gl::renderer::blending::BLEND);
 			}
 
 			spawn_wave();

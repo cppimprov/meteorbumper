@@ -392,7 +392,6 @@ namespace bump
 // todo:
 
 	// shadows:
-		// affect player shield
 		// affect particles
 
 	// add spotlights
