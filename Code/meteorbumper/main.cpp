@@ -24,17 +24,11 @@ int main(int , char* [])
 
 // todo:
 
-	// asteroid fragments:
-		// add mbp_model transforms to asteroid renderable (?) or save the transform somewhere...
-		// when creating fragments, use scale to adjust position.
+	// player debris:
+		// if player isn't alive, do the thing
 
 	// debris:
 
-		// asteroids
-			// split asteroid into lots of parts and export
-			// when an asteroid blows up, replace it with a one of these, add physics rigidbody for each
-			// render for a time, then dissolve?
-		
 		// player
 			// split player mesh into 3 or 4 parts and export
 

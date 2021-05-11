@@ -70,10 +70,14 @@ class ExportMBP(bpy.types.Operator, ExportHelper):
 	filter_glob: StringProperty(default = '*.mbp_model', options = {'HIDDEN'})
 
 	def do_json_export(self, filepath, material_data, transform_data, submesh_data, has_normals, has_tangents):
+		
 		# arrange data for export
-
 		json_submeshes = []
 		for m, s in zip(material_data, submesh_data):
+
+			# mesh may have material assigned, but no vertices using the material
+			if len(s.vertex_data) == 0: 
+				continue
 
 			# submesh material
 			json_material = {
