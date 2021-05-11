@@ -24,19 +24,13 @@ int main(int , char* [])
 
 // todo:
 
-	// player debris:
-		// if player isn't alive, do the thing
+	// test w/ rotation collision impulses (make sure player doesn't rotate)
 
-	// debris:
-
-		// player
-			// split player mesh into 3 or 4 parts and export
-
-	// player explosion:
-		// use debris to replace player on death
-		// add delay before returning to start screen
+	// start screen:
 		// clear input on entering start screen!
 		// add short delay before accepting input.
+		// add deferred rendering.
+		// add asteroid and camera motion...
 
 	// sound:
 		// replace start music
@@ -54,16 +48,11 @@ int main(int , char* [])
 		// player should be more fragile
 		// asteroids should be less fragile
 
-// todo next:
-
-	// player searchlight
-	// player side lights
-
-	// shadows?
+// todo maybe:
 
 	// effects:
 
-		// player side-lights
+		// player side-lights, search light
 
 		// fake volumetric effects:
 			// light "flare" (for bouys, engines, player side lights, player search light)
@@ -98,10 +87,8 @@ int main(int , char* [])
 	
 	// particle field:
 		// make more shader variables uniforms for better control (e.g. point size)
-		// [stretch: lighting?]
 
 	// player controls:
-		// does it make sense?
 		// make the player rotate over time instead of instantly (damped harmonic oscillation, e.g. https://gamedev.stackexchange.com/a/109828/)
 		// [stretch: zoom out when player is moving fast]
 

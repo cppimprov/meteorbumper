@@ -383,27 +383,30 @@ namespace bump
 			{
 				auto view = m_registry.view<asteroid_fragment_data, physics::rigidbody>();
 
-				for (auto const& e : m_asteroid_explosions)
+				if (!view.empty())
 				{
-					for (auto id : e.m_fragments)
+					for (auto const& e : m_asteroid_explosions)
 					{
-						auto [f, rb] = view.get<asteroid_fragment_data, physics::rigidbody>(id);
-						auto const transform = rb.get_transform();
+						for (auto id : e.m_fragments)
+						{
+							auto [f, rb] = view.get<asteroid_fragment_data, physics::rigidbody>(id);
+							auto const transform = rb.get_transform();
 
-						auto& data = m_fragment_renderable_instance_data[f.m_model_index];
-						data.m_transforms.push_back(matrices.model_view_projection_matrix(transform));
-						data.m_scales.push_back(e.m_model_scale);
+							auto& data = m_fragment_renderable_instance_data[f.m_model_index];
+							data.m_transforms.push_back(matrices.model_view_projection_matrix(transform));
+							data.m_scales.push_back(e.m_model_scale);
+						}
 					}
-				}
 
-				for (auto i = std::size_t{ 0 }; i != m_fragment_renderables.size(); ++i)
-				{
-					auto const& data = m_fragment_renderable_instance_data[i];
-					m_fragment_renderables[i].render_depth(renderer, matrices, data.m_transforms, data.m_scales);
-				}
+					for (auto i = std::size_t{ 0 }; i != m_fragment_renderables.size(); ++i)
+					{
+						auto const& data = m_fragment_renderable_instance_data[i];
+						m_fragment_renderables[i].render_depth(renderer, matrices, data.m_transforms, data.m_scales);
+					}
 
-				for (auto& i : m_fragment_renderable_instance_data)
-					i.clear();
+					for (auto& i : m_fragment_renderable_instance_data)
+						i.clear();
+				}
 			}
 		}
 		
@@ -437,29 +440,32 @@ namespace bump
 			{
 				auto view = m_registry.view<asteroid_fragment_data, physics::rigidbody>();
 
-				for (auto const& e : m_asteroid_explosions)
+				if (!view.empty())
 				{
-					for (auto id : e.m_fragments)
+					for (auto const& e : m_asteroid_explosions)
 					{
-						auto [f, rb] = view.get<asteroid_fragment_data, physics::rigidbody>(id);
-						auto const transform = rb.get_transform();
+						for (auto id : e.m_fragments)
+						{
+							auto [f, rb] = view.get<asteroid_fragment_data, physics::rigidbody>(id);
+							auto const transform = rb.get_transform();
 
-						auto& data = m_fragment_renderable_instance_data[f.m_model_index];
-						data.m_transforms.push_back(matrices.model_view_projection_matrix(transform));
-						data.m_normal_matrices.push_back(matrices.normal_matrix(transform));
-						data.m_colors.push_back(e.m_color);
-						data.m_scales.push_back(e.m_model_scale);
+							auto& data = m_fragment_renderable_instance_data[f.m_model_index];
+							data.m_transforms.push_back(matrices.model_view_projection_matrix(transform));
+							data.m_normal_matrices.push_back(matrices.normal_matrix(transform));
+							data.m_colors.push_back(e.m_color);
+							data.m_scales.push_back(e.m_model_scale);
+						}
 					}
-				}
 
-				for (auto i = std::size_t{ 0 }; i != m_fragment_renderables.size(); ++i)
-				{
-					auto const& data = m_fragment_renderable_instance_data[i];
-					m_fragment_renderables[i].render_scene(renderer, matrices, data.m_transforms, data.m_normal_matrices, data.m_colors, data.m_scales);
-				}
+					for (auto i = std::size_t{ 0 }; i != m_fragment_renderables.size(); ++i)
+					{
+						auto const& data = m_fragment_renderable_instance_data[i];
+						m_fragment_renderables[i].render_scene(renderer, matrices, data.m_transforms, data.m_normal_matrices, data.m_colors, data.m_scales);
+					}
 
-				for (auto& i : m_fragment_renderable_instance_data)
-					i.clear();
+					for (auto& i : m_fragment_renderable_instance_data)
+						i.clear();
+				}
 			}
 		}
 		

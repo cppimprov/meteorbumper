@@ -26,6 +26,8 @@ namespace bump
 			m_u_Emissive(shader.get_uniform_location("u_Emissive")),
 			m_transform(1.f)
 		{
+			m_transform = model.m_transform;
+
 			for (auto const& submesh : model.m_submeshes)
 			{
 				auto depth_vertex_array = gl::vertex_array();

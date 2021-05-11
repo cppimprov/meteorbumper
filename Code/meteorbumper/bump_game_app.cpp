@@ -75,6 +75,12 @@ namespace bump
 				{ "asteroid_fragment_12", "asteroid_fragment_12.mbp_model" },
 				{ "asteroid_fragment_13", "asteroid_fragment_13.mbp_model" },
 				{ "asteroid_fragment_14", "asteroid_fragment_14.mbp_model" },
+				{ "player_ship_fragment_0", "player_ship_fragment_0.mbp_model" },
+				{ "player_ship_fragment_1", "player_ship_fragment_1.mbp_model" },
+				{ "player_ship_fragment_2", "player_ship_fragment_2.mbp_model" },
+				{ "player_ship_fragment_3", "player_ship_fragment_3.mbp_model" },
+				{ "player_ship_fragment_4", "player_ship_fragment_4.mbp_model" },
+				{ "player_ship_fragment_5", "player_ship_fragment_5.mbp_model" },
 			};
 
 			auto const cubemaps = std::vector<cubemap_metadata>

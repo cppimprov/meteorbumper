@@ -91,13 +91,11 @@ namespace bump
 
 			auto asteroid_fragment_names = std::vector<std::string>();
 			asteroid_fragment_names.reserve(num_asteroid_fragment_models);
-
 			for (auto i = 0; i != num_asteroid_fragment_models; ++i)
 				asteroid_fragment_names.push_back("asteroid_fragment_" + std::to_string(i));
 
 			auto asteroid_fragment_models = std::vector<std::reference_wrapper<const mbp_model>>();
 			asteroid_fragment_models.reserve(num_asteroid_fragment_models);
-
 			for (auto const& n : asteroid_fragment_names)
 				asteroid_fragment_models.emplace_back(app.m_assets.m_models.at(n));
 			
@@ -122,6 +120,9 @@ namespace bump
 			auto fps = fps_counter(app.m_ft_context, app.m_assets.m_fonts.at("fps_counter"), app.m_assets.m_shaders.at("fps_counter"));
 
 			auto paused = false;
+			auto gameover = false;
+			auto gameover_timer = high_res_duration_t{ 0 };
+			auto gameover_wait_time = high_res_duration_from_seconds(3.5f);
 			auto timer = frame_timer();
 
 			while (true)
@@ -179,7 +180,8 @@ namespace bump
 					if (!paused)
 					{
 						// apply player input:
-						player.m_controls.apply(registry.get<physics::rigidbody>(player.m_entity), crosshair, glm::vec2(app.m_window.get_size()), camera_matrices(scene_camera));
+						if (player.m_health.is_alive())
+							player.m_controls.apply(registry.get<physics::rigidbody>(player.m_entity), crosshair, glm::vec2(app.m_window.get_size()), camera_matrices(scene_camera));
 
 						// physics:
 						physics_system.update(dt);
@@ -187,12 +189,28 @@ namespace bump
 						// update player state:
 						player.update(dt);
 
-						if (!player.m_health.is_alive()) 
-							return { do_start }; // player died! todo: explosion effect, game over text!
+						// if player is dead, wait until return to start screen
+						if (!player.m_health.is_alive())
+						{
+							if (!gameover)
+							{
+								gameover = true;
+								gameover_timer = high_res_duration_t{ 0 };
+							}
+							else
+							{
+								gameover_timer += dt;
+
+								if (gameover_timer > gameover_wait_time)
+									return { do_start };
+							}
+						}
 
 						// update camera position
 						auto player_position = get_position(registry.get<physics::rigidbody>(player.m_entity).get_transform());
-						set_position(scene_camera.m_transform, player_position + glm::vec3{ 0.f, camera_height, 0.f });
+
+						if (player.m_health.is_alive())
+							set_position(scene_camera.m_transform, player_position + glm::vec3{ 0.f, camera_height, 0.f });
 						
 						// update particle field position
 						space_dust.set_position(get_position(scene_camera.m_transform));
@@ -347,8 +365,12 @@ namespace bump
 					{
 						ZoneScopedN("MainLoop - Render UI");
 
-						indicators.render(renderer, glm::vec2(app.m_window.get_size()), scene_matrices, ui_matrices);
-						crosshair.render(renderer, ui_matrices);
+						if (player.m_health.is_alive())
+						{
+							indicators.render(renderer, glm::vec2(app.m_window.get_size()), scene_matrices, ui_matrices);
+							crosshair.render(renderer, ui_matrices);
+						}
+
 						fps.render(renderer, ui_matrices);
 					}
 

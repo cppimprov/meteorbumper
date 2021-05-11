@@ -208,6 +208,17 @@ namespace bump
 			float m_player_armor_restitution = 0.25f;
 			float m_player_shield_radius_m = 5.f;
 			float m_player_ship_radius_m = 3.f;
+
+			struct player_fragment_data
+			{
+				std::size_t m_model_index = 0;
+			};
+
+			bool m_frame_player_death = false;
+			std::vector<basic_renderable> m_fragment_renderables;
+			std::vector<entt::entity> m_fragment_entities;
+
+			std::mt19937 m_rng;
 		};
 
 	} // game

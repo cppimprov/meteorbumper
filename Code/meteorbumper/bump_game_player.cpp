@@ -6,6 +6,7 @@
 #include "bump_game_powerups.hpp"
 #include "bump_lighting.hpp"
 #include "bump_physics.hpp"
+#include "bump_random.hpp"
 
 #include <Tracy.hpp>
 
@@ -600,10 +601,13 @@ namespace bump
 		{
 			m_time_since_last_hit += dt;
 
-			if (m_time_since_last_hit > m_shield_recharge_delay)
+			if (is_alive())
 			{
-				auto const dt_s = high_res_duration_to_seconds(dt);
-				m_shield_hp = std::clamp(m_shield_hp + m_shield_recharge_rate_hp_per_s * dt_s, 0.f, m_shield_max_hp);
+				if (m_time_since_last_hit > m_shield_recharge_delay)
+				{
+					auto const dt_s = high_res_duration_to_seconds(dt);
+					m_shield_hp = std::clamp(m_shield_hp + m_shield_recharge_rate_hp_per_s * dt_s, 0.f, m_shield_max_hp);
+				}
 			}
 		}
 
@@ -631,9 +635,9 @@ namespace bump
 			m_engine_light_l(entt::null),
 			m_engine_light_r(entt::null),
 			m_shield_hit_effect(registry, assets.m_shaders.at("particle_effect")),
-			m_armor_hit_effect(registry, assets.m_shaders.at("particle_effect"))
+			m_armor_hit_effect(registry, assets.m_shaders.at("particle_effect")),
+			m_rng(std::random_device()())
 		{
-
 			m_entity = registry.create();
 			registry.emplace<player_tag>(m_entity);
 
@@ -671,6 +675,13 @@ namespace bump
 							m_frame_armor_hits.push_back({ hit.m_point, hit.m_normal });
 
 						m_health.take_damage(damage);
+
+						// player died, turn off collision
+						if (!m_health.is_alive())
+						{
+							m_frame_player_death = true;
+							m_registry.get<physics::collider>(m_entity).set_collision_mask(0);
+						}
 					}
 					else if (m_registry.has<powerups::powerup_data>(other))
 					{
@@ -793,6 +804,13 @@ namespace bump
 				m_armor_hit_effect.set_max_lifetime_random(high_res_duration_from_seconds(1.0f));
 				m_armor_hit_effect.set_color_update_fn(make_color_update_fn(m_armor_hit_effect, armor_color_map));
 			}
+
+			// setup fragment models
+			{
+				auto num_player_fragment_models = 6;
+				for (auto i = 0; i != num_player_fragment_models; ++i)
+					m_fragment_renderables.emplace_back(assets.m_shaders.at("player_ship_depth"), assets.m_shaders.at("player_ship"), assets.m_models.at("player_ship_fragment_" + std::to_string(i)));
+			}
 		}
 
 		player::~player()
@@ -800,6 +818,9 @@ namespace bump
 			m_registry.destroy(m_engine_light_l);
 			m_registry.destroy(m_engine_light_r);
 			m_registry.destroy(m_entity);
+
+			for (auto id : m_fragment_entities)
+				m_registry.destroy(id);
 		}
 
 		void player::update(high_res_duration_t dt)
@@ -817,7 +838,7 @@ namespace bump
 
 			// update particle effects
 			{
-				auto const enabled = (m_controls.m_boost_axis == 1.f);
+				auto const enabled = (m_health.is_alive() && (m_controls.m_boost_axis == 1.f));
 
 				auto const l_pos = glm::vec3{ -0.8f, 0.1f, 2.2f };
 				auto l_mat = player_transform;
@@ -863,7 +884,7 @@ namespace bump
 
 			// update engine lights
 			{
-				auto const enabled = (m_controls.m_boost_axis == 1.f);
+				auto const enabled = (m_health.is_alive() && (m_controls.m_boost_axis == 1.f));
 
 				auto& light_l = m_registry.get<lighting::point_light>(m_engine_light_l);
 				light_l.m_position = transform_point_to_world(player_transform, glm::vec3{ 0.8f, 0.1f, 2.5f });
@@ -875,23 +896,96 @@ namespace bump
 			}
 
 			// if we have shields, make collisions "bouncier" by increasing restitution
-			auto& collider = m_registry.get<physics::collider>(m_entity);
-			collider.set_restitution(m_health.has_shield() ? m_player_shield_restitution : m_player_armor_restitution);
-			collider.set_shape({ physics::sphere_shape{ m_health.has_shield() ? m_player_shield_radius_m : m_player_ship_radius_m } });
+			if (m_health.is_alive())
+			{
+				auto& collider = m_registry.get<physics::collider>(m_entity);
+				collider.set_restitution(m_health.has_shield() ? m_player_shield_restitution : m_player_armor_restitution);
+				collider.set_shape({ physics::sphere_shape{ m_health.has_shield() ? m_player_shield_radius_m : m_player_ship_radius_m } });
+			}
+
+			// update fragments
+			if (!m_health.is_alive())
+			{
+				if (m_frame_player_death)
+				{
+					m_frame_player_death = false;
+
+					// spawn fragments:
+					for (auto i = std::size_t{ 0 }; i != m_fragment_renderables.size(); ++i)
+					{
+						auto id = m_registry.create();
+
+						auto& data = m_registry.emplace<player_fragment_data>(id);
+						data.m_model_index = i;
+
+						auto const mass = random::scale(m_rng, 10.f, 5.f);
+						auto const size = glm::vec3(random::scale(m_rng, 3.f, 1.5f), random::scale(m_rng, 3.f, 1.5f), random::scale(m_rng, 3.f, 1.5f));
+
+						auto const transform = player_transform * m_fragment_renderables[i].get_transform();
+						auto const position = get_position(transform);
+						auto const orientation = glm::quat_cast(glm::mat3(transform));
+
+						auto const vel_direction = glm::normalize(position);
+						auto const vel_magnitude = random::scale(m_rng, 15.f, 5.f);
+						auto const vel_random = random::point_in_ring_3d(m_rng, 0.f, 5.f);
+						auto const velocity = vel_direction * vel_magnitude + vel_random;
+
+						auto const ang_axis = random::point_in_ring_3d(m_rng, 0.f, 1.f);
+						auto const ang_magnitude = random::scale(m_rng, 2.5f, 1.f);
+						auto const ang_velocity = ang_axis * ang_magnitude;
+
+						auto& rb = m_registry.emplace<physics::rigidbody>(id);
+						rb.set_mass(mass);
+						rb.set_local_inertia_tensor(physics::make_cuboid_inertia_tensor(mass, size));
+						rb.set_position(position);
+						rb.set_orientation(orientation);
+						rb.set_velocity(velocity);
+						rb.set_angular_velocity(ang_velocity);
+
+						m_fragment_entities.push_back(id);
+					}
+				}
+
+				// update fragments:
+				auto view = m_registry.view<player_fragment_data, physics::rigidbody>();
+
+				for (auto id : view)
+				{
+					auto [d, rb] = view.get<player_fragment_data, physics::rigidbody>(id);
+
+					m_fragment_renderables[d.m_model_index].set_transform(rb.get_transform());
+				}
+			}
 		}
 
 		void player::render_depth(gl::renderer& renderer, camera_matrices const& matrices)
 		{
 			ZoneScopedN("player::render_depth()");
 
-			m_ship_renderable.render_depth(renderer, matrices);
+			if (m_health.is_alive())
+			{
+				m_ship_renderable.render_depth(renderer, matrices);
+			}
+			else
+			{
+				for (auto& f : m_fragment_renderables)
+					f.render_depth(renderer, matrices);
+			}
 		}
 
 		void player::render_scene(gl::renderer& renderer, camera_matrices const& matrices)
 		{
 			ZoneScopedN("player::render_scene()");
 
-			m_ship_renderable.render(renderer, matrices);
+			if (m_health.is_alive())
+			{
+				m_ship_renderable.render(renderer, matrices);
+			}
+			else
+			{
+				for (auto& f : m_fragment_renderables)
+					f.render(renderer, matrices);
+			}
 		}
 
 		void player::render_particles(gl::renderer& renderer, camera_matrices const& light_matrices, camera_matrices const& matrices, gl::texture_2d const& shadow_map)
@@ -919,7 +1013,7 @@ namespace bump
 		{
 			ZoneScopedN("player::render_transparent()");
 
-			if (m_health.has_shield())
+			if (m_health.is_alive() && m_health.has_shield())
 			{
 				// get directional lights:
 				{
