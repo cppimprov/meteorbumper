@@ -319,7 +319,7 @@ namespace bump
 						auto const vel_direction = glm::normalize(get_position(m_fragment_renderable_transforms[i]));
 						auto const vel_magnitude = random::scale(m_rng, 15.f, 5.f);
 						auto const vel_random = random::point_in_ring_3d(m_rng, 0.f, 5.f);
-						auto const velocity = vel_direction * vel_magnitude + vel_random;
+						auto const velocity = destroyed.m_velocity + vel_direction * vel_magnitude + vel_random;
 
 						auto const ang_axis = random::point_in_ring_3d(m_rng, 0.f, 1.f);
 						auto const ang_magnitude = random::scale(m_rng, 2.5f, 1.f);
