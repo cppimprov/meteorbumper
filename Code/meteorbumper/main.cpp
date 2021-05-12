@@ -25,7 +25,12 @@ int main(int , char* [])
 // todo:
 
 	// start screen:
-		// add asteroid and camera motion...
+		
+		// add lights
+		// setup light matrices
+		// render depth
+
+		// add camera motion...
 
 	// sound:
 		// replace start music

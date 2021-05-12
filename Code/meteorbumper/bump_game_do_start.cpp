@@ -2,6 +2,7 @@
 
 #include "bump_camera.hpp"
 #include "bump_game_app.hpp"
+#include "bump_game_basic_renderable.hpp"
 #include "bump_game_debug_camera.hpp"
 #include "bump_game_particle_field.hpp"
 #include "bump_game_press_start_text.hpp"
@@ -39,7 +40,7 @@ namespace bump
 
 			auto scene_camera = perspective_camera();
 			scene_camera.m_projection.m_near = 0.1f;
-			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 0.f });
+			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 50.f });
 
 			auto ui_camera = orthographic_camera();
 
@@ -52,6 +53,8 @@ namespace bump
 			}
 			
 			auto skybox = game::skybox(app.m_assets.m_models.at("skybox"), app.m_assets.m_shaders.at("skybox"), app.m_assets.m_cubemaps.at("skybox"));
+
+			auto asteroid = basic_renderable(app.m_assets.m_shaders.at("start_asteroid_depth"), app.m_assets.m_shaders.at("start_asteroid"), app.m_assets.m_models.at("asteroid"));
 
 			auto space_dust = particle_field(app.m_assets.m_shaders.at("particle_field"), 5.f, 20);
 			space_dust.set_base_color_rgb({ 0.25, 0.20, 0.15 });
@@ -128,7 +131,7 @@ namespace bump
 					
 					// render scene
 					{
-						// ...
+						asteroid.render(renderer, scene_matrices);
 					}
 
 					renderer.set_framebuffer(shadow_rt.m_framebuffer);
@@ -141,7 +144,8 @@ namespace bump
 					{
 						// ... set light matrices
 
-						// ... render depth
+						// render scene depth
+						//asteroid.render_depth(renderer, light_matrices);
 					}
 
 					renderer.set_framebuffer(lighting_rt.m_framebuffer);
@@ -171,12 +175,12 @@ namespace bump
 						tone_map_blit.render(lighting_rt.m_texture, renderer, ui_matrices);
 					}
 
+					renderer.set_framebuffer_color_encoding(gl::renderer::framebuffer_color_encoding::RGB);
+
 					// render ui
 					{
 						press_start.render(renderer, ui_matrices, glm::vec2(app.m_window.get_size()), paused ? high_res_duration_t{ 0 } : timer.get_last_frame_time());
 					}
-					
-					renderer.set_framebuffer_color_encoding(gl::renderer::framebuffer_color_encoding::RGB);
 
 					app.m_window.swap_buffers();
 				}

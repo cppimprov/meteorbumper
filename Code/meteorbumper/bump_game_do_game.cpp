@@ -360,6 +360,8 @@ namespace bump
 						tone_map_blit.m_size = glm::vec2(app.m_window.get_size());
 						tone_map_blit.render(lighting_rt.m_texture, renderer, ui_matrices);
 					}
+
+					renderer.set_framebuffer_color_encoding(gl::renderer::framebuffer_color_encoding::RGB);
 					
 					// render ui
 					{
@@ -373,8 +375,6 @@ namespace bump
 
 						fps.render(renderer, ui_matrices);
 					}
-
-					renderer.set_framebuffer_color_encoding(gl::renderer::framebuffer_color_encoding::RGB);
 
 					{
 						ZoneScopedN("MainLoop - Swap Buffers ");

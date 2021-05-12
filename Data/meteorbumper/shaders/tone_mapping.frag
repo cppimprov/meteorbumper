@@ -12,6 +12,6 @@ void main()
 
 	float exposure = 2.0; // todo: make this configurable?
 	vec3 mapped = vec3(1.0) - exp(-color * exposure);
-
+	
 	out_Color = vec4(mapped, 1.0);
 }
