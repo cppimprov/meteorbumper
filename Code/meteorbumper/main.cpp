@@ -24,11 +24,8 @@ int main(int , char* [])
 
 // todo:
 
-	// asteroid fragments should keep asteroid velocity!
-
 	// start screen:
 		// add asteroid and camera motion...
-		// check that tabbing out and back doesn't go to game
 
 	// sound:
 		// replace start music

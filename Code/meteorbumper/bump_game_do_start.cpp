@@ -80,7 +80,8 @@ namespace bump
 						if (id == control_id::KEYBOARDKEY_ESCAPE && in.m_value == 1.f) quit = true;
 						else if (id == control_id::GAMEPADSTICK_LEFTX || id == control_id::GAMEPADSTICK_LEFTY || id == control_id::GAMEPADSTICK_RIGHTX || id == control_id::GAMEPADSTICK_RIGHTY) return;
 						else if (id == control_id::MOUSEPOSITION_X || id == control_id::MOUSEPOSITION_Y || id == control_id::MOUSEMOTION_X || id == control_id::MOUSEMOTION_Y) return;
-						else enter_game = true;
+						else if (id != control_id::KEYBOARDKEY_LEFTALT && id != control_id::KEYBOARDKEY_LEFTWINDOWS && id != control_id::KEYBOARDKEY_RIGHTWINDOWS)
+							enter_game = true;
 					};
 					callbacks.m_resize = [&] (glm::ivec2 size)
 					{
