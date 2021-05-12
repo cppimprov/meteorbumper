@@ -543,7 +543,7 @@ namespace bump
 			rigidbody.set_mass(spawn_data.m_mass);
 			rigidbody.set_local_inertia_tensor(physics::make_sphere_inertia_tensor(spawn_data.m_mass, model_radius));
 			rigidbody.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
-			rigidbody.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
+			rigidbody.set_angular_factor({ 0.f, 0.f, 0.f }); // no rotation!
 			rigidbody.set_position(spawn_data.m_position);
 			rigidbody.set_velocity(spawn_data.m_velocity);
 			

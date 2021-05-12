@@ -16,14 +16,14 @@
 #include "bump_physics.hpp"
 #include "bump_timer.hpp"
 
+#include <entt.hpp>
+
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
 #include <Tracy.hpp>
-
-#include <iostream>
 
 namespace bump
 {
@@ -355,7 +355,7 @@ namespace bump
 					renderer.clear_color_buffers({ 0.93f, 0.58f, 0.39f, 1.f });
 					renderer.clear_depth_buffers();
 
-					// blit pass (temp)
+					// blit to backbuffer (w/ tonemapping)
 					{
 						tone_map_blit.m_size = glm::vec2(app.m_window.get_size());
 						tone_map_blit.render(lighting_rt.m_texture, renderer, ui_matrices);

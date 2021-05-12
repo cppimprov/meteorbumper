@@ -24,13 +24,11 @@ int main(int , char* [])
 
 // todo:
 
-	// test w/ rotation collision impulses (make sure player doesn't rotate)
+	// asteroid fragments should keep asteroid velocity!
 
 	// start screen:
-		// clear input on entering start screen!
-		// add short delay before accepting input.
-		// add deferred rendering.
 		// add asteroid and camera motion...
+		// check that tabbing out and back doesn't go to game
 
 	// sound:
 		// replace start music

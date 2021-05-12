@@ -652,7 +652,7 @@ namespace bump
 				rigidbody.set_linear_damping(0.998f);
 				rigidbody.set_angular_damping(0.998f);
 				rigidbody.set_linear_factor({ 1.f, 0.f, 1.f }); // restrict movement on y axis
-				rigidbody.set_angular_factor({ 0.f, 1.f, 0.f }); // restrict rotation to y axis only
+				rigidbody.set_angular_factor({ 0.f, 0.f, 0.f }); // no rotation!
 
 				auto& collider = registry.emplace<physics::collider>(m_entity);
 				collider.set_shape({ physics::sphere_shape{ m_player_shield_radius_m } });
