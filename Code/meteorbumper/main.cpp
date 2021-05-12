@@ -24,14 +24,6 @@ int main(int , char* [])
 
 // todo:
 
-	// start screen:
-		
-		// add lights
-		// setup light matrices
-		// render depth
-
-		// add camera motion...
-
 	// sound:
 		// replace start music
 		// add gameplay music

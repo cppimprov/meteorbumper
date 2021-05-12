@@ -38,6 +38,22 @@ namespace bump
 				app.m_assets.m_shaders.at("light_emissive"));
 			auto tone_map_blit = lighting::tone_map_quad(app.m_assets.m_shaders.at("tone_mapping"));
 
+			// light directions from blender:
+			// C.selected_objects[0].matrix_world.to_3x3() @ Vector((0.0, 0.0, -1.0)) # (and with y = z, z = -y)
+			auto dir_light_1 = registry.create();
+			//registry.emplace<lighting::main_light_tag>(dir_light_1);
+			auto& l1 = registry.emplace<lighting::directional_light>(dir_light_1);
+			l1.m_direction = glm::vec3(-0.9245213270187378f, -1.4393192415695921e-08f, -0.3811303377151489f);
+			l1.m_color = glm::vec3(1.00f, 0.998f, 0.629f) * 2.5f;
+			auto dir_light_2 = registry.create();
+			auto& l2 = registry.emplace<lighting::directional_light>(dir_light_2);
+			l2.m_direction = glm::vec3(0.3472469449043274f, -0.9376746416091919f, 0.013631058856844902f);
+			l2.m_color = glm::vec3(0.047f, 0.326f, 0.638f) * 0.05f;
+			auto dir_light_3 = registry.create();
+			auto& l3 = registry.emplace<lighting::directional_light>(dir_light_3);
+			l3.m_direction = glm::vec3(0.5147935748100281f, 0.8573000431060791f, -0.004921185318380594f);
+			l3.m_color = glm::vec3(0.638f, 0.359f, 0.584f) * 0.10f;
+
 			auto scene_camera = perspective_camera();
 			scene_camera.m_projection.m_near = 0.1f;
 			scene_camera.m_transform = glm::translate(glm::mat4(1.f), { 0.f, 0.f, 50.f });
@@ -106,6 +122,17 @@ namespace bump
 
 				// update
 				{
+					auto const dt = timer.get_last_frame_time();
+					auto const dt_s = high_res_duration_to_seconds(dt);
+
+					set_position(scene_camera.m_transform, glm::vec3(0.f));
+
+					auto axis = glm::normalize(glm::vec3(0.4f, 2.f, 0.8f));
+					auto angle = 2.f * glm::pi<float>() * 0.01f;
+					rotate_around_world_axis(scene_camera.m_transform, axis, angle * dt_s);
+
+					translate_in_local(scene_camera.m_transform, glm::vec3{ 0.f, 0.f, 50.f });
+
 					space_dust.set_position(get_position(scene_camera.m_transform));
 				}
 
