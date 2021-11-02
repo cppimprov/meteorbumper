@@ -523,7 +523,7 @@ class PlatformGCC:
 		return 'lib' + name + '.a'
 	
 	def write_rules(self, n):
-		n.rule('cc', 'g++ -c $cc_flags $cc_build_flags $cc_defines $cc_out_obj $cc_in_includes $cc_in_files')
+		n.rule('cc', 'g++ -MD -MF$cc_depsfile -c $cc_flags $cc_build_flags $cc_defines $cc_out_obj $cc_in_includes $cc_in_files', depfile = '$cc_depsfile', deps = 'gcc')
 		n.rule('ar', 'ar $ar_flags $ar_out_file $ar_in_files')
 		n.rule('ld', 'g++ $ld_flags $ld_build_flags $ld_out_exe $ld_in_lib_dirs $ld_in_files $ld_in_libs')
 	
@@ -542,11 +542,12 @@ class PlatformGCC:
 	def get_cc_in_includes(self, paths):
 		return ' '.join('-I' + p for p in paths)
 	
-	def write_cc_build(self, n, build_type, in_src, in_includes, out_obj, defines):
+	def write_cc_build(self, n, build_type, depsfile, in_src, in_includes, out_obj, defines):
 		in_deps = [in_src]
 		out_deps = [out_obj]
 		n.build(out_deps, 'cc', in_deps,
 			variables = [
+				('cc_depsfile', depsfile),
 				('cc_flags', self.get_cc_flags()),
 				('cc_build_flags', self.get_cc_build_flags(build_type)),
 				('cc_defines', self.get_cc_defines(defines)),
@@ -578,7 +579,7 @@ class PlatformGCC:
 		return { BuildType.debug: '-g -Og', BuildType.release: '-g -O3', BuildType.master: '-O3' }[build_type]
 	
 	def get_link_out_exe(self, path):
-		return '-o ' + path
+		return '-o' + path
 	
 	def get_link_in_lib_dirs(self, paths):
 		return ' '.join('-L' + p for p in paths)
@@ -608,7 +609,8 @@ class PlatformGCC:
 		obj_paths = [join_file(lib.build_dir, get_file_stem(f) + '.o') for f in lib.src_files]
 
 		for src, obj in zip(src_paths, obj_paths):
-			self.write_cc_build(n, build_type, src, inc_paths, obj, lib.defines)
+			depsfile = join_file(lib.build_dir, get_file_stem(obj) + '.d')
+			self.write_cc_build(n, build_type, depsfile, src, inc_paths, obj, lib.defines)
 
 		lib_path = join_file(lib.deploy_dir, self.get_lib_name(lib.project_name))
 		self.write_ar_build(n, obj_paths, lib_path)
@@ -619,12 +621,14 @@ class PlatformGCC:
 		obj_paths = [join_file(exe.build_dir, get_file_stem(f) + '.o') for f in exe.src_files]
 
 		for src, obj in zip(src_paths, obj_paths):
-			self.write_cc_build(n, build_type, src, inc_paths, obj, exe.defines)
+			depsfile = join_file(exe.build_dir, get_file_stem(obj) + '.d')
+			self.write_cc_build(n, build_type, depsfile, src, inc_paths, obj, exe.defines)
 
 		exe_path = join_file(exe.deploy_dir, exe.project_name)
 		self.write_link_build(n, build_type, obj_paths, exe.standard_libs, exe.libs, exe.lib_dirs, exe_path)
 
 	def write(self, n, build_type):
+		
 		self.write_rules(n)
 		
 		# ...
@@ -663,29 +667,45 @@ def main():
 	build_type = BuildType[args.build_type]
 
 	try:
+
+		print('creating build file...')
+
 		build_file_name = 'build-' + platform.name + '-' + args.build_type + '.ninja'
 		write(platform_writer, build_type, build_file_name)
 
-		print('created build file: ', build_file_name)
+		print('build file created:', build_file_name)
 
 	except:
-		print('failed to generate build file!')
+		print('failed to create build file!')
 		raise
 
 	if not args.no_build:
+
+		print('building...')
+
 		build_result = subprocess.call(['ninja', '-f', build_file_name])
 
 		if build_result != 0:
 			print('build failed!')
 			return
 
-	print('build succeeded')
+		print('build succeeded')
 
 	if platform.name == 'msvc':
+
+		print('copying data files...')
+
 		copy_result = subprocess.call(['robocopy', 
-			'/v', '/w:1', '/mir', 
+			'/w:1', '/mir', '/njh', '/njs', '/ndl', '/nc', '/ns', '/np',
 			'Data/meteorbumper', 
 			get_deploy_dir('meteorbumper', platform_writer.get_platform_name(), build_type) + '/data'])
 			
+		if copy_result != 0:
+			print('failed to copy data files!')
+			return
+
+		print('data files copied')
+
+	print('done!')
 	
 main()

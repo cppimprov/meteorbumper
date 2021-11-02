@@ -373,7 +373,7 @@ namespace bump
 							crosshair.render(renderer, ui_matrices);
 						}
 
-						fps.render(renderer, ui_matrices);
+						//fps.render(renderer, ui_matrices);
 					}
 
 					{

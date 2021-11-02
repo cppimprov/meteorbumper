@@ -86,7 +86,8 @@
 			"set": "cpp",
 			"unordered_set": "cpp",
 			"variant": "cpp",
-			"queue": "cpp"
+			"queue": "cpp",
+			"stb_image.h": "c"
 		}
 	}
 }

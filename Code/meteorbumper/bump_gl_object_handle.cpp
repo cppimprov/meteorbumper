@@ -1,5 +1,7 @@
 #include "bump_gl_object_handle.hpp"
 
+#include "bump_die.hpp"
+
 namespace bump
 {
 	
@@ -48,8 +50,8 @@ namespace bump
 			if (!is_valid())
 				return;
 			
-			if (m_deleter)
-				m_deleter(m_id);
+			die_if(!m_deleter);
+			m_deleter(m_id);
 			
 			m_id = 0;
 			m_deleter = deleter_type();
