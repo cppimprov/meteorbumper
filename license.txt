@@ -1,0 +1,6 @@
+This repository contains:
+
+ * 3rd party code (various libraries used in the project) - these each have their own licenses (see the Code/ subdirectories).
+ * Code written specifically for this project (meteorbumper, normalstest, blenderexporter) - these are under the unlicense (see the relevant Code/ subdirectories).
+ * Sound and art assets created specifically for this project - these can be considered public domain (do whatever you like with them).
+ 
